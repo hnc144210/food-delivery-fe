@@ -1,0 +1,12 @@
+import { Stack } from 'expo-router';
+
+export default function RootLayout() {
+    return (
+        <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(customer)" />
+            <Stack.Screen name="(merchant)" />
+            <Stack.Screen name="(shipper)" />
+        </Stack>
+    );
+}
