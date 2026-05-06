@@ -1,6 +1,7 @@
 import { TouchableOpacity, Image, View, Text } from "react-native";
-import { ProductCardData } from "../../mock/home";
+import { ProductCardData } from "../../types/type";
 import AntDesign from "@expo/vector-icons/AntDesign";
+import { OrderitemsData } from "../../mock/shipper";
 
 export function ProductCard_Large({ name, base_price, discount_price, image_url, prep_time, rating }: ProductCardData) {
     return (
@@ -66,4 +67,18 @@ export function ProductCard_Small({ name, base_price, discount_price, image_url,
 
         </TouchableOpacity>
     );
+}
+
+export function ProductCard_ForDriver({ name, quantity, selected_options }: OrderitemsData) {
+    return (
+        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', width: '100%', gap: 15 }}>
+            <View style={{ alignItems: 'center', justifyContent: 'center', backgroundColor: '#F6F6F6', width: 40, height: 40, borderRadius: 12 }}>
+                <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#B22203' }}>{quantity}x</Text>
+            </View>
+            <View style={{ alignItems: 'flex-start', }}>
+                <Text style={{ fontSize: 17, fontWeight: 'bold' }}>{name}</Text>
+                <Text>{selected_options}</Text>
+            </View>
+        </View>
+    )
 }
