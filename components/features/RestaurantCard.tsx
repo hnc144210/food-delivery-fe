@@ -1,7 +1,7 @@
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from '@expo/vector-icons/Feather';
 import { View, StyleSheet, Text, TouchableOpacity, FlatList } from "react-native";
-import { RestaurantCardData } from "../../types/type";
+import { RestaurantCardData } from '@/types';
 import { ProductCard_Medium } from "./ProductCard";
 import { useRouter } from "expo-router";
 

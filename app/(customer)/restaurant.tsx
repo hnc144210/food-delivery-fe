@@ -5,7 +5,7 @@ import Feather from '@expo/vector-icons/Feather';
 import { ProductCard_Small } from "../../components/features/ProductCard";
 import { ReturnButton } from "../../components/ui/ReturnButton";
 import { useRouter } from "expo-router";
-import { ProductCardData } from "../../types/type";
+import { ProductCardData } from '@/types';
 import { mock_productdata } from "../../mock/home";
 
 export default function Restaurant() {

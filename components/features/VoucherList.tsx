@@ -1,5 +1,5 @@
 import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { VoucherData } from "../../types/type";
+import { VoucherData } from '@/types';
 
 export function Voucher({ description, start_date, end_date, image_url }: VoucherData) {
     return (

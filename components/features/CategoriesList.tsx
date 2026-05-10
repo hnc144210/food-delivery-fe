@@ -1,5 +1,5 @@
 import { Image, StyleSheet, Text, TouchableOpacity, View, FlatList } from "react-native";
-import { Category } from "../../types/type";
+import { Category } from '@/types';
 
 export function CategoryButton({ id, name, icon_url }: Category) {
     return (

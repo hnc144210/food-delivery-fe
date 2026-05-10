@@ -1,5 +1,5 @@
 import { TouchableOpacity, Image, View, Text } from "react-native";
-import { ProductCardData } from "../../types/type";
+import { ProductCardData } from '@/types';
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { OrderitemsData } from "../../mock/shipper";
 

@@ -1,4 +1,4 @@
-import { ProductCardData } from "../../mock/home";
+import { ProductCardData } from '@/types';
 import { Text, TouchableOpacity, View, StyleSheet } from "react-native";
 import { ProductCard_Small } from "./ProductCard";
 import { useState } from "react";

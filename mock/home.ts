@@ -1,4 +1,4 @@
-import { Category, ProductCardData, RestaurantCardData, VoucherData } from "../types/type";
+import { Category, ProductCardData, RestaurantCardData, VoucherData } from '@/types';
 
 //vouchers
 export const mock_vouchers: VoucherData[] = [
