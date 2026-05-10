@@ -28,21 +28,21 @@ interface OnboardingSlide {
 const SLIDES: OnboardingSlide[] = [
   {
     id: '1',
-    image: require('@/assets/images/onboarding-1.png'),
+    image: require('@/assets/images/onboarding/onboarding1.png'),
     title: 'Thưởng thức tại gia',
     description:
       'Hệ thống OHIO kết nối bạn với hàng ngàn quán ăn ngon nhất khu vực. Dễ dàng, tiện lợi và không cần phải nấu nướng',
   },
   {
     id: '2',
-    image: require('@/assets/images/onboarding-2.png'),
+    image: require('@/assets/images/onboarding/onboarding2.png'),
     title: 'Công nghệ giao hàng thông minh',
     description:
       'Nhận đơn hàng trong vòng 30 phút, theo dõi trực tuyến mọi lúc mọi nơi. Nhận điểm thưởng OHIO cho mỗi đơn hàng',
   },
   {
     id: '3',
-    image: require('@/assets/images/onboarding-3.png'),
+    image: require('@/assets/images/onboarding/onboarding3.png'),
     title: 'Hàng ngàn món ngon',
     description:
       'Hệ thống OHIO kết nối bạn với hàng ngàn quán ăn ngon nhất khu vực. Dễ dàng, tiện lợi và không cần phải nấu nướng',
@@ -50,18 +50,13 @@ const SLIDES: OnboardingSlide[] = [
 ];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-
 function OhioLogo() {
   return (
-    <View style={styles.logoRow}>
-      <View style={styles.logoIcon}>
-        <Text style={styles.logoIconText}>🕐</Text>
-      </View>
-      <View>
-        <Text style={styles.logoName}>OHIO</Text>
-        <Text style={styles.logoSub}>FOOD DELIVERY</Text>
-      </View>
-    </View>
+    <Image
+      source={require('@/assets/images/logo.png')}
+      style={{ width: 160, height: 60, marginBottom: 32 }}
+      resizeMode="contain"
+    />
   );
 }
 
@@ -190,38 +185,6 @@ const styles = StyleSheet.create({
     paddingTop: 56,
     paddingHorizontal: 24,
     backgroundColor: CREAM,
-  },
-
-  // Logo
-  logoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 32,
-  },
-  logoIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: ORANGE,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoIconText: {
-    fontSize: 20,
-  },
-  logoName: {
-    fontSize: 26,
-    fontWeight: '900',
-    color: ORANGE,
-    letterSpacing: 2,
-    lineHeight: 28,
-  },
-  logoSub: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: ORANGE,
-    letterSpacing: 3,
   },
 
   // Illustration
