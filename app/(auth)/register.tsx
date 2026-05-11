@@ -1,4 +1,4 @@
-// app/(auth)/login.tsx
+// app/(auth)/register.tsx
 import { useState } from 'react';
 import { Image } from 'react-native';
 import {
@@ -16,46 +16,31 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useMutation } from '@tanstack/react-query';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { AxiosError } from 'axios';
 import api from '@/services/api';
-import { useAuthStore } from '@/store/authStore';
-import type { User } from '@/types';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
-const loginSchema = z.object({
-  identifier: z.string().min(1, 'Email hoặc số điện thoại không được để trống'),
-  password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+const registerSchema = z.object({
+  fullName: z.string().min(1, 'Họ tên không được để trống'),
+  email: z.string().email('Email không hợp lệ'),
+  phone: z.string().min(9, 'Số điện thoại không hợp lệ'),
 });
 
-type LoginFormData = z.infer<typeof loginSchema>;
+type RegisterFormData = z.infer<typeof registerSchema>;
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 
-interface LoginResponse {
+interface RegisterResponse {
   success: true;
-  data: { accessToken: string; refreshToken: string; user: User };
   message: string;
 }
 
-async function loginRequest(payload: LoginFormData): Promise<LoginResponse> {
-  const { data } = await api.post<LoginResponse>('/auth/login', payload);
+async function registerRequest(payload: RegisterFormData): Promise<RegisterResponse> {
+  const { data } = await api.post<RegisterResponse>('/auth/register', payload);
   return data;
-}
-
-// ─── Role redirect ────────────────────────────────────────────────────────────
-
-function redirectByRole(role: User['role']) {
-  const routes: Record<User['role'], string> = {
-    CUSTOMER: '/(customer)/home',
-    MERCHANT: '/(merchant)/dashboard',
-    SHIPPER: '/(shipper)/home',
-    ADMIN: '/(admin)/users',
-  };
-  router.replace(routes[role] as any);
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -72,38 +57,32 @@ function OhioLogo() {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function LoginScreen() {
-  const setUser = useAuthStore((s) => s.setUser);
+export default function RegisterScreen() {
   const [serverError, setServerError] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
 
   const {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { identifier: '', password: '' },
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { fullName: '', email: '', phone: '' },
   });
 
-  const loginMutation = useMutation({
-    mutationFn: loginRequest,
-    onSuccess: async ({ data }) => {
-      await AsyncStorage.setItem('access_token', data.accessToken);
-      await AsyncStorage.setItem('refresh_token', data.refreshToken);
-      setUser(data.user);
-      redirectByRole(data.user.role);
+  const registerMutation = useMutation({
+    mutationFn: registerRequest,
+    onSuccess: () => {
+      router.replace('/(auth)/login');
     },
     onError: (error: AxiosError<{ message: string }>) => {
-      const message = error.response?.data?.message ?? 'Đăng nhập thất bại. Vui lòng thử lại.';
+      const message = error.response?.data?.message ?? 'Đăng ký thất bại. Vui lòng thử lại.';
       setServerError(message);
     },
   });
 
-  function handlePressLogin(formData: LoginFormData) {
+  function handlePressRegister(formData: RegisterFormData) {
     setServerError('');
-    loginMutation.mutate(formData);
+    registerMutation.mutate(formData);
   }
 
   return (
@@ -118,18 +97,39 @@ export default function LoginScreen() {
       >
         <OhioLogo />
 
-        <Text style={styles.title}>Let's Sign You In</Text>
-        <Text style={styles.subtitle}>Welcome back, you've been missed</Text>
+        <Text style={styles.title}>Getting Started</Text>
+        <Text style={styles.subtitle}>Create an account to continue!</Text>
 
-        {/* Email / Phone */}
+        {/* Full Name */}
         <View style={styles.fieldWrapper}>
-          <Text style={styles.label}>EMAIL OR PHONE NUMBER</Text>
+          <Text style={styles.label}>FULL NAME</Text>
           <Controller
             control={control}
-            name="identifier"
+            name="fullName"
             render={({ field: { onChange, onBlur, value } }) => (
               <TextInput
-                style={[styles.input, errors.identifier && styles.inputError]}
+                style={[styles.input, errors.fullName && styles.inputError]}
+                placeholder="Michael Jordan"
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value}
+              />
+            )}
+          />
+          {errors.fullName && (
+            <Text style={styles.errorText}>{errors.fullName.message}</Text>
+          )}
+        </View>
+
+        {/* Email */}
+        <View style={styles.fieldWrapper}>
+          <Text style={styles.label}>EMAIL</Text>
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                style={[styles.input, errors.email && styles.inputError]}
                 placeholder="alex.j@example.com"
                 autoCapitalize="none"
                 keyboardType="email-address"
@@ -139,87 +139,69 @@ export default function LoginScreen() {
               />
             )}
           />
-          {errors.identifier && (
-            <Text style={styles.errorText}>{errors.identifier.message}</Text>
+          {errors.email && (
+            <Text style={styles.errorText}>{errors.email.message}</Text>
           )}
         </View>
 
-        {/* Password */}
+        {/* Phone */}
         <View style={styles.fieldWrapper}>
-          <Text style={styles.label}>PASSWORD</Text>
+          <Text style={styles.label}>PHONE NUMBER</Text>
           <Controller
             control={control}
-            name="password"
+            name="phone"
             render={({ field: { onChange, onBlur, value } }) => (
-              <View style={[styles.input, styles.passwordRow, errors.password && styles.inputError]}>
-                <TextInput
-                  style={styles.passwordInput}
-                  placeholder="••••••••"
-                  secureTextEntry={!showPassword}
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value}
-                />
-                <TouchableOpacity onPress={() => setShowPassword((prev) => !prev)}>
-                  <Ionicons
-                    name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                    size={20}
-                    color="#9ca3af"
-                  />
-                </TouchableOpacity>
-              </View>
+              <TextInput
+                style={[styles.input, errors.phone && styles.inputError]}
+                placeholder="19001099"
+                keyboardType="phone-pad"
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value}
+              />
             )}
           />
-          {errors.password && (
-            <Text style={styles.errorText}>{errors.password.message}</Text>
+          {errors.phone && (
+            <Text style={styles.errorText}>{errors.phone.message}</Text>
           )}
         </View>
 
-        {/* Remember me + Forget password */}
-        <View style={styles.rememberRow}>
-          <TouchableOpacity
-            style={styles.rememberLeft}
-            onPress={() => setRememberMe((prev) => !prev)}
-            activeOpacity={0.7}
-          >
-            <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
-              {rememberMe && <Ionicons name="checkmark" size={12} color="#fff" />}
-            </View>
-            <Text style={styles.rememberText}>Remember me</Text>
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Text style={styles.forgotText}>Forget Password</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Terms */}
+        <Text style={styles.termsText}>
+          By continuing, you agree to{' '}
+          <Text style={styles.termsLink}>Terms of Use</Text>
+          {' '}and{' '}
+          <Text style={styles.termsLink}>Privacy Policy</Text>.
+        </Text>
 
         {/* Server error */}
         {serverError ? (
           <Text style={styles.serverError}>{serverError}</Text>
         ) : null}
 
-        {/* Sign in button */}
+        {/* Sign Up button */}
         <TouchableOpacity
-          style={[styles.button, loginMutation.isPending && styles.buttonDisabled]}
-          onPress={handleSubmit(handlePressLogin)}
-          disabled={loginMutation.isPending}
+          style={[styles.button, registerMutation.isPending && styles.buttonDisabled]}
+          onPress={handleSubmit(handlePressRegister)}
+          disabled={registerMutation.isPending}
           activeOpacity={0.85}
         >
-          {loginMutation.isPending ? (
+          {registerMutation.isPending ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Sign In</Text>
+            <Text style={styles.buttonText}>Sign Up</Text>
           )}
         </TouchableOpacity>
 
-        {/* Register link */}
-        <View style={styles.registerRow}>
-          <Text style={styles.registerHint}>Don't have an account? </Text>
-          <TouchableOpacity onPress={() => router.push('/register')}>
-            <Text style={styles.registerLink}>Sign Up</Text>
+        {/* Login link */}
+        <View style={styles.loginRow}>
+          <Text style={styles.loginHint}>Already have an account? </Text>
+          <TouchableOpacity onPress={() => router.replace('/login')}>
+            <Text style={styles.loginLink}>Sign In</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Social login */}
+        {/* Social */}
         <Text style={styles.orText}>or sign up with</Text>
         <View style={styles.socialRow}>
           <TouchableOpacity style={styles.socialButton}>
@@ -262,7 +244,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     color: '#9ca3af',
-    marginBottom: 32,
+    marginBottom: 28,
     textAlign: 'center',
   },
 
@@ -291,55 +273,21 @@ const styles = StyleSheet.create({
   inputError: {
     borderColor: '#ef4444',
   },
-  passwordRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 0,
-  },
-  passwordInput: {
-    flex: 1,
-    fontSize: 15,
-    color: '#111827',
-    paddingVertical: 14,
-  },
   errorText: {
     marginTop: 4,
     fontSize: 12,
     color: '#ef4444',
   },
 
-  // Remember me
-  rememberRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: 24,
+  // Terms
+  termsText: {
+    fontSize: 12,
+    color: '#9ca3af',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 18,
   },
-  rememberLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  checkbox: {
-    width: 18,
-    height: 18,
-    borderRadius: 4,
-    borderWidth: 1.5,
-    borderColor: '#d1d5db',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxChecked: {
-    backgroundColor: ORANGE,
-    borderColor: ORANGE,
-  },
-  rememberText: {
-    fontSize: 13,
-    color: '#6b7280',
-  },
-  forgotText: {
-    fontSize: 13,
+  termsLink: {
     color: ORANGE,
     fontWeight: '600',
   },
@@ -369,17 +317,17 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // Register
-  registerRow: {
+  // Login link
+  loginRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     marginTop: 20,
   },
-  registerHint: {
+  loginHint: {
     color: '#6b7280',
     fontSize: 14,
   },
-  registerLink: {
+  loginLink: {
     color: ORANGE,
     fontSize: 14,
     fontWeight: '700',
