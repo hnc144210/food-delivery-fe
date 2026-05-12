@@ -63,6 +63,7 @@ export default function RegisterScreen() {
   const {
     control,
     handleSubmit,
+    getValues,  
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -72,7 +73,10 @@ export default function RegisterScreen() {
   const registerMutation = useMutation({
     mutationFn: registerRequest,
     onSuccess: () => {
-      router.replace('/(auth)/login');
+      router.push({
+        pathname: '/(auth)/otp',
+        params: { email: getValues('email') },
+      });
     },
     onError: (error: AxiosError<{ message: string }>) => {
       const message = error.response?.data?.message ?? 'Đăng ký thất bại. Vui lòng thử lại.';
@@ -196,7 +200,7 @@ export default function RegisterScreen() {
         {/* Login link */}
         <View style={styles.loginRow}>
           <Text style={styles.loginHint}>Already have an account? </Text>
-          <TouchableOpacity onPress={() => router.replace('/login')}>
+          <TouchableOpacity onPress={() => router.replace({ pathname: '/(auth)/login' })}>
             <Text style={styles.loginLink}>Sign In</Text>
           </TouchableOpacity>
         </View>
