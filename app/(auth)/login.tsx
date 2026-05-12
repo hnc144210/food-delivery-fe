@@ -1,6 +1,8 @@
 // app/(auth)/login.tsx
 import { useState } from 'react';
 import { Image } from 'react-native';
+import { mockLoginResponse } from '@/mock/auth';
+
 import {
   View,
   Text,
@@ -16,11 +18,9 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useMutation } from '@tanstack/react-query';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { AxiosError } from 'axios';
-import api from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
 import type { User } from '@/types';
 
@@ -42,8 +42,8 @@ interface LoginResponse {
 }
 
 async function loginRequest(payload: LoginFormData): Promise<LoginResponse> {
-  const { data } = await api.post<LoginResponse>('/auth/login', payload);
-  return data;
+  // TODO: đổi lại khi BE xong
+  return mockLoginResponse;
 }
 
 // ─── Role redirect ────────────────────────────────────────────────────────────
@@ -88,18 +88,18 @@ export default function LoginScreen() {
   });
 
   const loginMutation = useMutation({
-    mutationFn: loginRequest,
-    onSuccess: async ({ data }) => {
-      await AsyncStorage.setItem('access_token', data.accessToken);
-      await AsyncStorage.setItem('refresh_token', data.refreshToken);
-      setUser(data.user);
-      redirectByRole(data.user.role);
-    },
-    onError: (error: AxiosError<{ message: string }>) => {
-      const message = error.response?.data?.message ?? 'Đăng nhập thất bại. Vui lòng thử lại.';
-      setServerError(message);
-    },
-  });
+  mutationFn: loginRequest,
+  onSuccess: async ({ data }) => {
+  console.log('onSuccess:', data);
+  setUser(data.user);
+  redirectByRole(data.user.role);
+},
+  onError: (error) => {
+    console.log('onError:', error);
+    const message = (error as AxiosError<{ message: string }>).response?.data?.message ?? 'Đăng nhập thất bại. Vui lòng thử lại.';
+    setServerError(message);
+  },
+});
 
   function handlePressLogin(formData: LoginFormData) {
     setServerError('');
@@ -187,7 +187,7 @@ export default function LoginScreen() {
             </View>
             <Text style={styles.rememberText}>Remember me</Text>
           </TouchableOpacity>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push({ pathname: '/(auth)/forgot-password' })}>
             <Text style={styles.forgotText}>Forget Password</Text>
           </TouchableOpacity>
         </View>
@@ -214,7 +214,7 @@ export default function LoginScreen() {
         {/* Register link */}
         <View style={styles.registerRow}>
           <Text style={styles.registerHint}>Don't have an account? </Text>
-          <TouchableOpacity onPress={() => router.push('/register')}>
+          <TouchableOpacity onPress={() => router.push({ pathname: '/(auth)/register' })}>
             <Text style={styles.registerLink}>Sign Up</Text>
           </TouchableOpacity>
         </View>
