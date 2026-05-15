@@ -10,7 +10,7 @@ import { CategoriesList } from "../../../components/features/CategoriesList";
 import { VoucherList } from "../../../components/features/VoucherList";
 import { useRouter } from "expo-router"
 
-import { mock_categories, mock_dealoftheday, mock_vouchers } from "../../../mock/home";
+import { mock_categories, mock_productdata, mock_vouchers } from "../../../mock/home";
 
 export default function HomeScreen() {
     const [isSearching, setIsSearching] = useState(false);
@@ -35,7 +35,7 @@ export default function HomeScreen() {
                                 <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 20 }}>Delivery to: Home</Text>
                             </TouchableOpacity>
                             <TouchableOpacity>
-                                <AntDesign name="shopping-cart" size={20} color="white" />
+                                <AntDesign name="shopping-cart" size={20} color="white" onPress={() => router.navigate('/(customer)/(tabs)/cart')} />
                             </TouchableOpacity>
                         </View>
                     }
@@ -49,8 +49,8 @@ export default function HomeScreen() {
                 {!isSearching && <ScrollView style={styles.body}>
                     <VoucherList vouchers={mock_vouchers} />
                     <CategoriesList categories={mock_categories} />
-                    <DealsOfTheDay dealoftheday={mock_dealoftheday} />
-                    <NearbyRestaurant nearbyrestaurants={mock_dealoftheday} />
+                    <DealsOfTheDay dealoftheday={mock_productdata} />
+                    <NearbyRestaurant nearbyrestaurants={mock_productdata} />
                     <View style={{ height: 80, width: '100%' }} />
                 </ScrollView>}
                 {isSearching && <View style={styles.body}>

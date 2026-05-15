@@ -5,15 +5,15 @@ import { useRouter } from "expo-router";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { OrderCardType } from "../../mock/shipper";
 
-export function OrderCard({ status, restaurantname, totalamount, pickuplocation, deliverylocation, onView }: OrderCardType) {
+export function OrderCard_ForDriver({ status, restaurantname, totalamount, pickuplocation, deliverylocation, onView }: OrderCardType) {
 
     const router = useRouter();
 
     const statuscolor = () => {
-        if (status === 'pending') return 'lightgray';
-        if (status === 'ready') return '#FFCC00';
-        if (status === 'delivering') return '#EA580C';
-        if (status === 'delivered') return '#34C759';
+        if (status === 'PENDING') return 'lightgray';
+        if (status === 'READY') return '#FFCC00';
+        if (status === 'DELIVERING') return '#EA580C';
+        if (status === 'DELIVERED') return '#34C759';
     }
 
 
@@ -61,10 +61,10 @@ export function OrderCard({ status, restaurantname, totalamount, pickuplocation,
     );
 }
 
-export function OrderCardHistory({ restaurantname, deliveredtime, totalamount, status, rating, onView }: OrderCardType) {
+export function OrderCardHistory_ForDriver({ restaurantname, deliveredtime, totalamount, status, rating, onView }: OrderCardType) {
     const statuscolor = () => {
-        if (status === 'cancel') return 'red';
-        if (status === 'delivered') return '#34C759';
+        if (status === 'CANCELLED') return 'red';
+        if (status === 'DELIVERED') return '#34C759';
     }
     return (
         <TouchableOpacity style={styles.ordercard_container} onPress={onView}>
@@ -97,6 +97,88 @@ export function OrderCardHistory({ restaurantname, deliveredtime, totalamount, s
         </TouchableOpacity>
     );
 }
+
+export function OrderCard_ForCustomer({ status, orderedtime, deliveredtime, restaurantname, totalamount, orderitems, onView }: OrderCardType) {
+    const statuscolor = () => {
+        if (status === 'PENDING') return '#ddddddff';
+        if (status === 'CONFIRMED') return '#90d9e2ff';
+        if (status === 'PREPARING') return '#ffaf54ff';
+        if (status === 'DELIVERING') return '#ee99e3ff';
+        if (status === 'DELIVERED') return '#a6ff83ff';
+        if (status === 'CANCELLED') return '#ffa6a6ff';
+        return '#FEF3C7';
+    }
+    const textcolor = () => {
+        if (status === 'PENDING') return '#000000ff';
+        if (status === 'CONFIRMED') return '#005661ff';
+        if (status === 'PREPARING') return '#6b4000ff';
+        if (status === 'DELIVERING') return '#682b60ff';
+        if (status === 'DELIVERED') return '#207000ff';
+        if (status === 'CANCELLED') return '#960000ff';
+        return '#92400eff';
+    }
+    return (
+        <View style={[styles.ordercard_container, { borderColor: statuscolor(), borderWidth: 1 }]}>
+            <View style={{ padding: 20, width: '100%', gap: 12 }}>
+                <View style={{ backgroundColor: statuscolor(), paddingVertical: 5, borderRadius: 10, justifyContent: 'center', alignItems: 'center', width: 100 }}>
+                    <Text style={{ color: textcolor(), fontSize: 12 }}>{status === '' ? 'Chưa đặt hàng' : status}</Text>
+                </View>
+                <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }} onPress={onView}>
+                    <Image source={{ uri: 'https://cdn.pixabay.com/photo/2021/05/03/04/18/uber-6225185_1280.jpg' }} style={{ width: 50, height: 50, borderRadius: 12 }} />
+                    <View style={{ width: 240 }}>
+                        <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{restaurantname}</Text>
+                        <Text style={{ color: 'gray', fontSize: 12 }}>{orderitems?.map((item) => `${item.quantity}x ${item.name}`).join(', ')}</Text>
+                    </View>
+                </TouchableOpacity>
+
+                {status !== 'DELIVERED' && status !== 'CANCELLED' && status !== '' &&
+                    <View style={{ gap: 12 }}>
+                        <View>
+                            <Text style={{ fontSize: 11, fontWeight: '300' }}>Thời điểm đặt hàng</Text>
+                            <Text>{orderedtime}</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: 18, backgroundColor: '#ebebebff', borderRadius: 12 }}>
+                            <Text style={{ fontSize: 15 }}>Tổng cộng</Text>
+                            <Text style={{ fontSize: 22, fontWeight: 'bold' }}>{totalamount}đ</Text>
+                        </View>
+                    </View>
+                }
+
+                {status === 'DELIVERED' &&
+                    <View style={{ gap: 12 }}>
+                        <View>
+                            <Text style={{ fontWeight: '300', fontSize: 11 }}>Đã giao lúc: </Text>
+                            <Text>{deliveredtime}</Text>
+                        </View>
+
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: 12 }}>
+                            <TouchableOpacity style={{ flex: 1, backgroundColor: '#ebebebff', padding: 12, borderRadius: 12, alignItems: 'center' }}>
+                                <Text style={{ fontWeight: 'bold' }}>Đặt lại</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={{ flex: 1, backgroundColor: '#EE4D2D', padding: 12, borderRadius: 12, alignItems: 'center' }}>
+                                <Text style={{ color: 'white', fontWeight: 'bold' }}>Đánh giá</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                }
+
+                {status === '' &&
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: 12 }}>
+                        <TouchableOpacity style={{ flex: 1, backgroundColor: '#ebebebff', padding: 12, borderRadius: 12, alignItems: 'center' }}>
+                            <Text style={{ fontWeight: 'bold' }}>Hủy giỏ hàng</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={{ flex: 1, backgroundColor: '#EE4D2D', padding: 12, borderRadius: 12, alignItems: 'center' }}>
+                            <Text style={{ color: 'white', fontWeight: 'bold' }}>Hoàn thành đơn</Text>
+                        </TouchableOpacity>
+                    </View>
+                }
+
+            </View>
+        </View>
+    )
+}
+
 
 const styles = StyleSheet.create({
     ordercard_container: {

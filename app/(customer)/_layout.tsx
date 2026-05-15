@@ -5,6 +5,7 @@ export default function CustomerLayout() {
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="restaurant" options={{ headerShown: false, title: 'Nhà hàng' }} />
             <Stack.Screen name="searchresult" options={{ headerShown: false, title: 'Tìm kiếm' }} />
+            <Stack.Screen name="carddetail" options={{ headerShown: false, title: 'Thông tin giỏ hàng' }} />
         </Stack>
     );
 }

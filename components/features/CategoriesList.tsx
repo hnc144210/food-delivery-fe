@@ -34,7 +34,11 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         marginVertical: 20,
         borderRadius: 12,
-        padding: 20
+        padding: 20,
+        shadowColor: '#000',
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 2,
     },
     categorybutton: {
         flexDirection: 'column',

@@ -1,7 +1,7 @@
 import { Text, View, StyleSheet, Image, TouchableOpacity, ScrollView } from "react-native";
 import { useState } from "react";
 import Octicons from '@expo/vector-icons/Octicons';
-import { OrderCard } from "../../../components/features/OrderCard";
+import { OrderCard_ForDriver } from "../../../components/features/OrderCard";
 import { router } from "expo-router";
 import { mock_odercard } from "../../../mock/shipper";
 
@@ -24,26 +24,26 @@ export default function ShipperHomePage() {
                 </TouchableOpacity>
             </View>
             <ScrollView contentContainerStyle={{ gap: 20, padding: 20 }}>
-                {mock_odercard.some(item => item.status === 'pending') &&
+                {mock_odercard.some(item => item.status === 'PENDING') &&
                     <View style={{ flexDirection: 'column' }}>
                         <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>Đang chờ xử lý</Text>
                         <View style={{ flexDirection: 'column', gap: 20 }}>
-                            {mock_odercard.map((item, index) => item.status === 'pending' && <OrderCard key={index} {...item} onView={() => router.push('/orderdetail')} />)}
+                            {mock_odercard.map((item, index) => item.status === 'PENDING' && <OrderCard_ForDriver key={index} {...item} onView={() => router.push('/orderdetail')} />)}
                         </View>
                     </View>}
 
-                {mock_odercard.some(item => item.status === 'ready') &&
+                {mock_odercard.some(item => item.status === 'READY') &&
                     <View style={{ flexDirection: 'column' }}>
                         <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>Sẵn sàng giao hàng</Text>
                         <View style={{ flexDirection: 'column', gap: 20 }}>
-                            {mock_odercard.map((item, index) => item.status === 'ready' && <OrderCard key={index} {...item} onView={() => router.push('/orderdetail')} />)}
+                            {mock_odercard.map((item, index) => item.status === 'READY' && <OrderCard_ForDriver key={index} {...item} onView={() => router.push('/orderdetail')} />)}
                         </View>
                     </View>}
-                {mock_odercard.some(item => item.status === 'delivering') &&
+                {mock_odercard.some(item => item.status === 'DELIVERING') &&
                     <View style={{ flexDirection: 'column' }}>
                         <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>Đang giao hàng</Text>
                         <View style={{ flexDirection: 'column', gap: 20 }}>
-                            {mock_odercard.map((item, index) => item.status === 'delivering' && <OrderCard key={index} {...item} onView={() => router.push('/orderdetail')} />)}
+                            {mock_odercard.map((item, index) => item.status === 'DELIVERING' && <OrderCard_ForDriver key={index} {...item} onView={() => router.push('/orderdetail')} />)}
                         </View>
                     </View>}
             </ScrollView>
