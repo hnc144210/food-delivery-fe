@@ -1,4 +1,4 @@
-import { Category, FoodItem, Option, OptionGroup, ProductCardData, RestaurantCardData, VoucherData } from '@/types';
+import { AddressCardProps, Category, FoodItem, Option, OptionGroup, ProductCardData, RestaurantCardData, User, VoucherData } from '@/types';
 
 
 export const category1: Category = { id: '1', name: 'Rice', icon_url: 'https://i.pinimg.com/736x/8a/54/a3/8a54a3ccbd7ee75edcccc397b3c7c2d3.jpg' }
@@ -55,6 +55,14 @@ export const mock_productdata: ProductCardData[] = [
 ];
 
 export const mock_nearbyrestaurant: RestaurantCardData[] = [
-    { name: 'Cơm Tấm HiHi', rating: 4.4, distance: 1.2, preparetime: 14, popularproduct: mock_productdata.filter(f => f.food.restaurantId === '1') },
-    { name: 'Cà Phê Phố Cổ', rating: 3.6, distance: 0.2, preparetime: 10, popularproduct: mock_productdata.filter(f => f.food.restaurantId === '2') },
+    { id: '1', name: 'Cơm Tấm HiHi', logo_url: 'https://cdn.pixabay.com/photo/2022/02/10/05/44/wuzhen-7004638_1280.jpg', banner_url: 'https://cdn.pixabay.com/photo/2022/02/10/05/44/wuzhen-7004638_1280.jpg', rating: 4.4, opening_time: '06:00', closing_time: '17:00', distance: 1.2, preparetime: 14, description: 'Cơm tấm là món ăn Việt Nam bao gồm cơm được nấu từ gạo tấm, ăn kèm với nhiều loại đồ mặn', popularproduct: mock_productdata.filter(f => f.food.restaurantId === '1') },
+    { id: '2', name: 'Cà Phê Phố Cổ', logo_url: 'https://cdn.pixabay.com/photo/2020/09/21/05/58/coffee-5589038_1280.jpg', banner_url: 'https://cdn.pixabay.com/photo/2020/09/21/05/58/coffee-5589038_1280.jpg', rating: 3.6, opening_time: '08:30', closing_time: '23:30', distance: 0.2, preparetime: 10, description: 'Cà phê là thức uống được yêu thích của nhiều người', popularproduct: mock_productdata.filter(f => f.food.restaurantId === '2') },
 ]
+
+export const mock_addresses: AddressCardProps[] = [
+    { id: '1', addressLabel: 'Nhà', receiverName: 'Nguyễn Văn A', receiverPhone: '0123456789', addressLine: 'Số 123', street: 'Đường ABC', district: 'Quận 1', city: 'Thành phố Hồ Chí Minh', defaultAddress: true },
+    { id: '2', addressLabel: 'Địa chỉ 2', receiverName: 'Nguyễn Văn B', receiverPhone: '0123456789', addressLine: 'Số 123', street: 'Đường ABC', district: 'Quận 1', city: 'Thành phố Hồ Chí Minh', defaultAddress: false },
+    { id: '3', addressLabel: 'Địa chỉ 3', receiverName: 'Nguyễn Văn C', receiverPhone: '0123456789', addressLine: 'Số 123', street: 'Đường ABC', district: 'Quận 1', city: 'Thành phố Hồ Chí Minh', defaultAddress: false },
+]
+
+

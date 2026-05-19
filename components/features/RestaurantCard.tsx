@@ -6,13 +6,13 @@ import { ProductCard_Medium } from "./ProductCard";
 import { useRouter } from "expo-router";
 
 
-export function RestaurantCard({ name, rating, distance, preparetime, popularproduct }: RestaurantCardData) {
+export function RestaurantCard({ id, name, rating, distance, preparetime, popularproduct }: RestaurantCardData) {
     const router = useRouter();
     return (
         <View style={styles.container}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Text style={styles.name}>{name}</Text>
-                <TouchableOpacity onPress={() => { router.push('/restaurant') }}>
+                <TouchableOpacity onPress={() => { router.push({ pathname: '/(customer)/restaurant', params: { id } }) }}>
                     <Text style={styles.menu_button}>Menu</Text>
                 </TouchableOpacity>
             </View>

@@ -20,11 +20,28 @@ export type ProductCardData = {
 }
 
 export type RestaurantCardData = {
+  id: string;
   name: string;
+  logo_url: string;
+  banner_url: string;
   rating: number;
+  opening_time: string;
+  closing_time: string;
   distance: number;
   preparetime: number;
+  description: string;
   popularproduct: ProductCardData[];
+}
+export interface AddressCardProps {
+  id: string;
+  addressLabel: string;
+  receiverName: string;
+  receiverPhone: string;
+  addressLine: string;
+  street: string;
+  district: string;
+  city: string;
+  defaultAddress: boolean;
 }
 //Shared / Domain types
 
@@ -36,6 +53,7 @@ export interface User {
   phone: string;
   email: string;
   role: UserRole;
+  avatar_url: string;
 }
 
 export interface Address {

@@ -5,7 +5,7 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
 import { useMemo, useState } from "react";
 import { ProductOption, ProductOptions, ProductOptionValue } from "../../components/features/ProductOptions";
-import { foods, mock_productdata } from "../../mock/home";
+import { foods, mock_productdata, mock_nearbyrestaurant } from "../../mock/home";
 
 function formatPrice(price: number) {
     return price.toLocaleString('vi-VN') + 'đ';
@@ -33,6 +33,7 @@ export default function ProductScreen() {
 
     // Tìm food item theo id
     const food = useMemo(() => foods.find(f => f.id === id), [id]);
+    const restaurant = useMemo(() => mock_nearbyrestaurant.find(f => f.id === food?.restaurantId), [food?.restaurantId]);
     // Tìm thêm thông tin từ productdata (giá gốc, giá giảm, rating, prep_time)
     const productData = useMemo(() => mock_productdata.find(p => p.food.id === id), [id]);
 
@@ -103,13 +104,21 @@ export default function ProductScreen() {
                                 <Text style={{ fontSize: 13, color: '#999', textDecorationLine: 'line-through' }}>{formatPrice(food.price)}</Text>
                             )}
                         </View>
-
-                        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff3f0', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, alignSelf: 'flex-start', marginTop: 8, gap: 4 }}>
-                            <AntDesign name="star" size={12} color="#EE4D2D" />
-                            <Text style={{ fontSize: 13, fontWeight: '600', color: '#EE4D2D' }}>{rating}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff3f0', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, alignSelf: 'flex-start', marginTop: 8, gap: 4 }}>
+                                <AntDesign name="star" size={12} color="#EE4D2D" />
+                                <Text style={{ fontSize: 13, fontWeight: '600', color: '#EE4D2D' }}>{rating}</Text>
+                            </View>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8 }}>
+                                <Text style={{ fontSize: 12, color: '#888' }}><AntDesign name="clock-circle" size={11} color="#888" /> {prep_time} mins</Text>
+                            </View>
                         </View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8 }}>
-                            <Text style={{ fontSize: 12, color: '#888' }}><AntDesign name="clock-circle" size={11} color="#888" /> {prep_time} mins</Text>
+
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Text style={styles.name}>{restaurant?.name}</Text>
+                            <TouchableOpacity onPress={() => { router.push({ pathname: '/(customer)/restaurant', params: { id: restaurant?.id } }) }}>
+                                <Text style={styles.menu_button}>Xem chi tiết</Text>
+                            </TouchableOpacity>
                         </View>
                     </View>
 
@@ -311,5 +320,14 @@ export const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
         opacity: 0.9,
+    },
+    name: {
+        fontSize: 20,
+        fontWeight: 'bold',
+    },
+    menu_button: {
+        fontSize: 13,
+        fontWeight: 'bold',
+        color: '#B22203',
     },
 });
