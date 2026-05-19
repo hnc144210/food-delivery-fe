@@ -1,32 +1,47 @@
 export type VoucherData = {
-    description: string;
-    start_date: string;
-    end_date: string;
-    image_url: string;
+  description: string;
+  start_date: string;
+  end_date: string;
+  image_url: string;
 }
 
 export type Category = {
-    id: string;
-    name: string;
-    icon_url: string;
+  id: string;
+  name: string;
+  icon_url: string;
 }
 
 export type ProductCardData = {
-    id: string;
-    name: string;
-    base_price: number;
-    discount_price: number;
-    image_url: string;
-    prep_time: number;
-    rating: number;
+  food: FoodItem;
+  base_price: number;
+  discount_price: number;
+  prep_time: number;
+  rating: number;
 }
 
 export type RestaurantCardData = {
-    name: string;
-    rating: number;
-    distance: number;
-    preparetime: number;
-    popularproduct: ProductCardData[];
+  id: string;
+  name: string;
+  logo_url: string;
+  banner_url: string;
+  rating: number;
+  opening_time: string;
+  closing_time: string;
+  distance: number;
+  preparetime: number;
+  description: string;
+  popularproduct: ProductCardData[];
+}
+export interface AddressCardProps {
+  id: string;
+  addressLabel: string;
+  receiverName: string;
+  receiverPhone: string;
+  addressLine: string;
+  street: string;
+  district: string;
+  city: string;
+  defaultAddress: boolean;
 }
 //Shared / Domain types
 
@@ -38,6 +53,7 @@ export interface User {
   phone: string;
   email: string;
   role: UserRole;
+  avatar_url: string;
 }
 
 export interface Address {

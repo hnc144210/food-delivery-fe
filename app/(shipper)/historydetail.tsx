@@ -61,7 +61,7 @@ export default function HistoryDetail() {
 
                 <View style={styles.smallcontainer}>
                     <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Tóm tắt đơn hàng</Text>
-                    <View style={{ borderRadius: 14, overflow: 'hidden', gap: 10 }}>
+                    <View style={{ borderRadius: 14, overflow: 'hidden', gap: 15 }}>
                         {mock_orderitems.map((item, index) => <ProductCard_ForDriver key={index} {...item} />)}
                     </View>
                     <View style={{ height: 1, width: '100%', backgroundColor: "lightgray" }} />

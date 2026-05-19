@@ -20,8 +20,8 @@ export function NearbyRestaurant({ nearbyrestaurants }: { nearbyrestaurants: Pro
                 </TouchableOpacity>
             </View>
             <View style={{ gap: 15 }}>
-                {nearbyrestaurants.map((nearbyrestaurant) => (
-                    <ProductCard_Small key={nearbyrestaurant.id} {...nearbyrestaurant} />
+                {nearbyrestaurants.map((nearbyrestaurant, index) => (
+                    <ProductCard_Small key={index} {...nearbyrestaurant} />
                 ))}
             </View>
         </View>
