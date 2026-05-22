@@ -6,11 +6,18 @@ import EvilIcons from '@expo/vector-icons/EvilIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Feather from '@expo/vector-icons/Feather';
 import { ProductCard_ForDriver } from "../../components/features/ProductCard";
-import { mock_orderitems } from "../../mock/shipper";
-import { useRouter } from "expo-router";
+import { mock_address, mock_odercard, mock_orderitems, mock_users, OrderCardType } from "../../mock/shipper";
+import { useRouter, useLocalSearchParams } from "expo-router";
 
 export default function OrderDetail() {
     const router = useRouter();
+    const params = useLocalSearchParams();
+    const orderId = params.id as string;
+    const order = mock_odercard.find((order) => order.id === orderId);
+    const merchant = mock_users.find((user) => user.id === order?.merchantId);
+    const customer = mock_users.find((user) => user.id === order?.customerId);
+    const merchantAddress = mock_address.find((address) => address.userId === order?.merchantId);
+    const customerAddress = mock_address.find((address) => address.userId === order?.customerId);
     return (
         <View style={styles.container}>
             <View style={styles.header}>
@@ -42,14 +49,14 @@ export default function OrderDetail() {
                             <Text style={{ color: '#ee4d2dff' }}>Pick up</Text>
                         </View>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Text style={{ fontSize: 30, fontWeight: 'bold' }}>The Pizza</Text>
+                            <Text style={{ fontSize: 30, fontWeight: 'bold' }}>{merchant?.name}</Text>
                             <TouchableOpacity style={{ width: 50, height: 50, borderRadius: 90, backgroundColor: '#15803c1a', justifyContent: 'center', alignItems: 'center' }}>
                                 <FontAwesome name="phone" size={24} color="#15803D" />
                             </TouchableOpacity>
                         </View>
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 5 }}>
                             <EvilIcons name="location" size={24} color="black" />
-                            <Text>24 Quach Dieu, Ward 15, Tan Binh</Text>
+                            <Text>{merchantAddress?.street}</Text>
                         </View>
 
                     </View>
@@ -59,32 +66,46 @@ export default function OrderDetail() {
                             <Text style={{ color: '#27881aff' }}>Drop off</Text>
                         </View>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Text style={{ fontSize: 30, fontWeight: 'bold' }}>Kim vu</Text>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                                <TouchableOpacity style={{ width: 50, height: 50, borderRadius: 90, backgroundColor: '#15803c1a', justifyContent: 'center', alignItems: 'center' }}>
-                                    <Feather name="message-circle" size={24} color="#15803D" />
-                                </TouchableOpacity>
-                                <TouchableOpacity style={{ width: 50, height: 50, borderRadius: 90, backgroundColor: '#15803c1a', justifyContent: 'center', alignItems: 'center' }}>
-                                    <FontAwesome name="phone" size={24} color="#15803D" />
-                                </TouchableOpacity>
-                            </View>
+                            <Text style={{ fontSize: 30, fontWeight: 'bold' }}>{customer?.name}</Text>
+                            <TouchableOpacity style={{ width: 50, height: 50, borderRadius: 90, backgroundColor: '#15803c1a', justifyContent: 'center', alignItems: 'center' }}>
+                                <FontAwesome name="phone" size={24} color="#15803D" />
+                            </TouchableOpacity>
                         </View>
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 5 }}>
                             <EvilIcons name="location" size={24} color="black" />
-                            <Text>19/3/4 Lu Wuang, Ward 15, Tan Binh</Text>
+                            <Text>{customerAddress?.street}</Text>
                         </View>
                         <View style={{ width: '100%', backgroundColor: '#F6F6F6', borderRadius: 12, flexDirection: 'row', alignItems: 'center', padding: 10, gap: 5 }}>
                             <Ionicons name="information-circle-outline" size={20} color="#EE4D2D" />
-                            <Text style={{ fontSize: 12, flex: 1 }}>Note: Nhắn người giao hàng gọi trước khi đến</Text>
+                            <Text style={{ fontSize: 12, flex: 1 }}>Note: {order?.note}</Text>
                         </View>
 
                     </View>
 
-                    <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Order item ({mock_orderitems.length})</Text>
-                    <View style={{ borderRadius: 14, overflow: 'hidden', gap: 10, backgroundColor: 'white', padding: 20 }}>
-                        {mock_orderitems.map((item, index) => <ProductCard_ForDriver key={index} {...item} />)}
+                    <View style={{ backgroundColor: 'white', width: '100%', borderRadius: 14, padding: 20, gap: 10 }}>
+                        <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Tóm tắt đơn hàng</Text>
+                        <View style={{ borderRadius: 14, overflow: 'hidden', gap: 15 }}>
+                            {mock_orderitems.map((item, index) => <ProductCard_ForDriver key={index} {...item} />)}
+                        </View>
+                        <View style={{ height: 1, width: '100%', backgroundColor: "lightgray" }} />
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Text>Tạm tính:</Text>
+                            <Text>{order?.subtotal} đ</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Text>Phí vận chuyển:</Text>
+                            <Text>{order?.deliveryfee} đ</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Text>Giảm giá:</Text>
+                            <Text>{order?.discountamount} đ</Text>
+                        </View>
+                        <View style={{ height: 1, width: '100%', backgroundColor: "lightgray" }} />
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Text>Tổng số tiền:</Text>
+                            <Text style={{ fontSize: 25, fontWeight: 'bold', color: '#EE4D2D' }}>{order?.totalamount} đ</Text>
+                        </View>
                     </View>
-                    <Text style={{ fontSize: 16, fontWeight: 'bold' }}>Total: 150000đ</Text>
                     <View style={{ height: 80 }} />
                 </View>
             </ScrollView >

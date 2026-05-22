@@ -12,6 +12,14 @@ export default function ProfileDetail() {
     const [licenseNumber, setLicenseNumber] = useState('');
     const router = useRouter();
 
+    const handleSave = () => {
+        // Call API to update profile
+    }
+
+    const handleIdentify = () => {
+        // Call API to update identity
+    }
+
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <View style={styles.container}>
@@ -35,7 +43,12 @@ export default function ProfileDetail() {
                     <Text style={styles.text}>License number</Text>
                     <TextInput style={styles.input} placeholder="Your license number" value={licenseNumber} onChangeText={setLicenseNumber} />
 
-                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%', height: 60, gap: 10, backgroundColor: '#EE4D2D', borderRadius: 12, marginTop: 10 }}>
+                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%', height: 60, gap: 10, backgroundColor: '#c9c9c9ff', borderRadius: 12, marginBottom: 20 }} onPress={handleIdentify}>
+                        <FontAwesome5 name="id-card" size={20} color="white" />
+                        <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>Định danh điện tử</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%', height: 60, gap: 10, backgroundColor: '#EE4D2D', borderRadius: 12 }} onPress={handleSave}>
                         <FontAwesome5 name="save" size={20} color="white" />
                         <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>Lưu thông tin</Text>
                     </TouchableOpacity>

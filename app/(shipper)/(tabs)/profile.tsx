@@ -26,6 +26,9 @@ export default function ProfilePage() {
                     </View>
                     <MaterialIcons name="account-balance-wallet" size={25} color="#bdbdbdff" />
                 </View>
+                <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%', height: 50, gap: 10, backgroundColor: '#cfcfcfff', borderRadius: 12 }}>
+                    <Text style={{ fontSize: 14, fontWeight: 'bold' }}>Nạp tiền vào ví</Text>
+                </TouchableOpacity>
                 <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%', height: 50, gap: 10, backgroundColor: '#f36a4eff', borderRadius: 12 }}>
                     <FontAwesome6 name="money-bills" size={18} color="black" />
                     <Text style={{ fontSize: 17, fontWeight: 'bold' }}>Rút tiền về ngân hàng</Text>

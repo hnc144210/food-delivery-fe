@@ -58,6 +58,7 @@ export interface User {
 
 export interface Address {
   id: string;
+  userId: string;
   label: string;
   street: string;
   lat: number;

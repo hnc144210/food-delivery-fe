@@ -4,17 +4,19 @@ import Octicons from '@expo/vector-icons/Octicons';
 import { OrderCard_ForDriver } from "../../../components/features/OrderCard";
 import { router } from "expo-router";
 import { mock_odercard } from "../../../mock/shipper";
+import { useAuthStore } from '@/store/authStore';
 
 export default function ShipperHomePage() {
     const [status, setStatus] = useState('Online');
+    const user = useAuthStore((s) => s.user);
     return (
         <View style={styles.container}>
             <View style={styles.header}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Image source={{ uri: 'https://cdn.pixabay.com/photo/2021/05/03/04/18/uber-6225185_1280.jpg' }} style={{ width: 50, height: 50, borderRadius: 100 }} />
+                    <Image source={{ uri: user?.avatar_url ? user.avatar_url : 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png' }} style={{ width: 50, height: 50, borderRadius: 100 }} />
                     <View>
                         <Text style={{ color: 'white' }}>Hello!</Text>
-                        <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>Nguyễn Văn A</Text>
+                        <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>{user?.name || 'NullUser'}</Text>
                     </View>
                 </View>
                 <TouchableOpacity style={styles.statusbutton} onPress={() => setStatus(status === 'Online' ? 'Offline' : 'Online')}>
@@ -28,7 +30,7 @@ export default function ShipperHomePage() {
                     <View style={{ flexDirection: 'column' }}>
                         <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>Đang chờ xử lý</Text>
                         <View style={{ flexDirection: 'column', gap: 20 }}>
-                            {mock_odercard.map((item, index) => item.status === 'PENDING' && <OrderCard_ForDriver key={index} {...item} onView={() => router.push('/orderdetail')} />)}
+                            {mock_odercard.map((item, index) => item.status === 'PENDING' && <OrderCard_ForDriver key={index} {...item} />)}
                         </View>
                     </View>}
 
@@ -36,14 +38,14 @@ export default function ShipperHomePage() {
                     <View style={{ flexDirection: 'column' }}>
                         <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>Sẵn sàng giao hàng</Text>
                         <View style={{ flexDirection: 'column', gap: 20 }}>
-                            {mock_odercard.map((item, index) => item.status === 'READY' && <OrderCard_ForDriver key={index} {...item} onView={() => router.push('/orderdetail')} />)}
+                            {mock_odercard.map((item, index) => item.status === 'READY' && <OrderCard_ForDriver key={index} {...item} />)}
                         </View>
                     </View>}
                 {mock_odercard.some(item => item.status === 'DELIVERING') &&
                     <View style={{ flexDirection: 'column' }}>
                         <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>Đang giao hàng</Text>
                         <View style={{ flexDirection: 'column', gap: 20 }}>
-                            {mock_odercard.map((item, index) => item.status === 'DELIVERING' && <OrderCard_ForDriver key={index} {...item} onView={() => router.push('/orderdetail')} />)}
+                            {mock_odercard.map((item, index) => item.status === 'DELIVERING' && <OrderCard_ForDriver key={index} {...item} />)}
                         </View>
                     </View>}
             </ScrollView>
