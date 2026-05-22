@@ -11,6 +11,7 @@ export default function RootLayout() {
                 <Stack.Screen name="(auth)" />
                 <Stack.Screen name="(shipper)" />
                 <Stack.Screen name="(customer)" />
+                <Stack.Screen name="(merchant)" />
             </Stack>
         </QueryClientProvider>
     );
