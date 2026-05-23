@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Image, Text, TouchableOpacity, View, StyleSheet, TextInput, TouchableWithoutFeedback, Keyboard } from "react-native";
 import { ReturnButton } from "../../components/ui/ReturnButton";
 import { useRouter } from "expo-router";
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import { useAuthStore } from "@/store/authStore";
 
 export default function ProfileDetail() {
     const [fullName, setFullName] = useState('');
@@ -11,6 +12,22 @@ export default function ProfileDetail() {
     const [vehiclePlate, setVehiclePlate] = useState('');
     const [licenseNumber, setLicenseNumber] = useState('');
     const router = useRouter();
+    const user = useAuthStore((s) => s.user)
+    useEffect(() => {
+        if (user) {
+            setFullName(user.name);
+            setPhoneNumber(user.phone);
+            setVehiclePlate('vehiclePlate');
+            setLicenseNumber('licenseNumber');
+        }
+    }, [user]);
+    const handleSave = () => {
+        // Call API to update profile
+    }
+
+    const handleIdentify = () => {
+        router.push("/ekycverify");
+    }
 
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -26,16 +43,21 @@ export default function ProfileDetail() {
                     </TouchableOpacity>
                     <Text style={{ alignSelf: 'center' }}>Avatar</Text>
 
-                    <Text style={styles.text}>Full name</Text>
-                    <TextInput style={styles.input} placeholder="Your full name" value={fullName} onChangeText={setFullName} />
-                    <Text style={styles.text}>Phone number</Text>
-                    <TextInput style={styles.input} placeholder="Your phone number" value={phoneNumber} onChangeText={setPhoneNumber} />
-                    <Text style={styles.text}>Vehicle plate</Text>
-                    <TextInput style={styles.input} placeholder="Your vehicle plate" value={vehiclePlate} onChangeText={setVehiclePlate} />
-                    <Text style={styles.text}>License number</Text>
-                    <TextInput style={styles.input} placeholder="Your license number" value={licenseNumber} onChangeText={setLicenseNumber} />
+                    <Text style={styles.text}>Họ và tên</Text>
+                    <TextInput style={styles.input} placeholder="Nhập họ và tên" value={fullName} onChangeText={setFullName} />
+                    <Text style={styles.text}>Số điện thoại</Text>
+                    <TextInput style={styles.input} placeholder="Nhập số điện thoại" value={phoneNumber} onChangeText={setPhoneNumber} />
+                    <Text style={styles.text}>Biển kiểm soát xe</Text>
+                    <TextInput style={styles.input} placeholder="Nhập biển kiểm soát xe" value={vehiclePlate} onChangeText={setVehiclePlate} />
+                    <Text style={styles.text}>Số giấy phép lái xe</Text>
+                    <TextInput style={styles.input} placeholder="Nhập số giấy phép lái xe" value={licenseNumber} onChangeText={setLicenseNumber} />
 
-                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%', height: 60, gap: 10, backgroundColor: '#EE4D2D', borderRadius: 12, marginTop: 10 }}>
+                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%', height: 60, gap: 10, backgroundColor: '#c9c9c9ff', borderRadius: 12, marginBottom: 20 }} onPress={handleIdentify}>
+                        <FontAwesome5 name="id-card" size={20} color="white" />
+                        <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>Định danh điện tử</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%', height: 60, gap: 10, backgroundColor: '#EE4D2D', borderRadius: 12 }} onPress={handleSave}>
                         <FontAwesome5 name="save" size={20} color="white" />
                         <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>Lưu thông tin</Text>
                     </TouchableOpacity>

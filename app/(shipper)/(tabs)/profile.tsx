@@ -4,14 +4,22 @@ import Feather from '@expo/vector-icons/Feather';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { useRouter } from "expo-router";
+import { useAuthStore } from "@/store/authStore";
+
 
 export default function ProfilePage() {
     const router = useRouter();
+    const user = useAuthStore((s) => s.user);
+    const clearUser = useAuthStore((s) => s.clearUser);
+    const handleLogout = () => {
+        clearUser();
+        router.replace('/login');
+    };
     return (
         <View style={styles.container}>
             <View style={styles.profile}>
                 <Image source={{ uri: 'https://wqtjigusdqbtcmdykboy.supabase.co/storage/v1/object/public/photos/aya.jpg' }} style={{ width: 100, height: 100, borderRadius: 10, borderColor: '#ee4d2d41', borderWidth: 3 }} />
-                <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Kimvux</Text>
+                <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{user?.name}</Text>
                 <TouchableOpacity style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: '#ee4d2d1c', padding: 5, paddingHorizontal: 10, borderRadius: 90 }} onPress={() => router.push('/profiledetail')}>
                     <EvilIcons name="pencil" size={20} color="#EE4D2D" />
                     <Text style={{ color: '#EE4D2D' }}>Chỉnh sửa hồ sơ</Text>
@@ -26,6 +34,9 @@ export default function ProfilePage() {
                     </View>
                     <MaterialIcons name="account-balance-wallet" size={25} color="#bdbdbdff" />
                 </View>
+                <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%', height: 50, gap: 10, backgroundColor: '#cfcfcfff', borderRadius: 12 }}>
+                    <Text style={{ fontSize: 14, fontWeight: 'bold' }}>Nạp tiền vào ví</Text>
+                </TouchableOpacity>
                 <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%', height: 50, gap: 10, backgroundColor: '#f36a4eff', borderRadius: 12 }}>
                     <FontAwesome6 name="money-bills" size={18} color="black" />
                     <Text style={{ fontSize: 17, fontWeight: 'bold' }}>Rút tiền về ngân hàng</Text>
@@ -33,7 +44,7 @@ export default function ProfilePage() {
 
             </View>
 
-            <TouchableOpacity style={styles.logout}>
+            <TouchableOpacity style={styles.logout} onPress={handleLogout}>
                 <Feather name="log-out" size={18} color="#696969ff" />
                 <Text style={{ fontSize: 15, color: '#696969ff' }}>Đăng xuất tài khoản</Text>
             </TouchableOpacity>

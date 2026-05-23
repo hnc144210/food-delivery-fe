@@ -168,7 +168,7 @@ export default function HomeScreen() {
                         <View style={{ justifyContent: 'space-between', flexDirection: 'row', alignItems: 'center' }}>
                             <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }} onPress={() => router.push('/(customer)/addresses')}>
                                 <EvilIcons name="location" size={20} color="white" />
-                                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 20 }}>Delivery to: {addressLabel}</Text>
+                                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 20 }}>Nơi giao hàng: {addressLabel}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity>
                                 <AntDesign name="shopping-cart" size={20} color="white" onPress={() => router.navigate('/(customer)/(tabs)/cart')} />

@@ -6,7 +6,7 @@ export function SearchBar({ onPressfunction, onSubmit, value = "", onChangeText 
     return (
         <View style={styles.searchbar}>
             <EvilIcons name="search" size={24} color="#EE4D2D" />
-            <TextInput placeholder="What are you craving today?" onPress={onPressfunction} style={{ flex: 1 }} value={value} onChangeText={onChangeText} />
+            <TextInput placeholder="Hôm nay bạn thèm món gì?" onPress={onPressfunction} style={{ flex: 1 }} value={value} onChangeText={onChangeText} />
             {value !== '' &&
                 <TouchableOpacity onPress={onSubmit}>
                     <Feather name="send" size={20} color="#EE4D2D" />

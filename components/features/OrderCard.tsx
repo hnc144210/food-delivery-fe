@@ -1,79 +1,132 @@
 import EvilIcons from "@expo/vector-icons/EvilIcons";
 import Octicons from "@expo/vector-icons/Octicons";
 import Entypo from '@expo/vector-icons/Entypo';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from "expo-router";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { OrderCardType } from "../../mock/shipper";
+import { mock_nearbyrestaurant } from "@/mock/home";
+import { useMemo } from "react";
+import { number } from "zod";
 
-export function OrderCard_ForDriver({ status, restaurantname, totalamount, pickuplocation, deliverylocation, onView }: OrderCardType) {
-
+export function OrderCard_ForDriver({ id, status, merchantId, totalamount, pickuplocation, deliverylocation }: OrderCardType) {
     const router = useRouter();
+    const restaurant = useMemo(() => mock_nearbyrestaurant.find(f => f.id === merchantId), [merchantId]);
 
     const statuscolor = () => {
-        if (status === 'PENDING') return 'lightgray';
-        if (status === 'READY') return '#FFCC00';
+        if (status === 'PENDING') return '#808080ff';
+        if (status === 'READY') return '#2cbe00ff';
         if (status === 'DELIVERING') return '#EA580C';
-        if (status === 'DELIVERED') return '#34C759';
     }
-
-
+    const buttontext = () => {
+        if (status === 'PENDING') return 'Nhận đơn';
+        if (status === 'READY') return 'Lấy hàng';
+        if (status === 'DELIVERING') return 'Hoàn thành';
+    }
+    const StatusText = () => {
+        if (status === 'PENDING') return 'Chờ duyệt';
+        if (status === 'READY') return 'Sẵn sàng';
+        if (status === 'DELIVERING') return 'Đang giao hàng';
+    }
+    const handleAccept = () => {
+        if (status === 'PENDING') {
+            // API update
+        }
+    }
+    const handlePickup = () => {
+        if (status === 'READY') {
+            // API update
+        }
+    }
+    const handleComplete = () => {
+        if (status === 'DELIVERING') {
+            router.push({ pathname: '/(shipper)/completion', params: { id } })
+        }
+    }
     return (
         <View style={styles.ordercard_container}>
-            <View style={{ padding: 20, gap: 10 }}>
-                <View style={[styles.status, { backgroundColor: statuscolor() }]}>
-                    <Text style={{ color: 'white' }}>{status}</Text>
-                </View>
+            <View style={{ padding: 20, gap: 20 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                    <View style={[styles.status, { backgroundColor: statuscolor() }]}>
+                        <Text style={{ fontSize: 14, fontWeight: 'bold', color: 'white' }}>{StatusText()}</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                        <TouchableOpacity
+                            style={styles.incidentBadgeButton}
+                            onPress={() => router.push({ pathname: '/(shipper)/incidentreport' as any, params: { id } })}
+                        >
+                            <Ionicons name="warning-outline" size={16} color="#EF4444" />
+                            <Text style={styles.incidentBadgeText}>Sự cố</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.chatBadgeButton}
+                            onPress={() => router.push({ pathname: '/(shipper)/chatroom' as any, params: { id } })}
+                        >
+                            <Ionicons name="chatbubble-ellipses-outline" size={16} color="#EE4D2D" />
+                            <Text style={styles.chatBadgeText}>Trò chuyện</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+                <TouchableOpacity style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }} onPress={() => router.push({ pathname: `/(shipper)/orderdetail`, params: { id } })}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                        <Image source={{ uri: 'https://cdn.pixabay.com/photo/2021/05/03/04/18/uber-6225185_1280.jpg' }} style={{ width: 50, height: 50, borderRadius: 12 }} />
-                        <Text>{restaurantname}</Text>
+                        <Image source={{ uri: restaurant?.logo_url }} style={{ width: 50, height: 50, borderRadius: 12 }} />
+                        <View>
+                            <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{restaurant?.name}</Text>
+                            <Text style={{ fontSize: 12, color: 'gray' }}>Xem chi tiết đơn hàng</Text>
+                        </View>
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
                         <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#B22203' }}>{totalamount}đ</Text>
-                        <Text>Driver fee</Text>
+                        <Text style={{ fontSize: 12, color: 'gray' }}>Phí vận chuyển</Text>
                     </View>
-                </View>
+                </TouchableOpacity>
                 <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%', gap: 20 }}>
-                    <View style={[styles.round, (status === 'delivering' || status === 'delivered') && { backgroundColor: '#ee4d2d3b' }]}>
-                        <Octicons name="dot-fill" size={20} color={status === 'delivering' || status === 'delivered' ? '#EE4D2D' : 'black'} />
+                    <View style={[styles.round, (status === 'DELIVERING' || status === 'DELIVERED') && { backgroundColor: '#ee4d2d3b' }]}>
+                        <Octicons name="dot-fill" size={20} color={status === 'DELIVERING' || status === 'DELIVERED' ? '#EE4D2D' : 'black'} />
                     </View>
                     <View>
-                        <Text>Pickup</Text>
+                        <Text style={{ fontSize: 12, color: 'gray' }}>Điểm lấy hàng</Text>
                         <Text>{pickuplocation}</Text>
                     </View>
 
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%', gap: 20 }}>
-                    <View style={[styles.round, (status === 'delivered') && { backgroundColor: '#ee4d2d3b' }]}>
-                        <EvilIcons name="location" size={20} color={status === 'delivered' ? '#EE4D2D' : 'black'} />
+                    <View style={[styles.round, (status === 'DELIVERED') && { backgroundColor: '#ee4d2d3b' }]}>
+                        <EvilIcons name="location" size={20} color={status === 'DELIVERED' ? '#EE4D2D' : 'black'} />
                     </View>
                     <View>
-                        <Text>Delivery</Text>
+                        <Text style={{ fontSize: 12, color: 'gray' }}>Điểm giao hàng</Text>
                         <Text>{deliverylocation}</Text>
                     </View>
 
                 </View>
             </View>
-            <TouchableOpacity style={{ justifyContent: 'center', alignItems: 'center', height: 60, width: '100%', backgroundColor: statuscolor() }} onPress={onView}>
-                <Text style={{ color: 'white', fontSize: 17, fontWeight: 'bold' }}>View</Text>
+            <TouchableOpacity style={{ justifyContent: 'center', alignItems: 'center', height: 60, width: '100%', backgroundColor: statuscolor() }} onPress={status === 'PENDING' ? handleAccept : status === 'READY' ? handlePickup : handleComplete}>
+                <Text style={{ color: 'white', fontSize: 17, fontWeight: 'bold' }}>{buttontext()}</Text>
             </TouchableOpacity>
         </View>
     );
 }
 
-export function OrderCardHistory_ForDriver({ restaurantname, deliveredtime, totalamount, status, rating, onView }: OrderCardType) {
+export function OrderCardHistory_ForDriver({ id, merchantId, deliveredtime, totalamount, status, rating }: OrderCardType) {
     const statuscolor = () => {
         if (status === 'CANCELLED') return 'red';
         if (status === 'DELIVERED') return '#34C759';
     }
+    const StatusText = () => {
+        if (status === 'CANCELLED') return 'Đã hủy';
+        if (status === 'DELIVERED') return 'Đã hoàn thành';
+    }
+    const router = useRouter();
+    const restaurant = useMemo(() => mock_nearbyrestaurant.find(f => f.id === merchantId), [merchantId]);
     return (
-        <TouchableOpacity style={styles.ordercard_container} onPress={onView}>
+        <TouchableOpacity style={styles.ordercard_container} onPress={() => router.push({ pathname: `/(shipper)/historydetail`, params: { id } })}>
             <View style={{ padding: 20, gap: 10 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                        <Image source={{ uri: 'https://cdn.pixabay.com/photo/2021/05/03/04/18/uber-6225185_1280.jpg' }} style={{ width: 50, height: 50, borderRadius: 12 }} />
+                        <Image source={{ uri: restaurant?.logo_url }} style={{ width: 50, height: 50, borderRadius: 12 }} />
                         <View>
-                            <Text style={{ fontSize: 16 }}>{restaurantname}</Text>
+                            <Text style={{ fontSize: 16 }}>{restaurant?.name}</Text>
                             <Text style={{ color: 'gray', fontSize: 12 }}>{deliveredtime}</Text>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
                                 <Text style={{ fontSize: 11, color: 'gray' }}>Rating:</Text>
@@ -86,7 +139,7 @@ export function OrderCardHistory_ForDriver({ restaurantname, deliveredtime, tota
                         <View style={{ alignItems: 'flex-end' }}>
                             <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#B22203' }}>{totalamount}đ</Text>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Text style={{ color: statuscolor(), fontSize: 12, fontWeight: 'bold' }}>{status}</Text>
+                                <Text style={{ color: statuscolor(), fontSize: 12, fontWeight: 'bold' }}>{StatusText()}</Text>
                             </View>
                         </View>
 
@@ -98,7 +151,7 @@ export function OrderCardHistory_ForDriver({ restaurantname, deliveredtime, tota
     );
 }
 
-export function OrderCard_ForCustomer({ status, orderedtime, deliveredtime, restaurantname, totalamount, orderitems, onView }: OrderCardType) {
+export function OrderCard_ForCustomer({ id, status, orderedtime, deliveredtime, merchantId, totalamount, orderitems }: OrderCardType) {
     const statuscolor = () => {
         if (status === 'PENDING') return '#ddddddff';
         if (status === 'CONFIRMED') return '#90d9e2ff';
@@ -117,16 +170,32 @@ export function OrderCard_ForCustomer({ status, orderedtime, deliveredtime, rest
         if (status === 'CANCELLED') return '#960000ff';
         return '#92400eff';
     }
+    const statusDisplay = () => {
+        if (status === 'PENDING') return 'Chờ duyệt';
+        if (status === 'CONFIRMED') return 'Đã xác nhận';
+        if (status === 'PREPARING') return 'Đang chuẩn bị';
+        if (status === 'DELIVERING') return 'Đang giao hàng';
+        if (status === 'DELIVERED') return 'Đã giao hàng';
+        if (status === 'CANCELLED') return 'Đã hủy';
+        if (status === '') return 'Chưa đặt hàng';
+        if (status === 'READY') return 'Sẵn sàng';
+        return '';
+    }
+    const restaurant = useMemo(() => mock_nearbyrestaurant.find(f => f.id === merchantId), [merchantId]);
+    const router = useRouter();
+    const handleReview = () => {
+        router.push({ pathname: `/(customer)/review`, params: { id } });
+    }
     return (
         <View style={[styles.ordercard_container, { borderColor: statuscolor(), borderWidth: 1 }]}>
             <View style={{ padding: 20, width: '100%', gap: 12 }}>
                 <View style={{ backgroundColor: statuscolor(), paddingVertical: 5, borderRadius: 10, justifyContent: 'center', alignItems: 'center', width: 100 }}>
-                    <Text style={{ color: textcolor(), fontSize: 12 }}>{status === '' ? 'Chưa đặt hàng' : status}</Text>
+                    <Text style={{ color: textcolor(), fontSize: 12 }}>{statusDisplay()}</Text>
                 </View>
-                <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }} onPress={onView}>
-                    <Image source={{ uri: 'https://cdn.pixabay.com/photo/2021/05/03/04/18/uber-6225185_1280.jpg' }} style={{ width: 50, height: 50, borderRadius: 12 }} />
+                <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }} onPress={() => { }}>
+                    <Image source={{ uri: restaurant?.logo_url }} style={{ width: 50, height: 50, borderRadius: 12 }} />
                     <View style={{ width: 240 }}>
-                        <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{restaurantname}</Text>
+                        <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{restaurant?.name}</Text>
                         <Text style={{ color: 'gray', fontSize: 12 }}>{orderitems?.map((item) => `${item.quantity}x ${item.name}`).join(', ')}</Text>
                     </View>
                 </TouchableOpacity>
@@ -141,6 +210,9 @@ export function OrderCard_ForCustomer({ status, orderedtime, deliveredtime, rest
                             <Text style={{ fontSize: 15 }}>Tổng cộng</Text>
                             <Text style={{ fontSize: 22, fontWeight: 'bold' }}>{totalamount}đ</Text>
                         </View>
+                        {status === 'PENDING' && <TouchableOpacity style={{ justifyContent: 'center', alignItems: 'center', height: 40, width: '100%', backgroundColor: '#EE4D2D', borderRadius: 12 }}>
+                            <Text style={{ color: 'white', fontSize: 17, fontWeight: 'bold' }}>Hủy đơn hàng</Text>
+                        </TouchableOpacity>}
                     </View>
                 }
 
@@ -155,7 +227,7 @@ export function OrderCard_ForCustomer({ status, orderedtime, deliveredtime, rest
                             <TouchableOpacity style={{ flex: 1, backgroundColor: '#ebebebff', padding: 12, borderRadius: 12, alignItems: 'center' }}>
                                 <Text style={{ fontWeight: 'bold' }}>Đặt lại</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={{ flex: 1, backgroundColor: '#EE4D2D', padding: 12, borderRadius: 12, alignItems: 'center' }}>
+                            <TouchableOpacity style={{ flex: 1, backgroundColor: '#EE4D2D', padding: 12, borderRadius: 12, alignItems: 'center' }} onPress={handleReview}>
                                 <Text style={{ color: 'white', fontWeight: 'bold' }}>Đánh giá</Text>
                             </TouchableOpacity>
                         </View>
@@ -197,7 +269,35 @@ const styles = StyleSheet.create({
         backgroundColor: 'lightgray',
         alignItems: 'center',
         justifyContent: 'center',
-        borderRadius: 20
+        borderRadius: 10
+    },
+    chatBadgeButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#ee4d2d12',
+        borderRadius: 20,
+        paddingHorizontal: 12,
+        paddingVertical: 5,
+        gap: 5,
+    },
+    chatBadgeText: {
+        color: '#EE4D2D',
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    incidentBadgeButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#ef444415',
+        borderRadius: 20,
+        paddingHorizontal: 12,
+        paddingVertical: 5,
+        gap: 5,
+    },
+    incidentBadgeText: {
+        color: '#EF4444',
+        fontSize: 12,
+        fontWeight: 'bold',
     },
     round: {
         width: 25,

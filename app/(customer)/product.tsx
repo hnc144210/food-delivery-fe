@@ -114,7 +114,7 @@ export default function ProductScreen() {
                             </View>
                         </View>
 
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
                             <Text style={styles.name}>{restaurant?.name}</Text>
                             <TouchableOpacity onPress={() => { router.push({ pathname: '/(customer)/restaurant', params: { id: restaurant?.id } }) }}>
                                 <Text style={styles.menu_button}>Xem chi tiết</Text>
