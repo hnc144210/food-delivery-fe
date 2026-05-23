@@ -7,16 +7,16 @@ export function NearbyRestaurant({ nearbyrestaurants }: { nearbyrestaurants: Pro
     const [selection, setSelection] = useState('nearby');
     return (
         <View>
-            <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Nearby Restaurant</Text>
+            <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Món ăn từ nhà hàng</Text>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15, marginTop: 5 }}>
                 <TouchableOpacity style={selection === 'nearby' ? styles.selected : styles.normal} onPress={() => setSelection('nearby')}>
-                    <Text style={selection === 'nearby' ? { color: '#EE4D2D' } : {}}>Nearby</Text>
+                    <Text style={selection === 'nearby' ? { color: '#EE4D2D' } : {}}>Gần đây</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={selection === 'rating' ? styles.selected : styles.normal} onPress={() => setSelection('rating')}>
-                    <Text style={selection === 'rating' ? { color: '#EE4D2D' } : {}}>Rating 4+</Text>
+                    <Text style={selection === 'rating' ? { color: '#EE4D2D' } : {}}>Đánh giá 4+</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={selection === 'fast' ? styles.selected : styles.normal} onPress={() => setSelection('fast')}>
-                    <Text style={selection === 'fast' ? { color: '#EE4D2D' } : {}}>Fast Delivery</Text>
+                    <Text style={selection === 'fast' ? { color: '#EE4D2D' } : {}}>Giao nhanh</Text>
                 </TouchableOpacity>
             </View>
             <View style={{ gap: 15 }}>

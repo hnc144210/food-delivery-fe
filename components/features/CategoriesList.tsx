@@ -13,7 +13,7 @@ export function CategoryButton({ id, name, icon_url }: Category) {
 export function CategoriesList({ categories }: { categories: Category[] }) {
     return (
         <View style={styles.container}>
-            <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Categories</Text>
+            <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Danh mục</Text>
             <FlatList
                 data={categories}
                 horizontal

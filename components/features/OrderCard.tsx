@@ -14,14 +14,19 @@ export function OrderCard_ForDriver({ id, status, merchantId, totalamount, picku
     const restaurant = useMemo(() => mock_nearbyrestaurant.find(f => f.id === merchantId), [merchantId]);
 
     const statuscolor = () => {
-        if (status === 'PENDING') return 'lightgray';
-        if (status === 'READY') return '#FFCC00';
+        if (status === 'PENDING') return '#808080ff';
+        if (status === 'READY') return '#2cbe00ff';
         if (status === 'DELIVERING') return '#EA580C';
     }
     const buttontext = () => {
-        if (status === 'PENDING') return 'Accept';
-        if (status === 'READY') return 'Pick up';
-        if (status === 'DELIVERING') return 'Complete';
+        if (status === 'PENDING') return 'Nhận đơn';
+        if (status === 'READY') return 'Lấy hàng';
+        if (status === 'DELIVERING') return 'Hoàn thành';
+    }
+    const StatusText = () => {
+        if (status === 'PENDING') return 'Chờ duyệt';
+        if (status === 'READY') return 'Sẵn sàng';
+        if (status === 'DELIVERING') return 'Đang giao hàng';
     }
     const handleAccept = () => {
         if (status === 'PENDING') {
@@ -40,10 +45,10 @@ export function OrderCard_ForDriver({ id, status, merchantId, totalamount, picku
     }
     return (
         <View style={styles.ordercard_container}>
-            <View style={{ padding: 20, gap: 10 }}>
+            <View style={{ padding: 20, gap: 20 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                     <View style={[styles.status, { backgroundColor: statuscolor() }]}>
-                        <Text style={{ color: 'white' }}>{status}</Text>
+                        <Text style={{ fontSize: 14, fontWeight: 'bold', color: 'white' }}>{StatusText()}</Text>
                     </View>
                     <View style={{ flexDirection: 'row', gap: 8 }}>
                         <TouchableOpacity
@@ -66,13 +71,13 @@ export function OrderCard_ForDriver({ id, status, merchantId, totalamount, picku
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                         <Image source={{ uri: restaurant?.logo_url }} style={{ width: 50, height: 50, borderRadius: 12 }} />
                         <View>
-                            <Text>{restaurant?.name}</Text>
+                            <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{restaurant?.name}</Text>
                             <Text style={{ fontSize: 12, color: 'gray' }}>Xem chi tiết đơn hàng</Text>
                         </View>
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
                         <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#B22203' }}>{totalamount}đ</Text>
-                        <Text>Driver fee</Text>
+                        <Text style={{ fontSize: 12, color: 'gray' }}>Phí vận chuyển</Text>
                     </View>
                 </TouchableOpacity>
                 <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%', gap: 20 }}>
@@ -80,7 +85,7 @@ export function OrderCard_ForDriver({ id, status, merchantId, totalamount, picku
                         <Octicons name="dot-fill" size={20} color={status === 'DELIVERING' || status === 'DELIVERED' ? '#EE4D2D' : 'black'} />
                     </View>
                     <View>
-                        <Text>Pickup</Text>
+                        <Text style={{ fontSize: 12, color: 'gray' }}>Điểm lấy hàng</Text>
                         <Text>{pickuplocation}</Text>
                     </View>
 
@@ -90,7 +95,7 @@ export function OrderCard_ForDriver({ id, status, merchantId, totalamount, picku
                         <EvilIcons name="location" size={20} color={status === 'DELIVERED' ? '#EE4D2D' : 'black'} />
                     </View>
                     <View>
-                        <Text>Delivery</Text>
+                        <Text style={{ fontSize: 12, color: 'gray' }}>Điểm giao hàng</Text>
                         <Text>{deliverylocation}</Text>
                     </View>
 
@@ -108,7 +113,10 @@ export function OrderCardHistory_ForDriver({ id, merchantId, deliveredtime, tota
         if (status === 'CANCELLED') return 'red';
         if (status === 'DELIVERED') return '#34C759';
     }
-
+    const StatusText = () => {
+        if (status === 'CANCELLED') return 'Đã hủy';
+        if (status === 'DELIVERED') return 'Đã hoàn thành';
+    }
     const router = useRouter();
     const restaurant = useMemo(() => mock_nearbyrestaurant.find(f => f.id === merchantId), [merchantId]);
     return (
@@ -131,7 +139,7 @@ export function OrderCardHistory_ForDriver({ id, merchantId, deliveredtime, tota
                         <View style={{ alignItems: 'flex-end' }}>
                             <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#B22203' }}>{totalamount}đ</Text>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Text style={{ color: statuscolor(), fontSize: 12, fontWeight: 'bold' }}>{status}</Text>
+                                <Text style={{ color: statuscolor(), fontSize: 12, fontWeight: 'bold' }}>{StatusText()}</Text>
                             </View>
                         </View>
 
@@ -162,6 +170,17 @@ export function OrderCard_ForCustomer({ id, status, orderedtime, deliveredtime, 
         if (status === 'CANCELLED') return '#960000ff';
         return '#92400eff';
     }
+    const statusDisplay = () => {
+        if (status === 'PENDING') return 'Chờ duyệt';
+        if (status === 'CONFIRMED') return 'Đã xác nhận';
+        if (status === 'PREPARING') return 'Đang chuẩn bị';
+        if (status === 'DELIVERING') return 'Đang giao hàng';
+        if (status === 'DELIVERED') return 'Đã giao hàng';
+        if (status === 'CANCELLED') return 'Đã hủy';
+        if (status === '') return 'Chưa đặt hàng';
+        if (status === 'READY') return 'Sẵn sàng';
+        return '';
+    }
     const restaurant = useMemo(() => mock_nearbyrestaurant.find(f => f.id === merchantId), [merchantId]);
     const router = useRouter();
     const handleReview = () => {
@@ -171,7 +190,7 @@ export function OrderCard_ForCustomer({ id, status, orderedtime, deliveredtime, 
         <View style={[styles.ordercard_container, { borderColor: statuscolor(), borderWidth: 1 }]}>
             <View style={{ padding: 20, width: '100%', gap: 12 }}>
                 <View style={{ backgroundColor: statuscolor(), paddingVertical: 5, borderRadius: 10, justifyContent: 'center', alignItems: 'center', width: 100 }}>
-                    <Text style={{ color: textcolor(), fontSize: 12 }}>{status === '' ? 'Chưa đặt hàng' : status}</Text>
+                    <Text style={{ color: textcolor(), fontSize: 12 }}>{statusDisplay()}</Text>
                 </View>
                 <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }} onPress={() => { }}>
                     <Image source={{ uri: restaurant?.logo_url }} style={{ width: 50, height: 50, borderRadius: 12 }} />
@@ -250,7 +269,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'lightgray',
         alignItems: 'center',
         justifyContent: 'center',
-        borderRadius: 20
+        borderRadius: 10
     },
     chatBadgeButton: {
         flexDirection: 'row',

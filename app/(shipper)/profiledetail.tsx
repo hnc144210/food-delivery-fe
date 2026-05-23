@@ -43,14 +43,14 @@ export default function ProfileDetail() {
                     </TouchableOpacity>
                     <Text style={{ alignSelf: 'center' }}>Avatar</Text>
 
-                    <Text style={styles.text}>Full name</Text>
-                    <TextInput style={styles.input} placeholder="Your full name" value={fullName} onChangeText={setFullName} />
-                    <Text style={styles.text}>Phone number</Text>
-                    <TextInput style={styles.input} placeholder="Your phone number" value={phoneNumber} onChangeText={setPhoneNumber} />
-                    <Text style={styles.text}>Vehicle plate</Text>
-                    <TextInput style={styles.input} placeholder="Your vehicle plate" value={vehiclePlate} onChangeText={setVehiclePlate} />
-                    <Text style={styles.text}>License number</Text>
-                    <TextInput style={styles.input} placeholder="Your license number" value={licenseNumber} onChangeText={setLicenseNumber} />
+                    <Text style={styles.text}>Họ và tên</Text>
+                    <TextInput style={styles.input} placeholder="Nhập họ và tên" value={fullName} onChangeText={setFullName} />
+                    <Text style={styles.text}>Số điện thoại</Text>
+                    <TextInput style={styles.input} placeholder="Nhập số điện thoại" value={phoneNumber} onChangeText={setPhoneNumber} />
+                    <Text style={styles.text}>Biển kiểm soát xe</Text>
+                    <TextInput style={styles.input} placeholder="Nhập biển kiểm soát xe" value={vehiclePlate} onChangeText={setVehiclePlate} />
+                    <Text style={styles.text}>Số giấy phép lái xe</Text>
+                    <TextInput style={styles.input} placeholder="Nhập số giấy phép lái xe" value={licenseNumber} onChangeText={setLicenseNumber} />
 
                     <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%', height: 60, gap: 10, backgroundColor: '#c9c9c9ff', borderRadius: 12, marginBottom: 20 }} onPress={handleIdentify}>
                         <FontAwesome5 name="id-card" size={20} color="white" />

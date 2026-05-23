@@ -2,9 +2,9 @@ import { View, StyleSheet, Text, ScrollView, Image, TouchableOpacity } from "rea
 import { ReturnButton } from "../../components/ui/ReturnButton";
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import EvilIcons from '@expo/vector-icons/EvilIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import Feather from '@expo/vector-icons/Feather';
 import { ProductCard_ForDriver } from "../../components/features/ProductCard";
 import { mock_address, mock_odercard, mock_orderitems, mock_users, OrderCardType } from "../../mock/shipper";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -45,37 +45,49 @@ export default function OrderDetail() {
 
                 <View style={{ margin: 20, gap: 20 }}>
                     <View style={{ backgroundColor: 'white', width: '100%', borderRadius: 14, padding: 20, }}>
-                        <View style={{ backgroundColor: '#ee4d2d21', width: 65, height: 25, justifyContent: 'center', alignItems: 'center', borderRadius: 12 }}>
-                            <Text style={{ color: '#ee4d2dff' }}>Pick up</Text>
+                        <View style={{ backgroundColor: '#ee4d2d21', width: 110, height: 25, justifyContent: 'center', alignItems: 'center', borderRadius: 7 }}>
+                            <Text style={{ color: '#ee4d2dff' }}>Điểm lấy hàng</Text>
                         </View>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Text style={{ fontSize: 30, fontWeight: 'bold' }}>{merchant?.name}</Text>
+                            <View style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                                <Text style={{ fontSize: 30, fontWeight: 'bold', marginBottom: 5 }}>{merchant?.name}</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <FontAwesome6 name="contact-card" size={14} color="black" />
+                                    <Text> {merchant?.phone}</Text>
+                                </View>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <FontAwesome name="location-arrow" size={20} color="black" />
+                                    <Text> {merchantAddress?.street}</Text>
+                                </View>
+                            </View>
                             <TouchableOpacity style={{ width: 50, height: 50, borderRadius: 90, backgroundColor: '#15803c1a', justifyContent: 'center', alignItems: 'center' }}>
                                 <FontAwesome name="phone" size={24} color="#15803D" />
                             </TouchableOpacity>
                         </View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 5 }}>
-                            <EvilIcons name="location" size={24} color="black" />
-                            <Text>{merchantAddress?.street}</Text>
-                        </View>
-
                     </View>
 
                     <View style={{ backgroundColor: 'white', width: '100%', borderRadius: 14, padding: 20 }}>
-                        <View style={{ backgroundColor: '#43ee2d21', width: 75, height: 25, justifyContent: 'center', alignItems: 'center', borderRadius: 12 }}>
-                            <Text style={{ color: '#27881aff' }}>Drop off</Text>
+                        <View style={{ backgroundColor: '#43ee2d21', width: 110, height: 25, justifyContent: 'center', alignItems: 'center', borderRadius: 7 }}>
+                            <Text style={{ color: '#27881aff' }}>Điểm nhận hàng</Text>
                         </View>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Text style={{ fontSize: 30, fontWeight: 'bold' }}>{customer?.name}</Text>
+                            <View style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                                <Text style={{ fontSize: 30, fontWeight: 'bold', marginBottom: 5 }}>{customer?.name}</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <FontAwesome6 name="contact-card" size={14} color="black" />
+                                    <Text> {customer?.phone}</Text>
+                                </View>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <FontAwesome name="location-arrow" size={20} color="black" />
+                                    <Text> {customerAddress?.street}</Text>
+                                </View>
+                            </View>
                             <TouchableOpacity style={{ width: 50, height: 50, borderRadius: 90, backgroundColor: '#15803c1a', justifyContent: 'center', alignItems: 'center' }}>
                                 <FontAwesome name="phone" size={24} color="#15803D" />
                             </TouchableOpacity>
                         </View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 5 }}>
-                            <EvilIcons name="location" size={24} color="black" />
-                            <Text>{customerAddress?.street}</Text>
-                        </View>
-                        <View style={{ width: '100%', backgroundColor: '#F6F6F6', borderRadius: 12, flexDirection: 'row', alignItems: 'center', padding: 10, gap: 5 }}>
+
+                        <View style={{ width: '100%', backgroundColor: '#F6F6F6', borderRadius: 7, flexDirection: 'row', alignItems: 'center', padding: 10, gap: 5, marginTop: 5 }}>
                             <Ionicons name="information-circle-outline" size={20} color="#EE4D2D" />
                             <Text style={{ fontSize: 12, flex: 1 }}>Note: {order?.note}</Text>
                         </View>

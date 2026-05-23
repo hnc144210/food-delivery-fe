@@ -190,9 +190,10 @@ export default function Chatroom() {
             <View style={styles.header}>
                 <ReturnButton onpressfunction={router.back} />
                 <View style={styles.headerTitleContainer}>
-                    <Text style={styles.headerTitle}>Trò chuyện</Text>
+                    <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#EE4D2D' }}>Trò chuyện</Text>
                     <Text style={styles.headerSubtitle}>ID: {orderId}</Text>
                 </View>
+
             </View>
 
             {/* Message Thread */}
@@ -276,7 +277,7 @@ const styles = StyleSheet.create({
     headerSubtitle: {
         fontSize: 13,
         fontWeight: 'bold',
-        color: '#EE4D2D',
+        color: '#b3b3b3ff',
         marginTop: 2,
     },
     listContent: {

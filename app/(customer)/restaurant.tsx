@@ -34,17 +34,14 @@ export default function Restaurant() {
                 <View style={styles.restaurantinfo_container}>
                     <Image source={{ uri: restaurant.logo_url }} style={{ width: 50, height: 50, borderRadius: 10, marginRight: 10 }} />
                     <View>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Text style={styles.restaurantname}>{restaurant.name}</Text>
-
-                        </View>
+                        <Text style={styles.restaurantname}>{restaurant.name}</Text>
 
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <AntDesign name="field-time" size={15} color="black" />
-                            <Text> Delivery in {restaurant.preparetime} mins</Text>
+                            <Text> Vận chuyển: {restaurant.preparetime} phút</Text>
                             <View style={{ marginLeft: 20, flexDirection: 'row', alignItems: 'center' }}>
                                 <AntDesign name="star" size={15} color="black" />
-                                <Text >{restaurant.rating}</Text>
+                                <Text> {restaurant.rating}</Text>
                             </View>
                         </View>
                     </View>
@@ -57,17 +54,17 @@ export default function Restaurant() {
                     <Text style={isMenu ? styles.activeText : styles.inactiveText}>Menu</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={isReview ? styles.active : styles.inactive} onPress={() => { setIsMenu(false); setIsReview(true); setIsInfo(false); }}>
-                    <Text style={isReview ? styles.activeText : styles.inactiveText}>Reviews</Text>
+                    <Text style={isReview ? styles.activeText : styles.inactiveText}>Đánh giá</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={isInfo ? styles.active : styles.inactive} onPress={() => { setIsMenu(false); setIsReview(false); setIsInfo(true); }}>
-                    <Text style={isInfo ? styles.activeText : styles.inactiveText}>Info</Text>
+                    <Text style={isInfo ? styles.activeText : styles.inactiveText}>Thông tin</Text>
                 </TouchableOpacity>
             </View>
             {/**main menu */}
             {isMenu && (
                 <View style={styles.body}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                        <Text style={{ fontWeight: 'bold', fontSize: 23 }}>Best Sellers</Text>
+                        <Text style={{ fontWeight: 'bold', fontSize: 23 }}>Món bán chạy</Text>
                         <View style={{ height: 1, flex: 1, backgroundColor: 'lightgray', marginLeft: 10 }} />
                     </View>
                     <View>
@@ -82,7 +79,7 @@ export default function Restaurant() {
                     </View>
 
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                        <Text style={{ fontWeight: 'bold', fontSize: 23 }}>Main Dishes</Text>
+                        <Text style={{ fontWeight: 'bold', fontSize: 23 }}>Món chính</Text>
                         <View style={{ height: 1, flex: 1, backgroundColor: 'lightgray', marginLeft: 10 }} />
                     </View>
                     <View style={{ flexDirection: 'column', gap: 20 }}>
@@ -100,21 +97,21 @@ export default function Restaurant() {
             {isInfo && (
                 <View style={styles.body}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 10 }}>
-                        <Text style={{ fontWeight: 'bold', fontSize: 17 }}>About restaurant</Text>
+                        <Text style={{ fontWeight: 'bold', fontSize: 17 }}>Thông tin nhà hàng</Text>
                         <View style={{ height: 1, flex: 1, backgroundColor: 'lightgray', marginLeft: 10 }} />
                     </View>
                     <View style={{ flexDirection: 'column', gap: 20 }}>
                         <Text>{restaurant.description}</Text>
                     </View>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 10 }}>
-                        <Text style={{ fontWeight: 'bold', fontSize: 17 }}>Opening time</Text>
+                        <Text style={{ fontWeight: 'bold', fontSize: 17 }}>Thời gian mở cửa</Text>
                         <View style={{ height: 1, flex: 1, backgroundColor: 'lightgray', marginLeft: 10 }} />
                     </View>
                     <View style={{ flexDirection: 'column', gap: 20 }}>
                         <Text>{restaurant.opening_time} - {restaurant.closing_time}</Text>
                     </View>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 10 }}>
-                        <Text style={{ fontWeight: 'bold', fontSize: 17 }}>Location</Text>
+                        <Text style={{ fontWeight: 'bold', fontSize: 17 }}>Địa chỉ</Text>
                         <View style={{ height: 1, flex: 1, backgroundColor: 'lightgray', marginLeft: 10 }} />
                     </View>
                 </View>

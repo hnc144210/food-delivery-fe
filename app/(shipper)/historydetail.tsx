@@ -38,7 +38,7 @@ export default function HistoryDetail() {
                     <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingLeft: 13 }}>
                         <MaterialIcons name="restaurant" size={18} color="#EE4D2D" />
                         <View style={{ flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start' }}>
-                            <Text style={{ fontSize: 12, color: 'gray' }}>PICKUP</Text>
+                            <Text style={{ fontSize: 12, color: 'gray' }}>Điểm lấy hàng</Text>
                             <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{restaurant?.name}</Text>
                             <Text style={{ fontSize: 14 }}>{order?.pickuplocation}</Text>
                         </View>
@@ -46,7 +46,7 @@ export default function HistoryDetail() {
                     <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingLeft: 13 }}>
                         <Entypo name="location" size={18} color="#EE4D2D" />
                         <View style={{ flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start' }}>
-                            <Text style={{ fontSize: 12, color: 'gray' }}>DROP-OFF</Text>
+                            <Text style={{ fontSize: 12, color: 'gray' }}>Điểm giao hàng</Text>
                             <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{order?.recipientname}</Text>
                             <Text style={{ fontSize: 14 }}>{order?.deliverylocation}</Text>
                         </View>
@@ -57,7 +57,7 @@ export default function HistoryDetail() {
                     <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Đánh giá từ khách hàng</Text>
                     <View>
                         <Text>Từ: <Text style={{ fontSize: 20, fontWeight: 'bold' }}>{order?.recipientname}</Text></Text>
-                        <Text>Rating: <Entypo name="star" size={15} color="#ffd900ff" />{order?.rating}</Text>
+                        <Text>Đánh giá: <Entypo name="star" size={15} color="#ffd900ff" />{order?.rating}</Text>
                         <Text>Lời nhắn: <Text style={{ fontSize: 18, fontStyle: 'italic' }}>"{order?.comment}"</Text></Text>
                     </View>
                 </View>

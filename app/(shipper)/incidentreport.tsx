@@ -233,7 +233,7 @@ export default function IncidentReport() {
             {/* Header */}
             <View style={styles.header}>
                 <ReturnButton onpressfunction={router.back} />
-                <Text style={styles.headerTitle}>Báo cáo sự cố</Text>
+                <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#EE4D2D' }}>Báo cáo sự cố</Text>
             </View>
 
             <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>

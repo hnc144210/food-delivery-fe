@@ -19,9 +19,9 @@ export default function ShipperLayout() {
                 fontWeight: '500',
             },
         }}>
-            <Tabs.Screen name="home" options={{ title: 'Home', tabBarIcon: ({ color, size }) => <MaterialIcons name="home" size={size} color={color} /> }} />
-            <Tabs.Screen name="history" options={{ title: 'History', tabBarIcon: ({ color, size }) => <MaterialIcons name="history" size={size} color={color} /> }} />
-            <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: ({ color, size }) => <MaterialIcons name="person" size={size} color={color} /> }} />
+            <Tabs.Screen name="home" options={{ title: 'Trang chủ', tabBarIcon: ({ color, size }) => <MaterialIcons name="home" size={size} color={color} /> }} />
+            <Tabs.Screen name="history" options={{ title: 'Lịch sử', tabBarIcon: ({ color, size }) => <MaterialIcons name="history" size={size} color={color} /> }} />
+            <Tabs.Screen name="profile" options={{ title: 'Tài khoản', tabBarIcon: ({ color, size }) => <MaterialIcons name="person" size={size} color={color} /> }} />
         </Tabs>
     );
 }

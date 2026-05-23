@@ -19,10 +19,10 @@ export default function CustomerLayout() {
                 fontWeight: '500',
             },
         }}>
-            <Tabs.Screen name="home" options={{ title: 'Home', tabBarIcon: ({ color }) => (<Ionicons name="home" size={20} color={color} />) }} />
-            <Tabs.Screen name="cart" options={{ title: 'Cart', tabBarIcon: ({ color }) => (<Ionicons name="cart" size={20} color={color} />) }} />
-            <Tabs.Screen name="notification" options={{ title: 'Notification', tabBarIcon: ({ color }) => (<Ionicons name="notifications" size={20} color={color} />) }} />
-            <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: ({ color }) => (<Ionicons name="person" size={20} color={color} />) }} />
+            <Tabs.Screen name="home" options={{ title: 'Trang chủ', tabBarIcon: ({ color }) => (<Ionicons name="home" size={20} color={color} />) }} />
+            <Tabs.Screen name="cart" options={{ title: 'Giỏ hàng', tabBarIcon: ({ color }) => (<Ionicons name="cart" size={20} color={color} />) }} />
+            <Tabs.Screen name="notification" options={{ title: 'Thông báo', tabBarIcon: ({ color }) => (<Ionicons name="notifications" size={20} color={color} />) }} />
+            <Tabs.Screen name="profile" options={{ title: 'Tài khoản', tabBarIcon: ({ color }) => (<Ionicons name="person" size={20} color={color} />) }} />
         </Tabs>
     );
 }
