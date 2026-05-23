@@ -163,6 +163,10 @@ export function OrderCard_ForCustomer({ id, status, orderedtime, deliveredtime, 
         return '#92400eff';
     }
     const restaurant = useMemo(() => mock_nearbyrestaurant.find(f => f.id === merchantId), [merchantId]);
+    const router = useRouter();
+    const handleReview = () => {
+        router.push({ pathname: `/(customer)/review`, params: { id } });
+    }
     return (
         <View style={[styles.ordercard_container, { borderColor: statuscolor(), borderWidth: 1 }]}>
             <View style={{ padding: 20, width: '100%', gap: 12 }}>
@@ -204,7 +208,7 @@ export function OrderCard_ForCustomer({ id, status, orderedtime, deliveredtime, 
                             <TouchableOpacity style={{ flex: 1, backgroundColor: '#ebebebff', padding: 12, borderRadius: 12, alignItems: 'center' }}>
                                 <Text style={{ fontWeight: 'bold' }}>Đặt lại</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={{ flex: 1, backgroundColor: '#EE4D2D', padding: 12, borderRadius: 12, alignItems: 'center' }}>
+                            <TouchableOpacity style={{ flex: 1, backgroundColor: '#EE4D2D', padding: 12, borderRadius: 12, alignItems: 'center' }} onPress={handleReview}>
                                 <Text style={{ color: 'white', fontWeight: 'bold' }}>Đánh giá</Text>
                             </TouchableOpacity>
                         </View>

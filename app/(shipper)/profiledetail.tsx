@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Image, Text, TouchableOpacity, View, StyleSheet, TextInput, TouchableWithoutFeedback, Keyboard } from "react-native";
 import { ReturnButton } from "../../components/ui/ReturnButton";
 import { useRouter } from "expo-router";
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import { useAuthStore } from "@/store/authStore";
 
 export default function ProfileDetail() {
     const [fullName, setFullName] = useState('');
@@ -11,13 +12,21 @@ export default function ProfileDetail() {
     const [vehiclePlate, setVehiclePlate] = useState('');
     const [licenseNumber, setLicenseNumber] = useState('');
     const router = useRouter();
-
+    const user = useAuthStore((s) => s.user)
+    useEffect(() => {
+        if (user) {
+            setFullName(user.name);
+            setPhoneNumber(user.phone);
+            setVehiclePlate('vehiclePlate');
+            setLicenseNumber('licenseNumber');
+        }
+    }, [user]);
     const handleSave = () => {
         // Call API to update profile
     }
 
     const handleIdentify = () => {
-        // Call API to update identity
+        router.push("/ekycverify");
     }
 
     return (
