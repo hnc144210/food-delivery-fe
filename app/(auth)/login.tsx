@@ -51,7 +51,7 @@ async function loginRequest(payload: LoginFormData): Promise<LoginResponse> {
 function redirectByRole(role: User['role']) {
   const routes: Record<User['role'], string> = {
     CUSTOMER: '/(customer)/home',
-    MERCHANT: '/(merchant)/dashboard',
+    MERCHANT: '/(merchant)/(tabs)/orders',
     SHIPPER: '/(shipper)/home',
     ADMIN: '/(admin)/users',
   };
