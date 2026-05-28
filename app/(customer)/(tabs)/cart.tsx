@@ -14,41 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import api from "@/services/api";
 import { useAuthStore } from "@/store/authStore";
 import { User } from "@/types";
-
-async function getCartItems(user: User | null) {
-    if (!user) return mock_cart_order;
-    const userId = user?.id
-    try {
-        if (!userId) return mock_cart_order;
-        const response = await api.get('/orders/cart');
-        const resData = response.data;
-        const rawData = resData.success ? resData.data : resData;
-        const items = rawData?.items || rawData;
-
-        if (Array.isArray(items) && items.length > 0) {
-            return items.map((cart: any) => ({
-                status: '',
-                restaurantname: `Cửa hàng ${cart.merchantId?.slice(0, 5).toUpperCase() || 'Food'}`,
-                recipientname: user?.name || 'Khách hàng',
-                subtotal: cart.subtotal || 0,
-                deliveryfee: 25000,
-                discountamount: 0,
-                totalamount: (cart.subtotal || 0) + 25000,
-                pickuplocation: 'Nhà hàng đối tác',
-                deliverylocation: 'Địa chỉ của tôi',
-                orderedtime: 'Chưa hoàn thành',
-                orderitems: (cart.items || []).map((item: any) => ({
-                    name: item.productName || 'Món ăn',
-                    quantity: item.quantity || 1
-                }))
-            }));
-        }
-        return mock_cart_order;
-    } catch (error) {
-        console.log('Error fetching cart from backend, using mock:', error);
-        return mock_cart_order;
-    }
-}
+import { cartService } from "@/services/cartService";
 
 export default function CartScreen() {
     const [cartState, setCartState] = useState(1);
@@ -57,9 +23,9 @@ export default function CartScreen() {
     const userId = user?.id;
 
     // Fetch dynamic cart items with elegant mock fallback (similar to categories & vouchers on Home)
-    const { data: cartItems, isLoading: isCartLoading, refetch: refetchCart, isRefetching } = useQuery({
+    const { data: carts, isLoading: isCartLoading, refetch: refetchCart, isRefetching } = useQuery({
         queryKey: ['cart', userId],
-        queryFn: async () => await getCartItems(user),
+        queryFn: cartService.getCart,
         enabled: !!userId,
     });
 
@@ -101,7 +67,7 @@ export default function CartScreen() {
                             refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetchCart} colors={["#EE4D2D"]} />}
                         >
                             <View style={{ gap: 20, paddingBottom: 24 }}>
-                                {(cartItems || mock_cart_order).map((item: any, index: number) => (
+                                {(carts?.items || mock_cart_order).map((item: any, index: number) => (
                                     <OrderCard_ForCustomer key={index} {...item} />
                                 ))}
                             </View>

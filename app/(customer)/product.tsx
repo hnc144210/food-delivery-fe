@@ -1,11 +1,14 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Image, TextInput } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Image, TextInput, Alert } from "react-native";
 import { ReturnButton } from "../../components/ui/ReturnButton";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ProductOption, ProductOptions, ProductOptionValue } from "../../components/features/ProductOptions";
-import { foods, mock_productdata, mock_nearbyrestaurant } from "../../mock/home";
+import { foods, mock_productdata, mock_nearbyrestaurant, mock_productdata_new } from "../../mock/home";
+import { ProductOptionResponseDto, ProductResponseDto } from "@/types/product";
+import { homeService } from "@/services/homeService";
+import { useQuery } from "@tanstack/react-query";
 
 function formatPrice(price: number) {
     return price.toLocaleString('vi-VN') + 'đ';
@@ -27,43 +30,59 @@ function buildOptionsFromFood(food: typeof foods[0]): ProductOption[] {
     }));
 }
 
+function buildOptionsFromProduct(product: ProductResponseDto): ProductOption[] {
+    if (!product.options) return [];
+    return product.options.map((group) => ({
+        id: group.id,
+        name: group.name,
+        max_selection: group.maxSelections,
+        options: group.values.map((opt, idx) => ({
+            id: opt.id,
+            name: opt.name,
+            extra_price: opt.additionalPrice,
+            is_selected: group.isRequired && idx === 0, // mặc định chọn option đầu nếu required
+        })),
+    }));
+}
+
 export default function ProductScreen() {
     const router = useRouter();
     const { id } = useLocalSearchParams<{ id: string }>();
 
-    // Tìm food item theo id
-    const food = useMemo(() => foods.find(f => f.id === id), [id]);
-    const restaurant = useMemo(() => mock_nearbyrestaurant.find(f => f.id === food?.restaurantId), [food?.restaurantId]);
-    // Tìm thêm thông tin từ productdata (giá gốc, giá giảm, rating, prep_time)
-    const productData = useMemo(() => mock_productdata.find(p => p.food.id === id), [id]);
+    const { data } = useQuery({
+        queryKey: ['product', id],
+        queryFn: () => homeService.getProductDetail(id),
+    });
+    const product = data ? data : useMemo(() => mock_productdata_new.find((p) => p.id === id), [id])
 
     const [quantity, setQuantity] = useState(1);
-    const [options, setOptions] = useState<ProductOption[]>(
-        food ? buildOptionsFromFood(food) : []
-    );
+    const [options, setOptions] = useState<ProductOption[]>([]);
 
-    const handleSelectOption = (option: ProductOption, optionValue: ProductOptionValue) => {
-        setOptions(prev => prev.map(o => {
-            if (o.id === option.id) {
-                return {
-                    ...o,
-                    options: o.options?.map(ov => {
-                        if (ov.id === optionValue.id) {
-                            return { ...ov, is_selected: !ov.is_selected };
-                        }
-                        return ov;
-                    }),
-                };
-            }
-            return o;
+    useEffect(() => {
+        if (product) {
+            setOptions(buildOptionsFromProduct(product));
+        }
+    }, [product]);
+
+    const handleSelectOption = (optionGroup: ProductOption, optionValue: ProductOptionValue) => {
+        setOptions(prevOptions => prevOptions.map(group => {
+            if (group.id !== optionGroup.id) return group;
+
+            return {
+                ...group,
+                options: group.options.map(opt =>
+                    opt.id === optionValue.id ? { ...opt, is_selected: !opt.is_selected } : opt
+                )
+            };
         }));
     }
+
 
     const handleAddCart = () => {
 
     }
 
-    if (!food) {
+    if (!product) {
         return (
             <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
                 <Text style={{ fontSize: 18, color: '#888' }}>Không tìm thấy sản phẩm</Text>
@@ -74,9 +93,9 @@ export default function ProductScreen() {
         );
     }
 
-    const rating = productData?.rating ?? 0;
-    const prep_time = productData?.prep_time ?? 0;
-    const discount_price = productData?.discount_price ?? food.price;
+    const rating = product?.averageRating ?? 0;
+    const prep_time = product?.prepTime ?? 0;
+    const discount_price = product?.discountPrice ?? product.basePrice;
 
     const totalPrice = (discount_price + options.reduce((acc, option) => acc + option.options.reduce((acc2, optionValue) => acc2 + (optionValue.is_selected ? optionValue.extra_price : 0), 0) || 0, 0)) * quantity;
 
@@ -90,18 +109,18 @@ export default function ProductScreen() {
             <ScrollView style={{ width: '100%' }} >
                 {/* Card thông tin món */}
                 <Image
-                    source={{ uri: food.image }}
+                    source={{ uri: product.imageUrl || '' }}
                     style={{ width: '100%', height: 240, position: "absolute", top: 0, alignSelf: 'center' }}
                 />
                 <View style={{ paddingHorizontal: 30 }}>
                     <View style={styles.card}>
                         <Text style={{ fontSize: 26, fontWeight: '700', color: '#1a1a1a', flex: 1 }}>
-                            {food.name}
+                            {product.name}
                         </Text>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                             <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#EE4D2D' }}>{formatPrice(discount_price)}</Text>
-                            {discount_price !== food.price && (
-                                <Text style={{ fontSize: 13, color: '#999', textDecorationLine: 'line-through' }}>{formatPrice(food.price)}</Text>
+                            {discount_price !== product.basePrice && (
+                                <Text style={{ fontSize: 13, color: '#999', textDecorationLine: 'line-through' }}>{formatPrice(product.basePrice)}</Text>
                             )}
                         </View>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -114,12 +133,12 @@ export default function ProductScreen() {
                             </View>
                         </View>
 
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                        {/*<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
                             <Text style={styles.name}>{restaurant?.name}</Text>
                             <TouchableOpacity onPress={() => { router.push({ pathname: '/(customer)/restaurant', params: { id: restaurant?.id } }) }}>
                                 <Text style={styles.menu_button}>Xem chi tiết</Text>
                             </TouchableOpacity>
-                        </View>
+                        </View>*/}
                     </View>
 
                     {options.map((option, index) => (

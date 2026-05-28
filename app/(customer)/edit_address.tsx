@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
     StyleSheet,
     Text,
@@ -18,7 +18,10 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/services/api";
 import { useAuthStore } from "@/store/authStore";
-import { mock_addresses } from "../../mock/home";
+import { mock_addresses, mock_addresses_new } from "../../mock/home";
+import { homeService } from "@/services/homeService";
+import { AddressRequestDto } from "@/types/address";
+import Toast from "react-native-toast-message";
 
 // ─── Dropdown Options ────────────────────────────────────────────────────────
 
@@ -54,34 +57,6 @@ const STREET_OPTIONS = [
     "Đường Cách Mạng Tháng 8",
     "Đường Nguyễn Thị Minh Khai"
 ];
-
-// ─── Helper API Fetcher ──────────────────────────────────────────────────────
-
-async function fetchAddresses(userId?: string) {
-    if (!userId) return mock_addresses;
-    try {
-        const response = await api.get(`/users/${userId}/addresses`);
-        const resData = response.data;
-        const rawData = resData.success ? resData.data : resData;
-        if (Array.isArray(rawData)) {
-            return rawData.map((addr: any) => ({
-                id: addr.id,
-                addressLabel: addr.label || 'Địa chỉ',
-                receiverName: addr.recipientName || '',
-                receiverPhone: addr.phone || '',
-                addressLine: addr.addressLine || '',
-                street: addr.ward || '', // Ward matches the "street" key in mock/type
-                district: addr.district || '',
-                city: addr.city || '',
-                defaultAddress: addr.isDefault || false,
-            }));
-        }
-        return mock_addresses;
-    } catch (error) {
-        console.log('Error fetching addresses, using mock:', error);
-        return mock_addresses;
-    }
-}
 
 // ─── ComboBox Sub-component ──────────────────────────────────────────────────
 
@@ -156,7 +131,7 @@ function ComboBox({ label, value, options, onSelect, placeholder }: ComboBoxProp
 export default function EditAddressScreen() {
     const router = useRouter();
     const queryClient = useQueryClient();
-    const { id } = useLocalSearchParams<{ id: string }>();
+    const { Id } = useLocalSearchParams<{ Id: string }>();
 
     const user = useAuthStore((s) => s.user);
     const userId = user?.id;
@@ -172,56 +147,88 @@ export default function EditAddressScreen() {
     const [isDefault, setIsDefault] = useState(false);
 
     // Load current address
-    const { data: addresses = mock_addresses } = useQuery({
+    const { data: address } = useQuery({
         queryKey: ['addresses', userId],
-        queryFn: () => fetchAddresses(userId),
-        placeholderData: mock_addresses,
+        queryFn: () => homeService.getAddressDetail(userId!, Id!),
         enabled: !!userId,
     });
 
-    const addressToEdit = addresses.find(addr => addr.id === id);
+    const addressDetail = address ? address : useMemo(() => mock_addresses_new.find((p) => p.Id === Id), [Id])
 
     // Populate values on load
     useEffect(() => {
-        if (addressToEdit) {
-            setLabel(addressToEdit.addressLabel || "");
-            setReceiverName(addressToEdit.receiverName || "");
-            setReceiverPhone(addressToEdit.receiverPhone || "");
-            setAddressLine(addressToEdit.addressLine || "");
-            setStreet(addressToEdit.street || "");
-            setWard(addressToEdit.district || "");
-            setCity(addressToEdit.city || "");
-            setIsDefault(addressToEdit.defaultAddress || false);
+        if (addressDetail) {
+            setLabel(addressDetail.Label || "null");
+            setReceiverName(addressDetail.RecipientName || "null");
+            setReceiverPhone(addressDetail.Phone || "null");
+            setAddressLine(addressDetail.AddressLine || "null");
+            setStreet(addressDetail.Ward || "null");
+            setWard(addressDetail.District || "null");
+            setCity(addressDetail.City || "null");
+            setIsDefault(addressDetail.IsDefault || false);
         }
-    }, [addressToEdit]);
+    }, [addressDetail]);
 
     // Mutation to save changes (Updates locally / mocks or hits BE endpoint)
     const updateAddressMutation = useMutation({
-        mutationFn: async () => {
-            const payload = {
-                label,
-                recipientName: receiverName,
-                phone: receiverPhone,
-                addressLine,
-                ward: street, // ward maps to street in frontend representation
-                district: ward, // ward maps to district in frontend representation
-                city,
-                isDefault,
-            };
-
-            if (userId) {
-                return await api.put(`/users/${userId}/addresses/${id}`, payload);
+        mutationFn: () => {
+            if (!userId) {
+                throw new Error("User not found");
             }
-            return null;
+            if (!Id) {
+                throw new Error("Address not found");
+            }
+            const updatedAddress: AddressRequestDto = {
+                Label: label,
+                RecipientName: receiverName,
+                Phone: receiverPhone,
+                AddressLine: addressLine,
+                Ward: street,
+                District: ward,
+                City: city,
+                IsDefault: isDefault,
+                Lat: addressDetail?.Lat || 0,
+                Lng: addressDetail?.Lng || 0,
+            };
+            return homeService.updateAddress(userId, Id, updatedAddress);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['addresses', userId] });
+            alert("Cập nhật địa chỉ thành công!");
             router.back();
         },
         onError: (error) => {
             console.log("Error updating address:", error);
-            // Even if offline/error, return to screen to simulate successful save
+            alert("Cập nhật địa chỉ thất bại!");
+        }
+    });
+    const createAddressMutation = useMutation({
+        mutationFn: () => {
+            if (!userId) {
+                throw new Error("User not found");
+            }
+            const newAddress: AddressRequestDto = {
+                Label: label,
+                RecipientName: receiverName,
+                Phone: receiverPhone,
+                AddressLine: addressLine,
+                Ward: street,
+                District: ward,
+                City: city,
+                IsDefault: isDefault,
+                Lat: addressDetail?.Lat || 0,
+                Lng: addressDetail?.Lng || 0,
+            };
+            return homeService.createAddress(userId, newAddress);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['addresses', userId] });
+            alert("Thêm địa chỉ thành công!");
             router.back();
+        },
+        onError: (error) => {
+            console.log("Error creating address:", error);
+            alert("Thêm địa chỉ thất bại!");
         }
     });
 
@@ -230,7 +237,11 @@ export default function EditAddressScreen() {
             alert("Vui lòng điền đầy đủ thông tin bắt buộc!");
             return;
         }
-        updateAddressMutation.mutate();
+        if (addressDetail?.Id) {
+            updateAddressMutation.mutate();
+        } else {
+            createAddressMutation.mutate();
+        }
     };
 
     return (

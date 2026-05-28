@@ -1,4 +1,5 @@
 import type { User } from '@/types';
+import { mockCustomerUser } from './customer';
 /*
 import { mockCustomerUser } from './customer';
 
@@ -37,7 +38,7 @@ export const mockLoginResponse = {
   data: {
     accessToken: 'mock-access-token',
     refreshToken: 'mock-refresh-token',
-    user: mockMerchantUser,
+    user: mockCustomerUser,
   },
   message: 'Đăng nhập thành công',
 };

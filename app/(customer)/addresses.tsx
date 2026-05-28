@@ -4,47 +4,22 @@ import { useRouter } from "expo-router";
 import { AntDesign } from "@expo/vector-icons";
 import { AddressCard } from "@/components/features/AddressCard";
 import { useQuery } from '@tanstack/react-query';
-import api from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
-import { mock_addresses } from "../../mock/home";
-
-async function fetchAddresses(userId?: string) {
-    if (!userId) return mock_addresses;
-    try {
-        const response = await api.get(`/users/${userId}/addresses`);
-        const resData = response.data;
-        const rawData = resData.success ? resData.data : resData;
-        if (Array.isArray(rawData)) {
-            return rawData.map((addr: any) => ({
-                id: addr.id,
-                addressLabel: addr.label || 'Địa chỉ',
-                receiverName: addr.recipientName || '',
-                receiverPhone: addr.phone || '',
-                addressLine: addr.addressLine || '',
-                street: addr.ward || '',
-                district: addr.district || '',
-                city: addr.city || '',
-                defaultAddress: addr.isDefault || false,
-            }));
-        }
-        return mock_addresses;
-    } catch (error) {
-        console.log('Error fetching addresses on AddressScreen, using mock:', error);
-        return mock_addresses;
-    }
-}
+import { homeService } from "@/services/homeService";
+import { mock_addresses, mock_addresses_new } from "@/mock/home";
 
 export default function AddressesScreen() {
     const router = useRouter();
     const user = useAuthStore((s) => s.user);
     const userId = user?.id;
 
-    const { data: addresses = mock_addresses } = useQuery({
+    const { data: addresses } = useQuery({
         queryKey: ['addresses', userId],
-        queryFn: () => fetchAddresses(userId),
-        placeholderData: mock_addresses,
+        queryFn: () => homeService.getAddresses(userId!),
         enabled: !!userId,
     });
+
+    const addressList = addresses?.items || mock_addresses_new
 
     return (
         <View style={styles.container}>
@@ -61,8 +36,8 @@ export default function AddressesScreen() {
                 </TouchableOpacity>
             </View>
             <ScrollView style={{ width: '100%', paddingHorizontal: 20 }} >
-                {addresses.map((addr) => (
-                    <AddressCard key={addr.id} {...addr} />
+                {addressList.map((addr) => (
+                    <AddressCard key={addr.Id} {...addr} />
                 ))}
             </ScrollView>
         </View>

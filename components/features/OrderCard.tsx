@@ -8,6 +8,7 @@ import { OrderCardType } from "../../mock/shipper";
 import { mock_nearbyrestaurant } from "@/mock/home";
 import { useMemo } from "react";
 import { number } from "zod";
+import { CartResponseDto } from "@/types/cart";
 
 export function OrderCard_ForDriver({ id, status, merchantId, totalamount, pickuplocation, deliverylocation }: OrderCardType) {
     const router = useRouter();
@@ -251,6 +252,34 @@ export function OrderCard_ForCustomer({ id, status, orderedtime, deliveredtime, 
     )
 }
 
+export function CartCard({ userId, merchantId, items, totalQuantity, subtotal, updatedAt }: CartResponseDto) {
+    return (
+        <View style={[styles.ordercard_container, { borderColor: "#FEF3C7", borderWidth: 1 }]}>
+            <View style={{ padding: 20, width: '100%', gap: 12 }}>
+                <View style={{ backgroundColor: "#FEF3C7", paddingVertical: 5, borderRadius: 10, justifyContent: 'center', alignItems: 'center', width: 100 }}>
+                    <Text style={{ color: "#92400e", fontSize: 12 }}>Đang chờ</Text>
+                </View>
+                <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }} onPress={() => { }}>
+                    <Image source={{ uri: 'restaurant?.logo_url' }} style={{ width: 50, height: 50, borderRadius: 12 }} />
+                    <View style={{ width: 240 }}>
+                        <Text style={{ fontSize: 16, fontWeight: 'bold' }}>restaurant?.name</Text>
+                        <Text style={{ color: 'gray', fontSize: 12 }}>{items?.map((item, idx) => idx === items.length - 1 ? `${item.quantity}x ${item.productName}` : `${item.quantity}x ${item.productName} ,`).join('')}</Text>
+                    </View>
+                </TouchableOpacity>
+
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: 12 }}>
+                    <TouchableOpacity style={{ flex: 1, backgroundColor: '#ebebebff', padding: 12, borderRadius: 12, alignItems: 'center' }}>
+                        <Text style={{ fontWeight: 'bold' }}>Hủy giỏ hàng</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={{ flex: 1, backgroundColor: '#EE4D2D', padding: 12, borderRadius: 12, alignItems: 'center' }}>
+                        <Text style={{ color: 'white', fontWeight: 'bold' }}>Hoàn thành đơn</Text>
+                    </TouchableOpacity>
+                </View>
+
+            </View>
+        </View>
+    )
+}
 
 const styles = StyleSheet.create({
     ordercard_container: {
