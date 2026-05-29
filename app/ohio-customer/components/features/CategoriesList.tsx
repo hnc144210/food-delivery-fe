@@ -1,16 +1,17 @@
 import { Image, StyleSheet, Text, TouchableOpacity, View, FlatList } from "react-native";
 import { Category } from '@/types';
+import { CategoryResponseDto } from "@/types/category";
 
-export function CategoryButton({ id, name, icon_url }: Category) {
+export function CategoryButton({ id, name, iconUrl }: CategoryResponseDto) {
     return (
         <TouchableOpacity style={styles.categorybutton}>
-            <Image source={{ uri: icon_url }} style={styles.image} />
+            <Image source={{ uri: iconUrl || '' }} style={styles.image} />
             <Text style={{ fontSize: 15, paddingTop: 5 }}>{name}</Text>
         </TouchableOpacity>
     );
 }
 
-export function CategoriesList({ categories }: { categories: Category[] }) {
+export function CategoriesList({ categories }: { categories: CategoryResponseDto[] }) {
     return (
         <View style={styles.container}>
             <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Danh mục</Text>

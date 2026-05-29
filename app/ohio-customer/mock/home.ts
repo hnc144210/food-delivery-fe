@@ -1,4 +1,8 @@
 import { AddressCardProps, Category, FoodItem, Option, OptionGroup, ProductCardData, RestaurantCardData, User, VoucherData } from '@/types';
+import { AddressResponseDto } from '@/types/address';
+import { CategoryResponseDto } from '@/types/category';
+import { ProductOptionResponseDto, ProductResponseDto } from '@/types/product';
+import { VoucherResponseDto } from '@/types/voucher';
 
 
 export const category1: Category = { id: '1', name: 'Rice', icon_url: 'https://i.pinimg.com/736x/8a/54/a3/8a54a3ccbd7ee75edcccc397b3c7c2d3.jpg' }
@@ -64,5 +68,116 @@ export const mock_addresses: AddressCardProps[] = [
     { id: '2', addressLabel: 'Địa chỉ 2', receiverName: 'Nguyễn Văn B', receiverPhone: '0123456789', addressLine: 'Số 123', street: 'Đường ABC', district: 'Quận 1', city: 'Thành phố Hồ Chí Minh', defaultAddress: false },
     { id: '3', addressLabel: 'Địa chỉ 3', receiverName: 'Nguyễn Văn C', receiverPhone: '0123456789', addressLine: 'Số 123', street: 'Đường ABC', district: 'Quận 1', city: 'Thành phố Hồ Chí Minh', defaultAddress: false },
 ]
+export const option1_new: ProductOptionResponseDto = {
+    id: '1',
+    categoryId: '1',
+    name: 'Chọn size',
+    isRequired: true,
+    maxSelections: 1,
+    createdAt: '2022-02-10',
+    values: [
+        {
+            id: '1',
+            name: 'Size S',
+            additionalPrice: 0,
+            isAvailable: true,
+        },
+        {
+            id: '2',
+            name: 'Size M',
+            additionalPrice: 5000,
+            isAvailable: true,
+        },
+        {
+            id: '3',
+            name: 'Size L',
+            additionalPrice: 10000,
+            isAvailable: true,
+        },
+    ],
+}
 
+export const option2_new: ProductOptionResponseDto = {
+    id: '2',
+    categoryId: '1',
+    name: 'Chọn topping',
+    isRequired: false,
+    maxSelections: 2,
+    createdAt: '2022-02-10',
+    values: [
+        {
+            id: '1',
+            name: 'Thịt nướng',
+            additionalPrice: 0,
+            isAvailable: true,
+        },
+        {
+            id: '2',
+            name: 'Thịt xíu mại',
+            additionalPrice: 5000,
+            isAvailable: true,
+        },
+        {
+            id: '3',
+            name: 'Trứng ốp la',
+            additionalPrice: 10000,
+            isAvailable: true,
+        },
+    ],
+}
 
+export const option3_new: ProductOptionResponseDto = {
+    id: '3',
+    categoryId: '1',
+    name: 'Chọn topping',
+    isRequired: false,
+    maxSelections: 2,
+    createdAt: '2022-02-10',
+    values: [
+        {
+            id: '1',
+            name: 'Không đường',
+            additionalPrice: 0,
+            isAvailable: true,
+        },
+        {
+            id: '2',
+            name: 'Thêm đá',
+            additionalPrice: 5000,
+            isAvailable: true,
+        },
+        {
+            id: '3',
+            name: 'Thêm sữa',
+            additionalPrice: 10000,
+            isAvailable: true,
+        },
+    ],
+}
+
+export const mock_productdata_new: ProductResponseDto[] = [
+    { id: '1', merchantId: '1', categoryId: '1', name: 'Cơm chiên đặc biệt', description: 'Cơm tấm là món ăn Việt Nam bao gồm cơm được nấu từ gạo tấm, ăn kèm với nhiều loại đồ mặn', imageUrl: 'https://cdn.pixabay.com/photo/2015/10/01/14/26/fried-rice-967081_1280.jpg', basePrice: 30000, discountPrice: 30000, prepTime: 20, averageRating: 4.5, isAvailable: true, isFeatured: true, category: { id: '1', name: 'Món mặn' }, reviewCount: 100, createdAt: '2022-02-10', updatedAt: '2022-02-10', deletedAt: null, options: [option1_new, option2_new] },
+    { id: '2', merchantId: '2', categoryId: '2', name: 'Cà bình dân', description: 'Đậm vị truyền thống, hương vị cà phê Việt Nam chuẩn gu!', imageUrl: 'https://cdn.pixabay.com/photo/2016/10/23/09/37/fried-rice-1762493_1280.jpg', basePrice: 20000, discountPrice: 17000, prepTime: 12, averageRating: 4.2, isAvailable: true, isFeatured: true, category: { id: '2', name: 'Thức uống' }, reviewCount: 200, createdAt: '2022-02-10', updatedAt: '2022-02-10', deletedAt: null, options: [option1_new, option2_new] },
+    { id: '3', merchantId: '1', categoryId: '1', name: 'Cơm gà xối mỡ', description: 'Đậm vị truyền thống, hương vị cà phê Việt Nam chuẩn gu!', imageUrl: 'https://cdn.pixabay.com/photo/2016/10/23/09/37/fried-rice-1762493_1280.jpg', basePrice: 15000, discountPrice: 14000, prepTime: 6, averageRating: 4.1, isAvailable: true, isFeatured: true, category: { id: '1', name: 'Món mặn' }, reviewCount: 300, createdAt: '2022-02-10', updatedAt: '2022-02-10', deletedAt: null, options: [option1_new, option2_new] },
+    { id: '4', merchantId: '2', categoryId: '2', name: 'Cà phê đen', description: 'Đậm vị cà phê Việt Nam chuẩn gu!', imageUrl: 'https://cdn.pixabay.com/photo/2014/12/11/02/56/coffee-563797_1280.jpg', basePrice: 20000, discountPrice: 20000, prepTime: 8, averageRating: 3.9, isAvailable: true, isFeatured: true, category: { id: '2', name: 'Thức uống' }, reviewCount: 130, createdAt: '2022-02-10', updatedAt: '2022-02-10', deletedAt: null, options: [option1_new, option3_new] },
+    { id: '5', merchantId: '1', categoryId: '1', name: 'Trà sữa', description: 'Đậm vị trà sữa Việt Nam chuẩn gu!', imageUrl: 'https://i.pinimg.com/736x/49/e3/45/49e345191b35bc57fb61c4cf4cc7a0f7.jpg', basePrice: 20000, discountPrice: 20000, prepTime: 15, averageRating: 4.6, isAvailable: true, isFeatured: true, category: { id: '1', name: 'Món mặn' }, reviewCount: 10, createdAt: '2022-02-10', updatedAt: '2022-02-10', deletedAt: null, options: [option1_new, option2_new] },
+];
+
+export const mock_addresses_new: AddressResponseDto[] = [
+    { Id: '1', UserId: '1', Label: 'Nhà', RecipientName: 'Nguyễn Văn A', Phone: '0123456789', AddressLine: 'Số 123', Ward: 'Đường ABC', District: 'Quận 1', City: 'Thành phố Hồ Chí Minh', IsDefault: true, CreatedAt: '2022-02-10', Lat: 10.8231, Lng: 106.6297 },
+    { Id: '2', UserId: '1', Label: 'Địa chỉ 2', RecipientName: 'Nguyễn Văn B', Phone: '0123456789', AddressLine: 'Số 123', Ward: 'Đường ABC', District: 'Quận 1', City: 'Thành phố Hồ Chí Minh', IsDefault: false, CreatedAt: '2022-02-10', Lat: 10.7769, Lng: 106.7009 },
+    { Id: '3', UserId: '1', Label: 'Địa chỉ 3', RecipientName: 'Nguyễn Văn C', Phone: '0123456789', AddressLine: 'Số 123', Ward: 'Đường ABC', District: 'Quận 1', City: 'Thành phố Hồ Chí Minh', IsDefault: false, CreatedAt: '2022-02-10', Lat: 10.7769, Lng: 106.7009 },
+];
+
+export const mock_categories_new: CategoryResponseDto[] = [
+    { id: '1', name: 'Món mặn', description: 'Món ăn mặn', iconUrl: 'https://cdn.pixabay.com/photo/2016/10/23/09/37/fried-rice-1762493_1280.jpg', parentId: null, sortOrder: 1, isActive: true, createdAt: '2022-02-10', deletedAt: null, parent: null, children: [], productCount: 10 },
+    { id: '2', name: 'Thức uống', description: 'Thức uống', iconUrl: 'https://cdn.pixabay.com/photo/2014/12/11/02/56/coffee-563797_1280.jpg', parentId: null, sortOrder: 2, isActive: true, createdAt: '2022-02-10', deletedAt: null, parent: null, children: [], productCount: 10 },
+];
+
+export const mock_vouchers_new: VoucherResponseDto[] = [
+    { id: '1', code: 'FREE10', name: 'Giảm giá 10%', description: 'Giảm giá 10% cho đơn hàng', discountType: 'PERCENTAGE', discountValue: 10, maxDiscount: 50000, minOrderAmount: 10000, discountTarget: 'SUBTOTAL', merchantId: '1', usageLimit: 100, perUserLimit: 1, startDate: '2024-01-01', endDate: '2024-12-31', isActive: true, createdAt: '2022-02-10', deletedAt: null, usedCount: 10, remainingUsage: 90, availability: 'active' },
+    { id: '2', code: 'FREE20', name: 'Giảm giá 20%', description: 'Giảm giá 20% cho đơn hàng', discountType: 'PERCENTAGE', discountValue: 20, maxDiscount: 100000, minOrderAmount: 20000, discountTarget: 'SUBTOTAL', merchantId: '1', usageLimit: 100, perUserLimit: 1, startDate: '2024-01-01', endDate: '2024-12-31', isActive: true, createdAt: '2022-02-10', deletedAt: null, usedCount: 10, remainingUsage: 90, availability: 'active' },
+    { id: '3', code: 'FREE30', name: 'Giảm giá 30%', description: 'Giảm giá 30% cho đơn hàng', discountType: 'PERCENTAGE', discountValue: 30, maxDiscount: 150000, minOrderAmount: 30000, discountTarget: 'SUBTOTAL', merchantId: '1', usageLimit: 100, perUserLimit: 1, startDate: '2024-01-01', endDate: '2024-12-31', isActive: true, createdAt: '2022-02-10', deletedAt: null, usedCount: 10, remainingUsage: 90, availability: 'active' },
+    { id: '4', code: 'FREE40', name: 'Giảm giá 40%', description: 'Giảm giá 40% cho đơn hàng', discountType: 'PERCENTAGE', discountValue: 40, maxDiscount: 200000, minOrderAmount: 40000, discountTarget: 'SUBTOTAL', merchantId: '1', usageLimit: 100, perUserLimit: 1, startDate: '2024-01-01', endDate: '2024-12-31', isActive: true, createdAt: '2022-02-10', deletedAt: null, usedCount: 10, remainingUsage: 90, availability: 'active' },
+    { id: '5', code: 'FREE50', name: 'Giảm giá 50%', description: 'Giảm giá 50% cho đơn hàng', discountType: 'PERCENTAGE', discountValue: 50, maxDiscount: 250000, minOrderAmount: 50000, discountTarget: 'SUBTOTAL', merchantId: '1', usageLimit: 100, perUserLimit: 1, startDate: '2024-01-01', endDate: '2024-12-31', isActive: true, createdAt: '2022-02-10', deletedAt: null, usedCount: 10, remainingUsage: 90, availability: 'active' },
+]

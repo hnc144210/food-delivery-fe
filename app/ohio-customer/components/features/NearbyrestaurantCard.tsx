@@ -2,8 +2,9 @@ import { ProductCardData } from '@/types';
 import { Text, TouchableOpacity, View, StyleSheet } from "react-native";
 import { ProductCard_Small } from "./ProductCard";
 import { useState } from "react";
+import { ProductResponseDto } from '@/types/product';
 
-export function NearbyRestaurant({ nearbyrestaurants }: { nearbyrestaurants: ProductCardData[] }) {
+export function NearbyRestaurant({ nearbyrestaurants }: { nearbyrestaurants: ProductResponseDto[] }) {
     const [selection, setSelection] = useState('nearby');
     return (
         <View>

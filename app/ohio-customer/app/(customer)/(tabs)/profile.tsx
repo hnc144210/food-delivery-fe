@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
+import { FontAwesome } from "@expo/vector-icons";
 
 
 export default function ProfileScreen() {
@@ -78,6 +79,21 @@ export default function ProfileScreen() {
                             <Text style={{ color: '#EE4D2D', fontWeight: '600', marginLeft: 4 }}>Chỉnh sửa hồ sơ</Text>
                         </TouchableOpacity>
                     </View>
+                </View>
+
+                <View style={[styles.roundedBox, { flexDirection: 'column', gap: 10 }]}>
+                    <TouchableOpacity style={{ flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', width: '100%', gap: 10 }} onPress={() => router.push('/(customer)/verify_merchant')}>
+                        <View style={{ width: 50, height: 50, backgroundColor: '#a8a8a81c', borderRadius: 10, justifyContent: 'center', alignItems: 'center' }}>
+                            <Entypo name="shop" size={20} color="#818181ff" />
+                        </View>
+                        <Text style={{ fontSize: 16, fontWeight: 'bold' }}>Đăng ký bán hàng</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={{ flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', width: '100%', gap: 10 }} onPress={() => router.push('/(customer)/verify_shipper')}>
+                        <View style={{ width: 50, height: 50, backgroundColor: '#8f8f8f1c', borderRadius: 10, justifyContent: 'center', alignItems: 'center' }}>
+                            <FontAwesome name="motorcycle" size={20} color="#818181ff" />
+                        </View>
+                        <Text style={{ fontSize: 16, fontWeight: 'bold' }}>Đăng ký giao hàng</Text>
+                    </TouchableOpacity>
                 </View>
 
                 <View style={styles.roundedBox}>
