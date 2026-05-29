@@ -3,7 +3,6 @@ import EvilIcons from '@expo/vector-icons/EvilIcons';
 import Entypo from '@expo/vector-icons/Entypo';
 import { useRouter } from "expo-router";
 import { useQuery } from '@tanstack/react-query';
-import api from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
 import { FontAwesome } from "@expo/vector-icons";
 import { profileService } from "@/services/profileService";
