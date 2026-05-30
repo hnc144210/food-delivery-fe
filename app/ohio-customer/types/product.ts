@@ -1,4 +1,4 @@
-import { ApiPaginatedResponse, ApiResponse } from "@/services/homeService";
+import { ApiResponse } from "@/services/homeService";
 
 export type ProductOptionResponseDto = {
     id: string;
@@ -48,4 +48,4 @@ export type ProductListResponseDto = {
 };
 
 export type ProductDetailResponse = ApiResponse<ProductResponseDto>;
-export type ProductListResponse = ApiPaginatedResponse<ProductResponseDto>;
+export type ProductListResponse = ApiResponse<ProductListResponseDto>;

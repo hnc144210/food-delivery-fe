@@ -1,4 +1,4 @@
-import { ApiPaginatedResponse, ApiResponse } from "@/services/homeService";
+import { ApiResponse } from "@/services/orderService";
 
 export type VoucherAvailabilityStatus =
     | "active"
@@ -54,6 +54,6 @@ export type VoucherActorContext = {
     merchantId?: string;
 };
 
-export type VoucherListResponse = ApiPaginatedResponse<VoucherResponseDto>;
+export type VoucherListResponse = ApiResponse<VoucherListResponseDto>;
 export type VoucherDetailResponse = ApiResponse<VoucherResponseDto>;
 export type VoucherValidationResponse = ApiResponse<VoucherValidationResponseDto>;

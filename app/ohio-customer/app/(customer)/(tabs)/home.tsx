@@ -12,14 +12,17 @@ import { useRouter } from "expo-router";
 
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
-import { mock_categories, mock_productdata, mock_vouchers, mock_addresses, mock_addresses_new, mock_vouchers_new, mock_categories_new, mock_productdata_new } from "@/mock/home";
+import { mock_addresses_new, mock_vouchers_new, mock_categories_new, mock_productdata_new } from "@/mock/home";
 import { homeService } from "@/services/homeService";
+import { userService } from "@/services/userService";
+import { orderService } from "@/services/orderService";
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
     const [isSearching, setIsSearching] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [categoriesFilter, setCategoriesFilter] = useState('');
 
     const router = useRouter();
     const user = useAuthStore((s) => s.user);
@@ -34,7 +37,7 @@ export default function HomeScreen() {
 
     const { data: vouchers } = useQuery({
         queryKey: ['vouchers'],
-        queryFn: homeService.getVouchers,
+        queryFn: orderService.getVouchers,
     });
 
     const { data: products } = useQuery({
@@ -44,13 +47,15 @@ export default function HomeScreen() {
 
     const { data: addresses } = useQuery({
         queryKey: ['addresses', userId],
-        queryFn: () => homeService.getAddresses(userId!),
+        queryFn: () => userService.getAddresses(userId!),
         enabled: !!userId,
     });
 
     // Find default or first address to display in header
     const addressList = addresses?.items || mock_addresses_new
     const addressLabel = addressList?.find(addr => addr.IsDefault)?.Label || addressList[0]?.Label || 'null';
+
+    const categoryList = categories?.items || mock_categories_new;
 
     const handlePressSearch = () => {
         //do something
@@ -81,14 +86,34 @@ export default function HomeScreen() {
 
                 {/**body */}
                 {!isSearching && <ScrollView style={styles.body}>
-                    <VoucherList vouchers={vouchers?.items || mock_vouchers_new} />
-                    <CategoriesList categories={categories?.items || mock_categories_new} />
-                    <DealsOfTheDay dealoftheday={products?.items || mock_productdata_new} />
-                    <NearbyRestaurant nearbyrestaurants={products?.items || mock_productdata_new} />
+                    {categoriesFilter === '' && <View style={{ flexDirection: 'column', gap: 10 }}>
+                        {/**vouchers */}
+                        <VoucherList vouchers={vouchers?.items || mock_vouchers_new} />
+
+                        {/**categories */}
+                        <CategoriesList categories={categoryList} onCategorySelected={(categoryId) => setCategoriesFilter(categoryId)} />
+
+                        {/**products */}
+                        <DealsOfTheDay dealoftheday={products?.items || mock_productdata_new} title="Món ăn đặc biệt hôm nay" categoryfilter={categoriesFilter} />
+                        <NearbyRestaurant nearbyrestaurants={products?.items || mock_productdata_new} title="Nhà hàng lân cận" categoryfilter={categoriesFilter} />
+                    </View>}
+                    {categoriesFilter !== '' && <View style={{ flexDirection: 'column', gap: 10 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <TouchableOpacity style={{ width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 }} onPress={() => setCategoriesFilter('')}>
+                                <AntDesign name="arrow-left" size={20} color="black" />
+                            </TouchableOpacity>
+                            <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#EE4D2D', textAlign: 'center' }}>{categoryList.find(ca => ca.id === categoriesFilter)?.name}</Text>
+                            <View style={{ width: 40 }} />
+                        </View>
+                        <View style={{ flexDirection: 'column', gap: 10 }}>
+                            <DealsOfTheDay dealoftheday={products?.items || mock_productdata_new} title="Sản phẩm nổi bật" categoryfilter={categoriesFilter} />
+                            <NearbyRestaurant nearbyrestaurants={products?.items || mock_productdata_new} title="Nhà hàng lân cận" categoryfilter={categoriesFilter} />
+                        </View>
+                    </View>}
                     <View style={{ height: 80, width: '100%' }} />
                 </ScrollView>}
                 {isSearching && <View style={styles.body}>
-                    <CategoriesList categories={categories?.items || mock_categories_new} />
+                    <CategoriesList categories={categoryList} onCategorySelected={(categoryId) => { setIsSearching(false); setCategoriesFilter(categoryId) }} />
                 </View>}
             </View>
         </TouchableWithoutFeedback>

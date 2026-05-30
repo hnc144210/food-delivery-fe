@@ -4,24 +4,24 @@ import { ProductCard_Small } from "./ProductCard";
 import { useState } from "react";
 import { ProductResponseDto } from '@/types/product';
 
-export function NearbyRestaurant({ nearbyrestaurants }: { nearbyrestaurants: ProductResponseDto[] }) {
-    const [selection, setSelection] = useState('nearby');
+export function NearbyRestaurant({ nearbyrestaurants, title, categoryfilter }: { nearbyrestaurants: ProductResponseDto[], title: string, categoryfilter: string }) {
+    const [selection, setSelection] = useState('all');
     return (
         <View>
-            <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Món ăn từ nhà hàng</Text>
+            <Text style={{ fontSize: 20, fontWeight: 'bold' }}>{title}</Text>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15, marginTop: 5 }}>
-                <TouchableOpacity style={selection === 'nearby' ? styles.selected : styles.normal} onPress={() => setSelection('nearby')}>
-                    <Text style={selection === 'nearby' ? { color: '#EE4D2D' } : {}}>Gần đây</Text>
+                <TouchableOpacity style={selection === 'all' ? styles.selected : styles.normal} onPress={() => setSelection('all')}>
+                    <Text style={selection === 'all' ? { color: '#EE4D2D' } : {}}>Tất cả</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={selection === 'rating' ? styles.selected : styles.normal} onPress={() => setSelection('rating')}>
                     <Text style={selection === 'rating' ? { color: '#EE4D2D' } : {}}>Đánh giá 4+</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={selection === 'fast' ? styles.selected : styles.normal} onPress={() => setSelection('fast')}>
-                    <Text style={selection === 'fast' ? { color: '#EE4D2D' } : {}}>Giao nhanh</Text>
+                    <Text style={selection === 'fast' ? { color: '#EE4D2D' } : {}}>Giao dưới 15 phút</Text>
                 </TouchableOpacity>
             </View>
             <View style={{ gap: 15 }}>
-                {nearbyrestaurants.map((nearbyrestaurant, index) => (
+                {nearbyrestaurants.filter(item => categoryfilter === '' || item.categoryId?.includes(categoryfilter) && ((selection === 'all') || (selection === 'rating' && (item.averageRating ?? 0) >= 4) || (selection === 'fast' && (item.prepTime ?? 0) <= 15))).map((nearbyrestaurant, index) => (
                     <ProductCard_Small key={index} {...nearbyrestaurant} />
                 ))}
             </View>

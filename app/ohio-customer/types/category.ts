@@ -1,4 +1,4 @@
-import { ApiPaginatedResponse, ApiResponse } from "@/services/homeService";
+import { ApiResponse } from "@/services/homeService";
 
 export type CategoryResponseDto = {
     id: string;
@@ -32,6 +32,5 @@ export type CategoryListResponseDto = {
     limit: number;
     totalPages: number;
 };
-
-export type CategoryListResponse = ApiPaginatedResponse<CategoryResponseDto>;
+export type CategoryListResponse = ApiResponse<CategoryListResponseDto>;
 export type CategoryDetailResponse = ApiResponse<CategoryResponseDto>;

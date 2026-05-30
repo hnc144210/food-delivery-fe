@@ -1,4 +1,4 @@
-import { ApiPaginatedResponse, ApiResponse } from "@/services/homeService";
+import { ApiResponse } from "@/services/userService";
 
 export type AddressResponseDto = {
     Id: string;
@@ -27,5 +27,12 @@ export type AddressRequestDto = {
     Lng: number | null;
     IsDefault: boolean;
 };
-export type AddressListResponse = ApiPaginatedResponse<AddressResponseDto>;
+export type AddressListResponseDto = {
+    items: AddressResponseDto[];
+    totalCount: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+};
+export type AddressListResponse = ApiResponse<AddressListResponseDto>;
 export type AddressDetailResponse = ApiResponse<AddressResponseDto>;
