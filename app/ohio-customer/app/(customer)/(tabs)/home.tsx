@@ -1,123 +1,28 @@
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View, ScrollView, TouchableWithoutFeedback, Keyboard, ActivityIndicator } from "react-native";
-import { SearchBar } from "../../../components/ui/SearchBar";
+import { SearchBar } from "@/components/ui/SearchBar";
 import EvilIcons from '@expo/vector-icons/EvilIcons';
 import AntDesign from '@expo/vector-icons/AntDesign';
-import { ReturnButton } from "../../../components/ui/ReturnButton";
-import { DealsOfTheDay } from "../../../components/features/DealsofthedayCard";
-import { NearbyRestaurant } from "../../../components/features/NearbyrestaurantCard";
-import { CategoriesList } from "../../../components/features/CategoriesList";
-import { VoucherList } from "../../../components/features/VoucherList";
+import { ReturnButton } from "@/components/ui/ReturnButton";
+import { DealsOfTheDay } from "@/components/features/DealsofthedayCard";
+import { NearbyRestaurant } from "@/components/features/NearbyrestaurantCard";
+import { CategoriesList } from "@/components/features/CategoriesList";
+import { VoucherList } from "@/components/features/VoucherList";
 import { useRouter } from "expo-router";
 
 import { useQuery } from '@tanstack/react-query';
-import api from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
-import { mock_categories, mock_productdata, mock_vouchers, mock_addresses } from "../../../mock/home";
-
-// ─── API Request Functions ───────────────────────────────────────────────────
-
-async function fetchCategories() {
-    try {
-        const response = await api.get('/catalog/categories');
-        const resData = response.data;
-        // Map ApiResponse<T> where T might be wrapped in .data or returned directly
-        const rawData = resData.success ? resData.data : resData;
-        if (Array.isArray(rawData)) {
-            return rawData.map((cat: any) => ({
-                id: cat.id,
-                name: cat.name,
-                icon_url: cat.iconUrl || cat.icon_url || 'https://via.placeholder.com/150',
-            }));
-        }
-        return mock_categories;
-    } catch (error) {
-        console.log('Error fetching categories from backend, using mock:', error);
-        return mock_categories;
-    }
-}
-
-async function fetchVouchers() {
-    try {
-        const response = await api.get('/orders/vouchers');
-        const resData = response.data;
-        const rawData = resData.success ? resData.data : resData;
-        if (Array.isArray(rawData)) {
-            return rawData.map((v: any) => ({
-                description: v.description || v.name || `${v.code} - Giảm ${v.discountValue}`,
-                start_date: new Date(v.startDate).toLocaleDateString('vi-VN'),
-                end_date: new Date(v.endDate).toLocaleDateString('vi-VN'),
-                image_url: 'https://cdn.pixabay.com/photo/2015/04/08/13/13/food-712665_1280.jpg',
-            }));
-        }
-        return mock_vouchers;
-    } catch (error) {
-        console.log('Error fetching vouchers from backend, using mock:', error);
-        return mock_vouchers;
-    }
-}
-
-async function fetchProducts() {
-    try {
-        const response = await api.get('/catalog/products');
-        const resData = response.data;
-        const rawData = resData.success ? resData.data : resData;
-        if (Array.isArray(rawData)) {
-            return rawData.map((p: any) => ({
-                food: {
-                    id: p.id,
-                    restaurantId: p.merchantId,
-                    categoryId: p.categoryId || '',
-                    name: p.name,
-                    price: Number(p.basePrice),
-                    image: p.imageUrl || 'https://via.placeholder.com/150',
-                    isAvailable: p.isAvailable,
-                    options: [],
-                },
-                base_price: Number(p.basePrice),
-                discount_price: p.discountPrice ? Number(p.discountPrice) : Number(p.basePrice),
-                prep_time: p.prepTime || 15,
-                rating: p.averageRating ? Number(p.averageRating) : 5.0,
-            }));
-        }
-        return mock_productdata;
-    } catch (error) {
-        console.log('Error fetching products from backend, using mock:', error);
-        return mock_productdata;
-    }
-}
-
-async function fetchAddresses(userId?: string) {
-    if (!userId) return mock_addresses;
-    try {
-        const response = await api.get(`/users/${userId}/addresses`);
-        const resData = response.data;
-        const rawData = resData.success ? resData.data : resData;
-        if (Array.isArray(rawData)) {
-            return rawData.map((addr: any) => ({
-                id: addr.id,
-                addressLabel: addr.label || 'Địa chỉ',
-                receiverName: addr.recipientName || '',
-                receiverPhone: addr.phone || '',
-                addressLine: addr.addressLine || '',
-                street: addr.ward || '',
-                district: addr.district || '',
-                city: addr.city || '',
-                defaultAddress: addr.isDefault || false,
-            }));
-        }
-        return mock_addresses;
-    } catch (error) {
-        console.log('Error fetching addresses from backend, using mock:', error);
-        return mock_addresses;
-    }
-}
+import { mock_addresses_new, mock_vouchers_new, mock_categories_new, mock_productdata_new } from "@/mock/home";
+import { homeService } from "@/services/homeService";
+import { userService } from "@/services/userService";
+import { orderService } from "@/services/orderService";
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
     const [isSearching, setIsSearching] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [categoriesFilter, setCategoriesFilter] = useState('');
 
     const router = useRouter();
     const user = useAuthStore((s) => s.user);
@@ -125,34 +30,32 @@ export default function HomeScreen() {
 
     // ─── React Query Hooks ────────────────────────────────────────────────────
 
-    const { data: categories = mock_categories } = useQuery({
+    const { data: categories } = useQuery({
         queryKey: ['categories'],
-        queryFn: fetchCategories,
-        placeholderData: mock_categories,
+        queryFn: homeService.getCategories,
     });
 
-    const { data: vouchers = mock_vouchers } = useQuery({
+    const { data: vouchers } = useQuery({
         queryKey: ['vouchers'],
-        queryFn: fetchVouchers,
-        placeholderData: mock_vouchers,
+        queryFn: orderService.getVouchers,
     });
 
-    const { data: products = mock_productdata } = useQuery({
+    const { data: products } = useQuery({
         queryKey: ['products'],
-        queryFn: fetchProducts,
-        placeholderData: mock_productdata,
+        queryFn: homeService.getProducts,
     });
 
-    const { data: addresses = mock_addresses } = useQuery({
+    const { data: addresses } = useQuery({
         queryKey: ['addresses', userId],
-        queryFn: () => fetchAddresses(userId),
-        placeholderData: mock_addresses,
+        queryFn: () => userService.getAddresses(userId!),
         enabled: !!userId,
     });
 
     // Find default or first address to display in header
-    const defaultAddress = addresses.find(addr => addr.defaultAddress) || addresses[0];
-    const addressLabel = defaultAddress ? defaultAddress.addressLabel : 'Home';
+    const addressList = addresses?.items || mock_addresses_new
+    const addressLabel = addressList?.find(addr => addr.IsDefault)?.Label || addressList[0]?.Label || 'null';
+
+    const categoryList = categories?.items || mock_categories_new;
 
     const handlePressSearch = () => {
         //do something
@@ -183,14 +86,34 @@ export default function HomeScreen() {
 
                 {/**body */}
                 {!isSearching && <ScrollView style={styles.body}>
-                    <VoucherList vouchers={vouchers} />
-                    <CategoriesList categories={categories} />
-                    <DealsOfTheDay dealoftheday={products} />
-                    <NearbyRestaurant nearbyrestaurants={products} />
+                    {categoriesFilter === '' && <View style={{ flexDirection: 'column', gap: 10 }}>
+                        {/**vouchers */}
+                        <VoucherList vouchers={vouchers?.items || mock_vouchers_new} />
+
+                        {/**categories */}
+                        <CategoriesList categories={categoryList} onCategorySelected={(categoryId) => setCategoriesFilter(categoryId)} />
+
+                        {/**products */}
+                        <DealsOfTheDay dealoftheday={products?.items || mock_productdata_new} title="Món ăn đặc biệt hôm nay" categoryfilter={categoriesFilter} />
+                        <NearbyRestaurant nearbyrestaurants={products?.items || mock_productdata_new} title="Nhà hàng lân cận" categoryfilter={categoriesFilter} />
+                    </View>}
+                    {categoriesFilter !== '' && <View style={{ flexDirection: 'column', gap: 10 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <TouchableOpacity style={{ width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 }} onPress={() => setCategoriesFilter('')}>
+                                <AntDesign name="arrow-left" size={20} color="black" />
+                            </TouchableOpacity>
+                            <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#EE4D2D', textAlign: 'center' }}>{categoryList.find(ca => ca.id === categoriesFilter)?.name}</Text>
+                            <View style={{ width: 40 }} />
+                        </View>
+                        <View style={{ flexDirection: 'column', gap: 10 }}>
+                            <DealsOfTheDay dealoftheday={products?.items || mock_productdata_new} title="Sản phẩm nổi bật" categoryfilter={categoriesFilter} />
+                            <NearbyRestaurant nearbyrestaurants={products?.items || mock_productdata_new} title="Nhà hàng lân cận" categoryfilter={categoriesFilter} />
+                        </View>
+                    </View>}
                     <View style={{ height: 80, width: '100%' }} />
                 </ScrollView>}
                 {isSearching && <View style={styles.body}>
-                    <CategoriesList categories={categories} />
+                    <CategoriesList categories={categoryList} onCategorySelected={(categoryId) => { setIsSearching(false); setCategoriesFilter(categoryId) }} />
                 </View>}
             </View>
         </TouchableWithoutFeedback>

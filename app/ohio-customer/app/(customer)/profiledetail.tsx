@@ -30,16 +30,12 @@ export default function ProfileDetail() {
 
     // Form inputs state
     const [fullName, setFullName] = useState('');
-    const [phoneNumber, setPhoneNumber] = useState('');
-    const [email, setEmail] = useState('');
     const [avatarUrl, setAvatarUrl] = useState('');
 
     // Sync input states with Zustand user context when loaded
     useEffect(() => {
         if (user) {
             setFullName(user.name || '');
-            setPhoneNumber(user.phone || '');
-            setEmail(user.email || '');
             setAvatarUrl(user.avatar_url || '');
         }
     }, [user]);
@@ -90,8 +86,6 @@ export default function ProfileDetail() {
                     ...user,
                     name: fullName,
                     avatar_url: avatarUrl,
-                    phone: phoneNumber,
-                    email: email
                 });
             }
 
@@ -109,8 +103,6 @@ export default function ProfileDetail() {
                     ...user,
                     name: fullName,
                     avatar_url: avatarUrl,
-                    phone: phoneNumber,
-                    email: email
                 });
             }
             queryClient.invalidateQueries({ queryKey: ['profile', userId] });
@@ -172,24 +164,6 @@ export default function ProfileDetail() {
                         onChangeText={setFullName}
                     />
 
-                    <Text style={styles.text}>Số điện thoại</Text>
-                    <TextInput
-                        style={[styles.input, styles.readonlyInput]}
-                        placeholder="Số điện thoại"
-                        value={phoneNumber}
-                        editable={false}
-                    />
-                    <Text style={styles.fieldNote}>* Số điện thoại không thể thay đổi</Text>
-
-                    <Text style={styles.text}>Địa chỉ Email</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Nhập địa chỉ email"
-                        value={email}
-                        onChangeText={setEmail}
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                    />
 
                     {/* Action Button */}
                     <TouchableOpacity
