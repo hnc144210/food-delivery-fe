@@ -1,14 +1,45 @@
-import { Text, View, StyleSheet, Image, TouchableOpacity, ScrollView } from "react-native";
+import { Text, View, StyleSheet, Image, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { useState } from "react";
 import Octicons from '@expo/vector-icons/Octicons';
 import { OrderCard_ForDriver } from "../../../components/features/OrderCard";
 import { router } from "expo-router";
-import { mock_odercard } from "../../../mock/shipper";
+import { mock_odercard, mock_shipper_new } from "../../../mock/shipper";
 import { useAuthStore } from '@/store/authStore';
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { deliveryService } from "@/services/deliveryService";
+import { userService } from "@/services/userService";
 
 export default function ShipperHomePage() {
-    const [status, setStatus] = useState('Online');
+    const [status, setStatus] = useState(true);
     const user = useAuthStore((s) => s.user);
+
+    const { data: shipperdata } = useQuery({
+        queryKey: ['shipper'],
+        queryFn: () => userService.getShipperProfileByUserId(user?.id || '')
+    })
+
+    const toggleOnlineMutation = useMutation({
+        mutationFn: () => deliveryService.toggleOnline(shipperdata?.id || '', { isGoOnline: !status, lat: 12, lng: 12 }),
+        onSuccess: () => {
+            setStatus(!status);
+        },
+        onError: (error) => {
+            console.log(error);
+            Alert.alert('Error', 'Failed to toggle online status');
+        }
+    })
+
+    const { data: assignedDeliveries } = useQuery({
+        queryKey: ['assigned-deliveries'],
+        queryFn: () => deliveryService.getAssignedDeliveries(shipperdata?.id || '')
+    })
+
+    const setOnlineStatus = () => {
+        toggleOnlineMutation.mutate();
+    }
+
+    const myAssignments = assignedDeliveries?.items || mock_odercard
+
     return (
         <View style={styles.container}>
             <View style={styles.header}>
@@ -19,33 +50,33 @@ export default function ShipperHomePage() {
                         <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>{user?.name || 'NullUser'}</Text>
                     </View>
                 </View>
-                <TouchableOpacity style={styles.statusbutton} onPress={() => setStatus(status === 'Online' ? 'Offline' : 'Online')}>
-                    {status === 'Online' && <Octicons name="dot-fill" size={20} color="green" />}
-                    {status === 'Offline' && <Octicons name="dot" size={20} color="red" />}
-                    <Text style={{ fontSize: 15, fontWeight: 'bold' }}>{status}</Text>
+                <TouchableOpacity style={styles.statusbutton} onPress={setOnlineStatus}>
+                    {status && <Octicons name="dot-fill" size={20} color="green" />}
+                    {!status && <Octicons name="dot" size={20} color="red" />}
+                    <Text style={{ fontSize: 15, fontWeight: 'bold' }}>{status ? 'Online' : 'Offline'}</Text>
                 </TouchableOpacity>
             </View>
             <ScrollView contentContainerStyle={{ gap: 20, padding: 20 }}>
-                {mock_odercard.some(item => item.status === 'PENDING') &&
+                {myAssignments.some(item => item.status === 'PENDING') &&
                     <View style={{ flexDirection: 'column' }}>
                         <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>Đang chờ xử lý</Text>
                         <View style={{ flexDirection: 'column', gap: 20 }}>
-                            {mock_odercard.map((item, index) => item.status === 'PENDING' && <OrderCard_ForDriver key={index} {...item} />)}
+                            {myAssignments.filter(item => item.status === 'PENDING').map((item, index) => <OrderCard_ForDriver key={index} {...item} />)}
                         </View>
                     </View>}
 
-                {mock_odercard.some(item => item.status === 'READY') &&
+                {myAssignments.some(item => item.status === 'READY') &&
                     <View style={{ flexDirection: 'column' }}>
                         <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>Sẵn sàng giao hàng</Text>
                         <View style={{ flexDirection: 'column', gap: 20 }}>
-                            {mock_odercard.map((item, index) => item.status === 'READY' && <OrderCard_ForDriver key={index} {...item} />)}
+                            {myAssignments.filter(item => item.status === 'READY').map((item, index) => <OrderCard_ForDriver key={index} {...item} />)}
                         </View>
                     </View>}
-                {mock_odercard.some(item => item.status === 'DELIVERING') &&
+                {myAssignments.some(item => item.status === 'DELIVERING') &&
                     <View style={{ flexDirection: 'column' }}>
                         <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>Đang giao hàng</Text>
                         <View style={{ flexDirection: 'column', gap: 20 }}>
-                            {mock_odercard.map((item, index) => item.status === 'DELIVERING' && <OrderCard_ForDriver key={index} {...item} />)}
+                            {myAssignments.filter(item => item.status === 'DELIVERING').map((item, index) => <OrderCard_ForDriver key={index} {...item} />)}
                         </View>
                     </View>}
             </ScrollView>

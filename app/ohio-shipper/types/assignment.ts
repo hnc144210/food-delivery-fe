@@ -40,5 +40,39 @@ export type ShipperListAssignmentDto = {
     hasNextPage: boolean;
     hasPreviousPage: boolean;
 }
+
+export type AssignmentAcceptRequestDto = {
+    assignmentId: string;
+    isAccepted: boolean;
+    offerId: string | null;
+    rejectionReason: string | null;
+}
+
+export type AssignmentRejectRequestDto = {
+    offerId: string | null;
+    reason: string | null;
+}
+
+export type ShipperOfferDto = {
+    hasActiveOffer: boolean;
+    assignmentId: string | null;
+    offerId: string | null;
+    orderId: string | null;
+    expiresAt: string | null;
+}
+
+export type UpdateDeliveryStatusRequestDto = {
+    note: string | null;
+    proofFileKey: string | null;
+    status: 'Pending' | 'Assigned' | 'PickingUp' | 'PickedUp' | 'Delivering' | 'Delivered' | 'Failed';
+}
+
+export type ToggleOnlineRequestDto = {
+    isGoOnline: boolean;
+    lat: number;
+    lng: number;
+}
+
+export type ShipperOfferResponse = ApiResponse<ShipperOfferDto>
 export type ShipperAssignmentResponse = ApiResponse<ShipperAssignmentDto>
 export type ShipperListAssignmentResponse = ApiResponse<ShipperListAssignmentDto>   
