@@ -1,14 +1,34 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import type { User } from '@/types';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import type { UserProfile } from '@/types/api';
 
 interface AuthState {
-  user: User | null;
-  setUser: (user: User) => void;
-  clearUser: () => void;
+  user: UserProfile | null;
+  accessToken: string | null;
+  refreshToken: string | null;
+  setAuth: (payload: {
+    user: UserProfile;
+    accessToken: string;
+    refreshToken: string;
+  }) => void;
+  clearAuth: () => void;
 }
 
-export const useAuthStore = create<AuthState>()((set) => ({
-  user: null,
-  setUser: (user) => set({ user }),
-  clearUser: () => set({ user: null }),
-}));
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      user: null,
+      accessToken: null,
+      refreshToken: null,
+      setAuth: ({ user, accessToken, refreshToken }) =>
+        set({ user, accessToken, refreshToken }),
+      clearAuth: () =>
+        set({ user: null, accessToken: null, refreshToken: null }),
+    }),
+    {
+      name: 'ohio_merchant_auth',
+      storage: createJSONStorage(() => AsyncStorage),
+    }
+  )
+);

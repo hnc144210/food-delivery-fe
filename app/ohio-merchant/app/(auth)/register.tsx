@@ -1,6 +1,13 @@
 // app/(auth)/register.tsx
-import { useState } from 'react';
-import { Image } from 'react-native';
+import { useState } from "react";
+import { Image } from "react-native";
+import { useRegister } from "@/hooks/useAuth";
+import { getApiErrorMessage } from "@/lib/api";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { router } from "expo-router";
+import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import {
   View,
   Text,
@@ -11,44 +18,28 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-} from 'react-native';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { router } from 'expo-router';
-import { useMutation } from '@tanstack/react-query';
-import { Ionicons, FontAwesome } from '@expo/vector-icons';
-import { AxiosError } from 'axios';
-import api from '@/services/api';
+} from "react-native";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const registerSchema = z.object({
-  fullName: z.string().min(1, 'Họ tên không được để trống'),
-  email: z.string().email('Email không hợp lệ'),
-  phone: z.string().min(9, 'Số điện thoại không hợp lệ'),
+  fullName: z.string().min(1, "Họ tên không được để trống"),
+  email: z.string().email("Email không hợp lệ"),
+  password: z
+    .string()
+    .min(6, "Mật khẩu phải có ít nhất 6 ký tự")
+    .regex(/[a-z]/, "Mật khẩu phải có ít nhất 1 chữ thường")
+    .regex(/[A-Z]/, "Mật khẩu phải có ít nhất 1 chữ hoa"),
 });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
-
-// ─── API ──────────────────────────────────────────────────────────────────────
-
-interface RegisterResponse {
-  success: true;
-  message: string;
-}
-
-async function registerRequest(payload: RegisterFormData): Promise<RegisterResponse> {
-  const { data } = await api.post<RegisterResponse>('/auth/register', payload);
-  return data;
-}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function OhioLogo() {
   return (
     <Image
-      source={require('@/assets/images/logo.png')}
+      source={require("@/assets/images/logo.png")}
       style={{ width: 160, height: 60, marginBottom: 28 }}
       resizeMode="contain"
     />
@@ -58,41 +49,37 @@ function OhioLogo() {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function RegisterScreen() {
-  const [serverError, setServerError] = useState('');
+  const [serverError, setServerError] = useState("");
 
   const {
     control,
     handleSubmit,
-    getValues,  
+    getValues,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { fullName: '', email: '', phone: '' },
+    defaultValues: { fullName: "", email: "", password: "" },
   });
 
-  const registerMutation = useMutation({
-    mutationFn: registerRequest,
-    onSuccess: () => {
-      router.push({
-        pathname: '/(auth)/otp',
-        params: { email: getValues('email') },
-      });
-    },
-    onError: (error: AxiosError<{ message: string }>) => {
-      const message = error.response?.data?.message ?? 'Đăng ký thất bại. Vui lòng thử lại.';
-      setServerError(message);
-    },
-  });
+  const registerMutation = useRegister();
 
   function handlePressRegister(formData: RegisterFormData) {
-    setServerError('');
-    registerMutation.mutate(formData);
+    setServerError("");
+    registerMutation.mutate(formData, {
+      onSuccess: () => {
+        router.push({
+          pathname: "/(auth)/otp",
+          params: { email: getValues("email") },
+        });
+      },
+      onError: (error) => setServerError(getApiErrorMessage(error)),
+    });
   }
 
   return (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
         contentContainerStyle={styles.container}
@@ -148,33 +135,31 @@ export default function RegisterScreen() {
           )}
         </View>
 
-        {/* Phone */}
+        {/* Password */}
         <View style={styles.fieldWrapper}>
-          <Text style={styles.label}>PHONE NUMBER</Text>
+          <Text style={styles.label}>PASSWORD</Text>
           <Controller
             control={control}
-            name="phone"
+            name="password"
             render={({ field: { onChange, onBlur, value } }) => (
               <TextInput
-                style={[styles.input, errors.phone && styles.inputError]}
-                placeholder="19001099"
-                keyboardType="phone-pad"
+                style={[styles.input, errors.password && styles.inputError]}
+                placeholder="••••••••"
+                secureTextEntry
                 onBlur={onBlur}
                 onChangeText={onChange}
                 value={value}
               />
             )}
           />
-          {errors.phone && (
-            <Text style={styles.errorText}>{errors.phone.message}</Text>
+          {errors.password && (
+            <Text style={styles.errorText}>{errors.password.message}</Text>
           )}
         </View>
-
         {/* Terms */}
         <Text style={styles.termsText}>
-          By continuing, you agree to{' '}
-          <Text style={styles.termsLink}>Terms of Use</Text>
-          {' '}and{' '}
+          By continuing, you agree to{" "}
+          <Text style={styles.termsLink}>Terms of Use</Text> and{" "}
           <Text style={styles.termsLink}>Privacy Policy</Text>.
         </Text>
 
@@ -185,7 +170,10 @@ export default function RegisterScreen() {
 
         {/* Sign Up button */}
         <TouchableOpacity
-          style={[styles.button, registerMutation.isPending && styles.buttonDisabled]}
+          style={[
+            styles.button,
+            registerMutation.isPending && styles.buttonDisabled,
+          ]}
           onPress={handleSubmit(handlePressRegister)}
           disabled={registerMutation.isPending}
           activeOpacity={0.85}
@@ -200,7 +188,9 @@ export default function RegisterScreen() {
         {/* Login link */}
         <View style={styles.loginRow}>
           <Text style={styles.loginHint}>Already have an account? </Text>
-          <TouchableOpacity onPress={() => router.replace({ pathname: '/(auth)/login' })}>
+          <TouchableOpacity
+            onPress={() => router.replace({ pathname: "/(auth)/login" })}
+          >
             <Text style={styles.loginLink}>Sign In</Text>
           </TouchableOpacity>
         </View>
@@ -222,16 +212,16 @@ export default function RegisterScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const ORANGE = '#EE4D2D';
+const ORANGE = "#EE4D2D";
 
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: "#F5F5F5",
   },
   container: {
     flexGrow: 1,
-    alignItems: 'center',
+    alignItems: "center",
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 40,
@@ -240,67 +230,67 @@ const styles = StyleSheet.create({
   // Title
   title: {
     fontSize: 24,
-    fontWeight: '800',
-    color: '#1a1a1a',
+    fontWeight: "800",
+    color: "#1a1a1a",
     marginBottom: 6,
-    textAlign: 'center',
+    textAlign: "center",
   },
   subtitle: {
     fontSize: 14,
-    color: '#9ca3af',
+    color: "#9ca3af",
     marginBottom: 28,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   // Fields
   fieldWrapper: {
-    width: '100%',
+    width: "100%",
     marginBottom: 16,
   },
   label: {
     fontSize: 11,
-    fontWeight: '600',
-    color: '#6b7280',
+    fontWeight: "600",
+    color: "#6b7280",
     letterSpacing: 1,
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 15,
-    color: '#111827',
+    color: "#111827",
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: "#e5e7eb",
   },
   inputError: {
-    borderColor: '#ef4444',
+    borderColor: "#ef4444",
   },
   errorText: {
     marginTop: 4,
     fontSize: 12,
-    color: '#ef4444',
+    color: "#ef4444",
   },
 
   // Terms
   termsText: {
     fontSize: 12,
-    color: '#9ca3af',
-    textAlign: 'center',
+    color: "#9ca3af",
+    textAlign: "center",
     marginBottom: 20,
     lineHeight: 18,
   },
   termsLink: {
     color: ORANGE,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   // Server error
   serverError: {
     fontSize: 13,
-    color: '#ef4444',
-    textAlign: 'center',
+    color: "#ef4444",
+    textAlign: "center",
     marginBottom: 12,
   },
 
@@ -309,53 +299,53 @@ const styles = StyleSheet.create({
     backgroundColor: ORANGE,
     borderRadius: 14,
     paddingVertical: 16,
-    width: '100%',
-    alignItems: 'center',
+    width: "100%",
+    alignItems: "center",
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   buttonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 
   // Login link
   loginRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginTop: 20,
   },
   loginHint: {
-    color: '#6b7280',
+    color: "#6b7280",
     fontSize: 14,
   },
   loginLink: {
     color: ORANGE,
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 
   // Social
   orText: {
-    color: '#9ca3af',
+    color: "#9ca3af",
     fontSize: 13,
     marginTop: 24,
     marginBottom: 16,
   },
   socialRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 16,
   },
   socialButton: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: '#e5e7eb',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: "#e5e7eb",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
