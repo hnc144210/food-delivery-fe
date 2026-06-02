@@ -3,15 +3,17 @@ import Octicons from "@expo/vector-icons/Octicons";
 import Entypo from '@expo/vector-icons/Entypo';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from "expo-router";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { OrderCardType } from "../../mock/shipper";
 import { mock_nearbyrestaurant } from "@/mock/home";
 import { useMemo } from "react";
 import { number } from "zod";
-import { CartResponseDto } from "@/types/cart";
-import { useQuery } from "@tanstack/react-query";
+import { CartItemResponseDto, CartResponseDto } from "@/types/cart";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { userService } from "@/services/userService";
 import { mock_merchant_new } from "@/mock/customer_cart";
+import { OrderHistoryItemDto } from "@/types/order";
+import { orderService } from "@/services/orderService";
 
 export function OrderCard_ForDriver({ id, status, merchantId, totalamount, pickuplocation, deliverylocation }: OrderCardType) {
     const router = useRouter();
@@ -155,7 +157,7 @@ export function OrderCardHistory_ForDriver({ id, merchantId, deliveredtime, tota
     );
 }
 
-export function OrderCard_ForCustomer({ id, status, orderedtime, deliveredtime, merchantId, totalamount, orderitems }: OrderCardType) {
+export function OrderCard_ForCustomer({ id, status, createdAt, merchantId, merchantAvatar, merchantName, totalAmount, previewItems }: OrderHistoryItemDto) {
     const statuscolor = () => {
         if (status === 'PENDING') return '#ddddddff';
         if (status === 'CONFIRMED') return '#90d9e2ff';
@@ -181,11 +183,9 @@ export function OrderCard_ForCustomer({ id, status, orderedtime, deliveredtime, 
         if (status === 'DELIVERING') return 'Đang giao hàng';
         if (status === 'DELIVERED') return 'Đã giao hàng';
         if (status === 'CANCELLED') return 'Đã hủy';
-        if (status === '') return 'Chưa đặt hàng';
         if (status === 'READY') return 'Sẵn sàng';
         return '';
     }
-    const restaurant = useMemo(() => mock_nearbyrestaurant.find(f => f.id === merchantId), [merchantId]);
     const router = useRouter();
     const handleReview = () => {
         router.push({ pathname: `/(customer)/review`, params: { id } });
@@ -197,22 +197,22 @@ export function OrderCard_ForCustomer({ id, status, orderedtime, deliveredtime, 
                     <Text style={{ color: textcolor(), fontSize: 12 }}>{statusDisplay()}</Text>
                 </View>
                 <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }} onPress={() => { }}>
-                    <Image source={{ uri: restaurant?.logo_url }} style={{ width: 50, height: 50, borderRadius: 12 }} />
+                    <Image source={{ uri: merchantAvatar || '' }} style={{ width: 50, height: 50, borderRadius: 12 }} />
                     <View style={{ width: 240 }}>
-                        <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{restaurant?.name}</Text>
-                        <Text style={{ color: 'gray', fontSize: 12 }}>{orderitems?.map((item) => `${item.quantity}x ${item.name}`).join(', ')}</Text>
+                        <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{merchantName}</Text>
+                        <Text style={{ color: 'gray', fontSize: 12 }}>{previewItems?.map((item) => `${item.quantity}x ${item.productName}`).join(', ')}</Text>
                     </View>
                 </TouchableOpacity>
 
-                {status !== 'DELIVERED' && status !== 'CANCELLED' && status !== '' &&
+                {status !== 'DELIVERED' && status !== 'CANCELLED' &&
                     <View style={{ gap: 12 }}>
                         <View>
                             <Text style={{ fontSize: 11, fontWeight: '300' }}>Thời điểm đặt hàng</Text>
-                            <Text>{orderedtime}</Text>
+                            <Text>{createdAt}</Text>
                         </View>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: 18, backgroundColor: '#ebebebff', borderRadius: 12 }}>
                             <Text style={{ fontSize: 15 }}>Tổng cộng</Text>
-                            <Text style={{ fontSize: 22, fontWeight: 'bold' }}>{totalamount}đ</Text>
+                            <Text style={{ fontSize: 22, fontWeight: 'bold' }}>{totalAmount}đ</Text>
                         </View>
                         {status === 'PENDING' && <TouchableOpacity style={{ justifyContent: 'center', alignItems: 'center', height: 40, width: '100%', backgroundColor: '#EE4D2D', borderRadius: 12 }}>
                             <Text style={{ color: 'white', fontSize: 17, fontWeight: 'bold' }}>Hủy đơn hàng</Text>
@@ -222,11 +222,6 @@ export function OrderCard_ForCustomer({ id, status, orderedtime, deliveredtime, 
 
                 {status === 'DELIVERED' &&
                     <View style={{ gap: 12 }}>
-                        <View>
-                            <Text style={{ fontWeight: '300', fontSize: 11 }}>Đã giao lúc: </Text>
-                            <Text>{deliveredtime}</Text>
-                        </View>
-
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: 12 }}>
                             <TouchableOpacity style={{ flex: 1, backgroundColor: '#ebebebff', padding: 12, borderRadius: 12, alignItems: 'center' }}>
                                 <Text style={{ fontWeight: 'bold' }}>Đặt lại</Text>
@@ -244,12 +239,26 @@ export function OrderCard_ForCustomer({ id, status, orderedtime, deliveredtime, 
     )
 }
 
-export function CartCard({ merchantId, items }: CartResponseDto) {
+export function CartCard({ merchantId, items, refetchCart }: { merchantId: string, items: CartItemResponseDto[], refetchCart: () => void }) {
     const { data: merchantData } = useQuery({
         queryKey: ['merchant', merchantId],
         queryFn: () => userService.getMerchantProfile(merchantId!),
         enabled: !!merchantId,
     });
+    const removeCartByMerchantMutation = useMutation({
+        mutationFn: () => orderService.removeCartByMerchant(merchantId!),
+        onSuccess: () => {
+            Alert.alert('Đã xóa giỏ hàng');
+            refetchCart();
+        },
+        onError: (error: any) => {
+            Alert.alert('Xóa giỏ hàng thất bại', error.message);
+        }
+    })
+
+    const removeHandler = () => {
+        removeCartByMerchantMutation.mutate();
+    }
 
     const merchant = merchantData || mock_merchant_new
     return (
@@ -267,7 +276,7 @@ export function CartCard({ merchantId, items }: CartResponseDto) {
                 </TouchableOpacity>
 
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: 12 }}>
-                    <TouchableOpacity style={{ flex: 1, backgroundColor: '#ebebebff', padding: 12, borderRadius: 12, alignItems: 'center' }}>
+                    <TouchableOpacity style={{ flex: 1, backgroundColor: '#ebebebff', padding: 12, borderRadius: 12, alignItems: 'center' }} onPress={removeHandler}>
                         <Text style={{ fontWeight: 'bold' }}>Hủy giỏ hàng</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={{ flex: 1, backgroundColor: '#EE4D2D', padding: 12, borderRadius: 12, alignItems: 'center' }}>

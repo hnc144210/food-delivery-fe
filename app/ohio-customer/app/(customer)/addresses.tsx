@@ -4,7 +4,6 @@ import { useRouter } from "expo-router";
 import { AntDesign } from "@expo/vector-icons";
 import { AddressCard } from "@/components/features/AddressCard";
 import { useQuery } from '@tanstack/react-query';
-import api from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
 import { mock_addresses_new } from "../../mock/home";
 import { userService } from "@/services/userService";

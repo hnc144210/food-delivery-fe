@@ -2,6 +2,7 @@ import { AddressCardProps, Category, FoodItem, Option, OptionGroup, ProductCardD
 import { AddressResponseDto } from '@/types/address';
 import { CategoryResponseDto } from '@/types/category';
 import { ProductOptionResponseDto, ProductResponseDto } from '@/types/product';
+import { MerchantProfileResponseDto } from '@/types/profile';
 import { VoucherResponseDto } from '@/types/voucher';
 
 

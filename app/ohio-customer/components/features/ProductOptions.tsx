@@ -1,3 +1,4 @@
+import { ProductOptionResponseDto, ProductOptionValueResponseDto } from "@/types/product";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -20,10 +21,10 @@ function formatPrice(price: number) {
     return price.toLocaleString('vi-VN') + 'đ';
 }
 
-export function ProductOptions({ option, onSelectOption }: { option: ProductOption, onSelectOption: (option: ProductOption, optionValue: ProductOptionValue) => void }) {
-    const [selectedOption, setSelectedOption] = useState<boolean[]>(option.options?.map(() => false) || []);
+export function ProductOptions({ option, onSelectOption }: { option: ProductOptionResponseDto, onSelectOption: (option: ProductOptionResponseDto, optionValue: ProductOptionValueResponseDto) => void }) {
+    const [selectedOption, setSelectedOption] = useState<boolean[]>(option.values?.map(() => false) || []);
     const handleSelectOption = (index: number) => {
-        const max_selection = option.max_selection;
+        const max_selection = option.maxSelections;
         const selectedCount = selectedOption.filter(Boolean).length;
         if (selectedOption[index]) {
             setSelectedOption(prev => prev.map((checked, i) => i === index ? !checked : checked));
@@ -33,24 +34,24 @@ export function ProductOptions({ option, onSelectOption }: { option: ProductOpti
     }
     const getOpacity = (index: number) => {
         const selectedCount = selectedOption.filter(Boolean).length;
-        if (!selectedOption[index] && option.max_selection != null && selectedCount === option.max_selection) {
+        if (!selectedOption[index] && option.maxSelections != null && selectedCount === option.maxSelections) {
             return 0.6;
         }
         return 1;
     }
     const getDisable = (index: number) => {
-        return !selectedOption[index] && option.max_selection != null && selectedOption.filter(Boolean).length === option.max_selection;
+        return !selectedOption[index] && option.maxSelections != null && selectedOption.filter(Boolean).length === option.maxSelections;
     }
     return (
         <View style={styles.container}>
             <Text style={{ marginBottom: 12, fontSize: 15, fontWeight: '700', color: '#1a1a1a', }}>{option.name}</Text>
-            {option.options?.map((value, index) => (
+            {option.values?.map((value, index) => (
                 <TouchableOpacity key={index} style={[styles.optionRow, { opacity: getOpacity(index) }]} onPress={() => { handleSelectOption(index); onSelectOption(option, value) }} disabled={getDisable(index)}>
                     <View style={[styles.checkbox, selectedOption[index] && styles.checkboxSelected]}>
                         {selectedOption[index] && <AntDesign name="check" size={11} color="white" />}
                     </View>
                     <Text style={styles.optionLabel}>{value.name}</Text>
-                    <Text style={styles.optionPrice}>+{formatPrice(value.extra_price)}</Text>
+                    <Text style={styles.optionPrice}>+{formatPrice(value.additionalPrice)}</Text>
                 </TouchableOpacity>
             ))}
         </View>

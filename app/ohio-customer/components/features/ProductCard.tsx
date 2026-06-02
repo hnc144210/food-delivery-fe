@@ -15,9 +15,9 @@ export function ProductCard_Large({ id, name, imageUrl, basePrice, discountPrice
             <View style={{ paddingVertical: 7, paddingHorizontal: 15 }}>
                 <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{name}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#B22203' }}>{discountPrice}đ</Text>
+                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#B22203' }}>{discountPrice ? discountPrice : basePrice}đ</Text>
                     <View style={{ width: 10 }} />
-                    {discountPrice !== basePrice && (
+                    {discountPrice && (
                         <Text style={{ fontSize: 12, color: '#999', textDecorationLine: 'line-through' }}>{basePrice}đ</Text>
                     )}
                 </View>
@@ -42,7 +42,7 @@ export function ProductCard_Medium({ id, name, imageUrl, basePrice, discountPric
             <Image source={{ uri: imageUrl || '' }} style={{ height: 145, width: 145, borderRadius: 20 }} />
             <View style={{ padding: 0, marginTop: 5 }}>
                 <Text style={{ fontSize: 14, fontWeight: 'bold' }}>{name}</Text>
-                <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#B22203' }}>{discountPrice}đ</Text>
+                <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#B22203' }}>{discountPrice ? discountPrice : basePrice}đ</Text>
             </View>
 
         </TouchableOpacity>
@@ -53,13 +53,13 @@ export function ProductCard_Small({ id, name, imageUrl, basePrice, discountPrice
     const router = useRouter();
     return (
         <TouchableOpacity style={styles.small} onPress={() => router.push({ pathname: '/(customer)/product', params: { id: id } })}>
-            <Image source={{ uri: imageUrl || '' }} style={{ width: 100, height: 100, borderRadius: 12 }} />
+            <Image source={{ uri: imageUrl || '' }} style={{ width: 110, height: 110, borderRadius: 12 }} />
             <View style={{ padding: 20 }}>
                 <Text style={{ fontSize: 15, fontWeight: 'bold' }}>{name}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#B22203' }}>{discountPrice}đ</Text>
+                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#B22203' }}>{discountPrice ? discountPrice : basePrice}đ</Text>
                     <View style={{ width: 10 }} />
-                    {discountPrice !== basePrice && (
+                    {discountPrice && (
                         <Text style={{ fontSize: 12, color: '#999', textDecorationLine: 'line-through' }}>{basePrice}đ</Text>
                     )}
                 </View>
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         borderRadius: 12,
         width: '100%',
-        height: 100,
+        height: 110,
         alignItems: 'center',
         shadowColor: '#000',
         shadowOpacity: 0.06,
@@ -152,7 +152,6 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
         borderRadius: 12,
         width: 240,
-        height: 245,
         marginBottom: 20,
         shadowColor: '#000',
         shadowOpacity: 0.06,

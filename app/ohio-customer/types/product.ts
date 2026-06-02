@@ -1,4 +1,11 @@
-import { ApiResponse } from "@/services/homeService";
+import { ApiResponse } from "@/services/catalogService";
+
+export type ProductOptionValueResponseDto = {
+    id: string;
+    name: string;
+    additionalPrice: number;
+    isAvailable: boolean;
+};
 
 export type ProductOptionResponseDto = {
     id: string;
@@ -7,12 +14,7 @@ export type ProductOptionResponseDto = {
     isRequired: boolean;
     maxSelections: number;
     createdAt: string;
-    values: Array<{
-        id: string;
-        name: string;
-        additionalPrice: number;
-        isAvailable: boolean;
-    }>;
+    values: ProductOptionValueResponseDto[];
 };
 
 export type ProductResponseDto = {
