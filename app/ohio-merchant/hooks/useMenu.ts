@@ -1,6 +1,7 @@
+//hooks/useMenu.ts
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { menuService } from "@/services/menuService";
-import type { CatalogListParams, ProductPayload } from "@/types/api";
+import type { CatalogListParams, ProductPayload, Product } from "@/types/api";
 import { useAuthStore } from "@/store/authStore";
 import { useMerchantStore } from "@/store/merchantStore";
 
@@ -63,8 +64,21 @@ export function useUpdateProductAvailability() {
   return useMutation({
     mutationFn: ({ id, isAvailable }: { id: string; isAvailable: boolean }) =>
       menuService.updateProductAvailability(id, { isAvailable }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["products"] });
+    onMutate: async ({ id, isAvailable }) => {
+      await qc.cancelQueries({ queryKey: ['products', 'merchant', 'me'] });
+      const previous = qc.getQueryData<Product[]>(['products', 'merchant', 'me']);
+      qc.setQueryData<Product[]>(['products', 'merchant', 'me'], (old) =>
+        old?.map((p) => p.id === id ? { ...p, isAvailable } : p) ?? []
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        qc.setQueryData(['products', 'merchant', 'me'], context.previous);
+      }
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['products', 'merchant', 'me'] });
     },
   });
 }
@@ -77,5 +91,52 @@ export function useDeleteProduct() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["products"] });
     },
+  });
+}
+export function useCreateCategory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { name: string; isActive: boolean }) =>
+      menuService.createCategory(body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['categories'] }),
+  });
+}
+
+export function useUpdateCategory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: { name: string; isActive: boolean } }) =>
+      menuService.updateCategory(id, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['categories'] }),
+  });
+}
+
+export function useDeleteCategory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => menuService.deleteCategory(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['categories'] }),
+  });
+}
+
+export function useMerchantReviews() {
+  const merchantId = useMerchantStore((s) => s.merchant?.id);
+
+  return useQuery({
+    queryKey: ['reviews', 'merchant', merchantId],
+    queryFn: () => menuService.getMerchantReviews(merchantId!),
+    enabled: Boolean(merchantId),
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useReplyReview() {
+  const qc = useQueryClient();
+  const merchantId = useMerchantStore((s) => s.merchant?.id);
+
+  return useMutation({
+    mutationFn: ({ id, content }: { id: string; content: string }) =>
+      menuService.replyReview(id, content),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['reviews', 'merchant', merchantId] }),
   });
 }

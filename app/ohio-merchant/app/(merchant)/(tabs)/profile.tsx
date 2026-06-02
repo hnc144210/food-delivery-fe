@@ -1,3 +1,4 @@
+//app/ohio-merchant/app/(merchant)/(tabs)/profile.tsx
 import {
   View,
   Text,
@@ -12,6 +13,8 @@ import { useState } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useMerchantStore } from "@/store/merchantStore";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useToggleStoreOpen } from "@/hooks/useMerchantProfile";
+import { useLogout } from "@/hooks/useAuth";
 
 const ORANGE = "#E8441A";
 const CREAM = "#FEF3E8";
@@ -43,9 +46,13 @@ function MenuItem({ icon, label, value, onPress, danger }: MenuItemProps) {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { clearAuth } = useAuthStore();
-  const { isOpen, setIsOpen } = useMerchantStore();
+  const { merchant } = useMerchantStore();
+  const { isOpen, toggle } = useToggleStoreOpen();
+  const logout = useLogout();
   const [notifications, setNotifications] = useState(true);
+
+  const openingTime = merchant?.openingTime?.slice(0, 5) ?? "07:00";
+  const closingTime = merchant?.closingTime?.slice(0, 5) ?? "22:00";
 
   return (
     <SafeAreaView
@@ -56,14 +63,17 @@ export default function ProfileScreen() {
         style={styles.container}
         contentContainerStyle={styles.content}
       >
-        {/* Store card */}
         <View style={styles.storeCard}>
           <View style={styles.avatar}>
             <Ionicons name="storefront" size={32} color={ORANGE} />
           </View>
           <View style={styles.storeInfo}>
-            <Text style={styles.storeName}>Kinetic Kitchen</Text>
-            <Text style={styles.storeAddress}>123 Nguyễn Huệ, Q.1, TP.HCM</Text>
+            <Text style={styles.storeName}>
+              {merchant?.storeName ?? "Cửa hàng"}
+            </Text>
+            <Text style={styles.storeAddress}>
+              {merchant?.storeDescription ?? ""}
+            </Text>
             <View style={styles.ratingRow}>
               <Ionicons name="star" size={14} color="#f59e0b" />
               <Text style={styles.ratingText}>4.8 · 1,248 đơn</Text>
@@ -71,7 +81,6 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Open toggle */}
         <View style={styles.toggleCard}>
           <View style={styles.toggleLeft}>
             <View
@@ -89,13 +98,12 @@ export default function ProfileScreen() {
           </View>
           <Switch
             value={isOpen}
-            onValueChange={setIsOpen}
+            onValueChange={toggle}
             trackColor={{ false: "#e0e0e0", true: ORANGE }}
             thumbColor="#fff"
           />
         </View>
 
-        {/* Store settings */}
         <Text style={styles.sectionLabel}>Cửa hàng</Text>
         <View style={styles.menuGroup}>
           <MenuItem
@@ -106,8 +114,13 @@ export default function ProfileScreen() {
           <MenuItem
             icon="time-outline"
             label="Giờ mở cửa"
-            value="07:00 – 22:00"
+            value={`${openingTime} – ${closingTime}`}
             onPress={() => router.push("/(merchant)/opening-hours")}
+          />
+          <MenuItem
+            icon="chatbubble-ellipses-outline"
+            label="Phản hồi khách hàng"
+            onPress={() => router.push("/(merchant)/feedbacks")}
           />
           <MenuItem
             icon="grid-outline"
@@ -116,7 +129,6 @@ export default function ProfileScreen() {
           />
         </View>
 
-        {/* Account */}
         <Text style={styles.sectionLabel}>Tài khoản</Text>
         <View style={styles.menuGroup}>
           <MenuItem
@@ -140,11 +152,10 @@ export default function ProfileScreen() {
           <MenuItem
             icon="lock-closed-outline"
             label="Đổi mật khẩu"
-            onPress={() => {}}
+            onPress={() => router.push("/(merchant)/change-password")}
           />
         </View>
 
-        {/* Support */}
         <Text style={styles.sectionLabel}>Hỗ trợ</Text>
         <View style={styles.menuGroup}>
           <MenuItem
@@ -169,10 +180,7 @@ export default function ProfileScreen() {
             icon="log-out-outline"
             label="Đăng xuất"
             danger
-            onPress={() => {
-              clearAuth();
-              router.replace("/(auth)/login");
-            }}
+            onPress={() => logout.mutate()}
           />
         </View>
       </ScrollView>

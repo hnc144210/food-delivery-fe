@@ -1,4 +1,5 @@
-import { useState } from "react";
+// app/ohio-merchant/app/(merchant)/category-layout.tsx
+import { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -6,77 +7,104 @@ import {
   ScrollView,
   Alert,
   StyleSheet,
+  TextInput,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import {
+  useCategories,
+  useCreateCategory,
+  useUpdateCategory,
+  useDeleteCategory,
+  useMyProducts,
+} from "@/hooks/useMenu";
 
 const ORANGE = "#E8441A";
 const CREAM = "#FEF3E8";
 
-interface Category {
-  id: string;
-  name: string;
-  itemCount: number;
-  description: string;
-  isDefault?: boolean;
-  isPriority?: boolean;
-}
-
-const INITIAL: Category[] = [
-  {
-    id: "all",
-    name: "All Dishes",
-    itemCount: 24,
-    description: "Default view",
-    isDefault: true,
-  },
-  {
-    id: "best",
-    name: "Best Sellers",
-    itemCount: 5,
-    description: "Top Priority",
-    isPriority: true,
-  },
-  { id: "main", name: "Món chính", itemCount: 15, description: "Dinner Menu" },
-  {
-    id: "drinks",
-    name: "Nước uống",
-    itemCount: 12,
-    description: "Bar Selection",
-  },
-];
-
 export default function CategoryLayoutScreen() {
   const router = useRouter();
-  const [cats, setCats] = useState<Category[]>(INITIAL);
+  const categoriesQuery = useCategories({
+    page: 1,
+    limit: 100,
+    status: "ACTIVE",
+  });
+  const createCategory = useCreateCategory();
+  const updateCategory = useUpdateCategory();
+  const deleteCategory = useDeleteCategory();
 
-  const moveUp = (i: number) => {
-    if (i === 0) return;
-    const next = [...cats];
-    [next[i - 1], next[i]] = [next[i], next[i - 1]];
-    setCats(next);
-  };
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
+  const [newName, setNewName] = useState("");
 
-  const moveDown = (i: number) => {
-    if (i === cats.length - 1) return;
-    const next = [...cats];
-    [next[i], next[i + 1]] = [next[i + 1], next[i]];
-    setCats(next);
-  };
+  const cats = categoriesQuery.data ?? [];
 
-  const remove = (id: string) =>
+  const productsQuery = useMyProducts();
+
+  const itemCountByCategory = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const p of productsQuery.data ?? []) {
+      if (p.categoryId) {
+        map.set(p.categoryId, (map.get(p.categoryId) ?? 0) + 1);
+      }
+    }
+    return map;
+  }, [productsQuery.data]);
+
+  function handleEditStart(id: string, name: string) {
+    setEditingId(id);
+    setEditingName(name);
+  }
+
+  function handleEditSave(id: string) {
+    if (!editingName.trim()) return;
+    updateCategory.mutate(
+      { id, body: { name: editingName.trim(), isActive: true } },
+      { onSuccess: () => setEditingId(null) },
+    );
+  }
+
+  function handleDelete(id: string) {
     Alert.alert("Xóa danh mục", "Bạn có chắc muốn xóa?", [
       { text: "Hủy", style: "cancel" },
       {
         text: "Xóa",
         style: "destructive",
-        onPress: () => setCats((c) => c.filter((x) => x.id !== id)),
+        onPress: () => deleteCategory.mutate(id),
       },
     ]);
+  }
+
+  function handleCreate() {
+    if (!newName.trim()) return;
+    createCategory.mutate(
+      { name: newName.trim(), isActive: true },
+      {
+        onSuccess: () => {
+          setNewName("");
+          setShowCreate(false);
+        },
+      },
+    );
+  }
+
+  if (categoriesQuery.isLoading) {
+    return (
+      <View
+        style={[
+          styles.container,
+          { justifyContent: "center", alignItems: "center" },
+        ]}
+      >
+        <ActivityIndicator color={ORANGE} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#1a1a1a" />
@@ -92,19 +120,15 @@ export default function CategoryLayoutScreen() {
 
         {cats.map((cat, i) => (
           <View key={cat.id} style={styles.card}>
-            {/* Reorder arrows */}
             <View style={styles.arrows}>
-              <TouchableOpacity onPress={() => moveUp(i)} disabled={i === 0}>
+              <TouchableOpacity disabled={i === 0}>
                 <Ionicons
                   name="chevron-up"
                   size={22}
                   color={i === 0 ? "#ddd" : "#555"}
                 />
               </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => moveDown(i)}
-                disabled={i === cats.length - 1}
-              >
+              <TouchableOpacity disabled={i === cats.length - 1}>
                 <Ionicons
                   name="chevron-down"
                   size={22}
@@ -113,45 +137,97 @@ export default function CategoryLayoutScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Info */}
             <View style={styles.info}>
-              <View style={styles.nameRow}>
+              {editingId === cat.id ? (
+                <TextInput
+                  style={styles.inlineInput}
+                  value={editingName}
+                  onChangeText={setEditingName}
+                  autoFocus
+                  onSubmitEditing={() => handleEditSave(cat.id)}
+                />
+              ) : (
                 <Text style={styles.catName}>{cat.name}</Text>
-                {cat.isPriority && (
-                  <View style={styles.priorityBadge}>
-                    <Text style={styles.priorityText}>TOP PRIORITY</Text>
-                  </View>
-                )}
-              </View>
-              <Text style={styles.catMeta}>
-                {cat.itemCount} items · {cat.description}
-                {cat.isDefault ? " · Default" : ""}
-              </Text>
+              )}
+              {editingId !== cat.id && (
+                <Text style={styles.catMeta}>
+                  {itemCountByCategory.get(cat.id) ?? 0} items
+                </Text>
+              )}
             </View>
 
-            {/* Actions */}
-            <TouchableOpacity style={styles.actionBtn}>
-              <Ionicons name="create-outline" size={18} color="#666" />
-            </TouchableOpacity>
-            {!cat.isDefault && (
+            {editingId === cat.id ? (
               <TouchableOpacity
                 style={styles.actionBtn}
-                onPress={() => remove(cat.id)}
+                onPress={() => handleEditSave(cat.id)}
+                disabled={updateCategory.isPending}
               >
-                <Ionicons name="trash-outline" size={18} color="#e53e3e" />
+                {updateCategory.isPending ? (
+                  <ActivityIndicator size="small" color={ORANGE} />
+                ) : (
+                  <Ionicons name="checkmark" size={18} color={ORANGE} />
+                )}
               </TouchableOpacity>
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={styles.actionBtn}
+                  onPress={() => handleEditStart(cat.id, cat.name)}
+                >
+                  <Ionicons name="create-outline" size={18} color="#666" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.actionBtn}
+                  onPress={() => handleDelete(cat.id)}
+                  disabled={deleteCategory.isPending}
+                >
+                  <Ionicons name="trash-outline" size={18} color="#e53e3e" />
+                </TouchableOpacity>
+              </>
             )}
           </View>
         ))}
 
-        {/* Create new */}
-        <TouchableOpacity style={styles.createBtn}>
-          <Ionicons name="add-circle-outline" size={20} color={ORANGE} />
-          <Text style={styles.createText}>Create New Category</Text>
-        </TouchableOpacity>
+        {showCreate ? (
+          <View style={styles.createForm}>
+            <TextInput
+              style={styles.createInput}
+              placeholder="Tên danh mục..."
+              value={newName}
+              onChangeText={setNewName}
+              autoFocus
+            />
+            <TouchableOpacity
+              style={styles.createConfirmBtn}
+              onPress={handleCreate}
+              disabled={createCategory.isPending}
+            >
+              {createCategory.isPending ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.createConfirmText}>Tạo</Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                setShowCreate(false);
+                setNewName("");
+              }}
+            >
+              <Ionicons name="close" size={22} color="#999" />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.createBtn}
+            onPress={() => setShowCreate(true)}
+          >
+            <Ionicons name="add-circle-outline" size={20} color={ORANGE} />
+            <Text style={styles.createText}>Create New Category</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
 
-      {/* Footer */}
       <View style={styles.footer}>
         <TouchableOpacity style={styles.saveBtn} onPress={() => router.back()}>
           <Text style={styles.saveBtnText}>Lưu bố cục</Text>
@@ -183,22 +259,16 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   arrows: { alignItems: "center", gap: 0 },
-  info: { flex: 1, gap: 3 },
-  nameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  info: { flex: 1 },
   catName: { fontSize: 15, fontWeight: "700", color: "#1a1a1a" },
-  priorityBadge: {
-    backgroundColor: CREAM,
-    borderRadius: 6,
-    paddingHorizontal: 6,
+  inlineInput: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#1a1a1a",
+    borderBottomWidth: 1.5,
+    borderBottomColor: ORANGE,
     paddingVertical: 2,
   },
-  priorityText: {
-    fontSize: 9,
-    fontWeight: "800",
-    color: ORANGE,
-    letterSpacing: 0.5,
-  },
-  catMeta: { fontSize: 12, color: "#999" },
   actionBtn: {
     width: 34,
     height: 34,
@@ -222,6 +292,24 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   createText: { color: ORANGE, fontWeight: "600", fontSize: 15 },
+  createForm: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderWidth: 1.5,
+    borderColor: ORANGE,
+    borderRadius: 14,
+    padding: 12,
+    marginTop: 4,
+  },
+  createInput: { flex: 1, fontSize: 15, color: "#1a1a1a" },
+  createConfirmBtn: {
+    backgroundColor: ORANGE,
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  createConfirmText: { color: "#fff", fontWeight: "700", fontSize: 14 },
   footer: {
     position: "absolute",
     bottom: 0,
@@ -239,5 +327,6 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: "center",
   },
+  catMeta: { fontSize: 12, color: "#999", marginTop: 2 },
   saveBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
 });

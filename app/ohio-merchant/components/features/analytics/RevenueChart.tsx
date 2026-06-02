@@ -1,3 +1,4 @@
+//components/features/analytics/RevenueChart.tsx
 import { View, Text, StyleSheet } from "react-native";
 
 const ORANGE = "#E8441A";

@@ -1,3 +1,4 @@
+//lib/api.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { router } from 'expo-router';
@@ -87,15 +88,15 @@ async function refreshAccessToken(): Promise<AuthTokenResponse> {
   return data;
 }
 
-export function extractData<T>(response: AxiosResponse<ApiResponse<T>>): T {
+export function extractData<T>(response: AxiosResponse): T {
   const d = response.data as any;
   const success = d.success ?? d.ok;
 
-  if (!success || d.data === null) {
+  if (!success || d.data === null || d.data === undefined) {
     throw new Error(d.errors?.[0] ?? d.message ?? 'Request failed');
   }
 
-  return d.data;
+  return d.data as T;
 }
 
 export function getApiErrorMessage(error: unknown): string {
@@ -103,9 +104,11 @@ export function getApiErrorMessage(error: unknown): string {
   return 'Đã có lỗi xảy ra';
 }
 
-function toApiError(error: AxiosError<ApiResponse<unknown>>): Error {
+function toApiError(error: AxiosError<any>): Error {
+  const data = error.response?.data as any;
   const message =
-    error.response?.data?.errors?.[0] ??
+    data?.errors?.[0] ??
+    data?.message ??
     (error.response?.status && error.response.status >= 500
       ? 'Máy chủ đang lỗi. Vui lòng thử lại sau.'
       : 'Không thể kết nối máy chủ');

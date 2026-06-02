@@ -1,3 +1,4 @@
+//types/api.ts
 export interface ForgotPasswordRequest {
   email: string;
 }
@@ -296,4 +297,24 @@ export interface ProductPayload {
 
 export interface ProductAvailabilityPayload {
   isAvailable: boolean;
+}
+
+export interface Review {
+  id: string;
+  userId: string;
+  orderId: string;
+  merchantId: string | null;
+  productId: string | null;
+  shipperId: string | null;
+  rating: number;
+  comment: string;
+  images: string[];
+  merchantReply: string | null;
+  repliedAt: string | null;
+}
+
+export interface ReviewListParams {
+  page?: number;
+  limit?: number;
+  rating?: number;
 }

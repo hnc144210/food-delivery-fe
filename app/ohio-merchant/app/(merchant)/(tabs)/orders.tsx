@@ -1,4 +1,5 @@
-import { useState } from "react";
+// app/ohio-merchant/app/(merchant)/(tabs)/orders.tsx
+import { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -71,7 +72,11 @@ export default function MerchantOrdersScreen() {
   const [activeTab, setActiveTab] = useState<MerchantOrderStatus>("new");
 
   const activeApiStatus = TABS.find((tab) => tab.key === activeTab)?.apiStatus;
-  const ordersQuery = useMerchantOrders({ status: activeApiStatus });
+  const queryParams = useMemo(
+    () => ({ status: activeApiStatus }),
+    [activeApiStatus],
+  );
+  const ordersQuery = useMerchantOrders(queryParams);
   const updateStatus = useUpdateMerchantOrderStatus();
 
   const orders = ordersQuery.data?.map(mapOrder) ?? [];

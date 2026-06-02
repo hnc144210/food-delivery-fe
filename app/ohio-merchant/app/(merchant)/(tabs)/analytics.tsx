@@ -1,3 +1,4 @@
+// app/ohio-merchant/app/(merchant)/(tabs)/analytics.tsx
 import { useState } from "react";
 import {
   ScrollView,
@@ -21,6 +22,7 @@ import {
   useMerchantOverview,
   useMerchantTopProducts,
 } from "@/hooks/useMerchantReports";
+import { useToggleStoreOpen } from "@/hooks/useMerchantProfile";
 
 type Period = "today" | "week" | "month";
 
@@ -69,7 +71,8 @@ function toChartData(daily: Record<string, unknown>[] = []): RevenueData[] {
 }
 
 export default function AnalyticsScreen() {
-  const { isOpen, setIsOpen } = useMerchantStore();
+  const { merchant } = useMerchantStore();
+  const { isOpen, toggle } = useToggleStoreOpen();
   const [period, setPeriod] = useState<Period>("month");
 
   const range = getDateRange(period);
@@ -97,7 +100,9 @@ export default function AnalyticsScreen() {
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.shopName}>Kinetic Kitchen</Text>
+          <Text style={styles.shopName}>
+            {merchant?.storeName ?? "Kinetic Kitchen"}
+          </Text>
           <Text style={styles.shopSub}>Analytics</Text>
         </View>
         <View style={styles.toggleWrapper}>
@@ -108,7 +113,7 @@ export default function AnalyticsScreen() {
           </Text>
           <Switch
             value={isOpen}
-            onValueChange={setIsOpen}
+            onValueChange={toggle}
             trackColor={{ false: "#DDD", true: ORANGE }}
             thumbColor="#fff"
           />

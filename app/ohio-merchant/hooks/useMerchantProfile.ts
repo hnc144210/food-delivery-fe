@@ -1,3 +1,4 @@
+//hooks/useMerchantProfile.ts
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { merchantService, type UpdateMerchantRequest } from '@/services/merchantService';
 import { useMerchantStore } from '@/store/merchantStore';

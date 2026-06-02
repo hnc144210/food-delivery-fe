@@ -1,3 +1,4 @@
+// app/ohio-merchant/app/(merchant)/(tabs)/menu.tsx
 import React, { useMemo, useState } from "react";
 import {
   View,
@@ -62,6 +63,7 @@ function mapProductToDish(product: Product, categoryName?: string): Dish {
 }
 
 export default function MenuScreen() {
+  const { merchant } = useMerchantStore();
   const router = useRouter();
   const { isOpen, setIsOpen } = useMerchantStore();
   const [searchQuery, setSearchQuery] = useState("");
@@ -128,7 +130,9 @@ export default function MenuScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.shopName}>Kinetic Kitchen</Text>
+          <Text style={styles.shopName}>
+            {merchant?.storeName ?? "Kinetic Kitchen"}
+          </Text>
           <Text style={styles.shopSub}>Menu Management</Text>
         </View>
         <View style={styles.toggleWrapper}>

@@ -1,3 +1,4 @@
+//services/merchantService.ts
 import { userApi, extractData } from '@/lib/api';
 import type {
   MessageResponse,

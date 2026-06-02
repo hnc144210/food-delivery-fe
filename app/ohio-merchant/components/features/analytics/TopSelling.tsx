@@ -1,3 +1,4 @@
+//components/features/analytics/TopSelling.tsx
 import { View, Text, Image, StyleSheet } from "react-native";
 
 const ORANGE = "#E8441A";

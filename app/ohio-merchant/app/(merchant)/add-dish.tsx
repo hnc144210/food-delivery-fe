@@ -1,3 +1,4 @@
+// app/ohio-merchant/app/(merchant)/add-dish.tsx
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -128,8 +129,9 @@ export default function AddDishScreen() {
         ],
       });
       router.back();
-    } catch (e: any) {
-      console.log("create error detail:", JSON.stringify(e), e?.message);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : JSON.stringify(e);
+      console.log("create error:", msg);
     }
   };
 

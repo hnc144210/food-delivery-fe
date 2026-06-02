@@ -1,3 +1,4 @@
+//hooks/useMerchantReports.ts
 import { useQuery } from '@tanstack/react-query';
 import { reportService } from '@/services/reportService';
 import type { DateRangeParams } from '@/types/api';

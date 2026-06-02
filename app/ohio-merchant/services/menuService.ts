@@ -1,4 +1,6 @@
+//services/menuService.ts
 import { catalogApi, extractData } from "@/lib/api";
+import {Review} from "@/types/api";
 import type {
   CatalogCategory,
   CatalogListParams,
@@ -17,12 +19,12 @@ export const menuService = {
   },
 
   async getMyProducts(): Promise<Product[]> {
-    const res = await catalogApi.get("/api/catalog/products/merchant/me");
-    console.log('raw res.data:', JSON.stringify(res.data));
-    const data = extractData<PaginatedResponse<Product> | Product[]>(res);
-    console.log('after extract:', JSON.stringify(data));
-    return Array.isArray(data) ? data : data.items;
-  },
+  const res = await catalogApi.get("/api/catalog/products/merchant/me");
+  const d = res.data as any;
+  if (!d.ok && !d.success) throw new Error(d.message ?? 'Request failed');
+  const data = d.data;
+  return Array.isArray(data) ? data : data?.items ?? [];
+},
 
   async getProduct(id: string): Promise<Product> {
     const res = await catalogApi.get(`/api/catalog/products/${id}/detail`);
@@ -50,4 +52,31 @@ export const menuService = {
     const res = await catalogApi.delete(`/api/catalog/products/${id}`);
     return extractData<MessageResponse>(res);
   },
+
+  async createCategory(body: { name: string; isActive: boolean }): Promise<CatalogCategory> {
+  const res = await catalogApi.post('/api/catalog/categories', body);
+  return extractData<CatalogCategory>(res);
+},
+
+async updateCategory(id: string, body: { name: string; isActive: boolean }): Promise<CatalogCategory> {
+  const res = await catalogApi.put(`/api/catalog/categories/${id}`, body);
+  return extractData<CatalogCategory>(res);
+},
+
+async deleteCategory(id: string): Promise<MessageResponse> {
+  const res = await catalogApi.delete(`/api/catalog/categories/${id}`);
+  return extractData<MessageResponse>(res);
+  },
+
+  async getMerchantReviews(merchantId: string): Promise<Review[]> {
+  const res = await catalogApi.get(`/api/catalog/reviews/merchant/${merchantId}`);
+  const d = res.data as any;
+  if (!d.ok && !d.success) throw new Error(d.message ?? 'Request failed');
+  return d.data?.items ?? d.data ?? [];
+},
+
+async replyReview(id: string, content: string): Promise<MessageResponse> {
+  const res = await catalogApi.patch(`/api/catalog/reviews/${id}/reply`, { merchantReply: content });
+  return extractData<MessageResponse>(res);
+},
 };
