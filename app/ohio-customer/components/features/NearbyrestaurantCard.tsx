@@ -21,7 +21,7 @@ export function NearbyRestaurant({ nearbyrestaurants, title, categoryfilter }: {
                 </TouchableOpacity>
             </View>
             <View style={{ gap: 15 }}>
-                {nearbyrestaurants.filter(item => categoryfilter === '' || item.categoryId?.includes(categoryfilter) && ((selection === 'all') || (selection === 'rating' && (item.averageRating ?? 0) >= 4) || (selection === 'fast' && (item.prepTime ?? 0) <= 15))).map((nearbyrestaurant, index) => (
+                {nearbyrestaurants.filter(item => (categoryfilter === '' || item.categoryId?.includes(categoryfilter)) && ((selection === 'all') || (selection === 'rating' && (item.averageRating ?? 0) >= 4) || (selection === 'fast' && (item.prepTime ?? 0) <= 15))).map((nearbyrestaurant, index) => (
                     <ProductCard_Small key={index} {...nearbyrestaurant} />
                 ))}
             </View>

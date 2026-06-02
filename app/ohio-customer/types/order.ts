@@ -1,8 +1,10 @@
+import { ApiResponse } from "@/services/orderService";
+
 export type OrderPaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
 
 
 export type PaymentMethod = 'COD' | 'VNPAY';
-export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY_TO_DELIVER' | 'DELIVERING' | 'COMPLETED' | 'CANCELLED' | 'DELIVERY_FAILED';
+export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'PICKED_UP' | 'DELIVERING' | 'DELIVERED' | 'CANCELLED';
 
 export type CheckoutPreviewItemDto = {
     id: string;
@@ -170,3 +172,6 @@ export type OrderDetailResponseDto = {
         createdAt: string;
     }>;
 };
+
+export type MyOrderResponse = ApiResponse<MyOrdersResponseDto>;
+export type OrderDetailResponse = ApiResponse<OrderDetailResponseDto>;

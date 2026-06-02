@@ -1,4 +1,4 @@
-import { ApiResponse } from "@/services/homeService";
+import { ApiResponse } from "@/services/catalogService";
 
 export type CategoryResponseDto = {
     id: string;
@@ -14,10 +14,7 @@ export type CategoryResponseDto = {
         id: string;
         name: string;
     } | null;
-    children: Array<{
-        id: string;
-        name: string;
-    }>;
+    children: CategoryResponseDto[];
     productCount: number;
 };
 
@@ -34,3 +31,4 @@ export type CategoryListResponseDto = {
 };
 export type CategoryListResponse = ApiResponse<CategoryListResponseDto>;
 export type CategoryDetailResponse = ApiResponse<CategoryResponseDto>;
+export type CategoryTreeResponse = ApiResponse<CategoryTreeNodeDto[]>;

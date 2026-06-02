@@ -21,6 +21,8 @@ import { useAuthStore } from "@/store/authStore";
 import { mock_addresses, mock_addresses_new } from "@/mock/home";
 import { userService } from "@/services/userService";
 import { AddressRequestDto } from "@/types/address";
+import { addressService } from "@/services/addressService";
+import { mockProvinces, mockWards } from "@/mock/addressitem";
 
 // ─── Dropdown Options ────────────────────────────────────────────────────────
 
@@ -65,62 +67,66 @@ interface ComboBoxProps {
     options: string[];
     onSelect: (val: string) => void;
     placeholder: string;
+    disabled?: boolean;
 }
 
-function ComboBox({ label, value, options, onSelect, placeholder }: ComboBoxProps) {
+function ComboBox({ label, value, options, onSelect, placeholder, disabled }: ComboBoxProps) {
     const [visible, setVisible] = useState(false);
 
     return (
         <View style={styles.content}>
             <Text style={styles.labelText}>{label}:</Text>
             <TouchableOpacity
-                style={styles.dropdownTrigger}
+                style={[styles.dropdownTrigger, disabled && { backgroundColor: '#e5e7eb', borderColor: '#d1d5db' }]}
                 onPress={() => {
+                    if (disabled) return;
                     Keyboard.dismiss();
                     setVisible(true);
                 }}
-                activeOpacity={0.8}
+                activeOpacity={disabled ? 1 : 0.8}
             >
-                <Text style={{ flex: 1, color: value ? '#111827' : '#9ca3af', fontSize: 15 }}>
+                <Text style={{ flex: 1, color: disabled ? '#9ca3af' : (value ? '#111827' : '#9ca3af'), fontSize: 15 }}>
                     {value || placeholder}
                 </Text>
-                <AntDesign name="down" size={14} color="#6b7280" />
+                <AntDesign name="down" size={14} color={disabled ? '#d1d5db' : '#6b7280'} />
             </TouchableOpacity>
 
-            <Modal visible={visible} transparent animationType="fade">
-                <TouchableWithoutFeedback onPress={() => setVisible(false)}>
-                    <View style={styles.modalOverlay}>
-                        <View style={styles.modalContent}>
-                            <View style={styles.modalHeader}>
-                                <Text style={styles.modalTitle}>Chọn {label}</Text>
-                                <TouchableOpacity onPress={() => setVisible(false)}>
-                                    <AntDesign name="close" size={20} color="#4b5563" />
-                                </TouchableOpacity>
-                            </View>
-                            <FlatList
-                                data={options}
-                                keyExtractor={(item) => item}
-                                renderItem={({ item }) => (
-                                    <TouchableOpacity
-                                        style={[styles.optionItem, value === item && styles.selectedOption]}
-                                        onPress={() => {
-                                            onSelect(item);
-                                            setVisible(false);
-                                        }}
-                                    >
-                                        <Text style={[styles.optionText, value === item && styles.selectedOptionText]}>
-                                            {item}
-                                        </Text>
-                                        {value === item && <AntDesign name="check" size={16} color="#EE4D2D" />}
+            {!disabled && (
+                <Modal visible={visible} transparent animationType="fade">
+                    <TouchableWithoutFeedback onPress={() => setVisible(false)}>
+                        <View style={styles.modalOverlay}>
+                            <View style={styles.modalContent}>
+                                <View style={styles.modalHeader}>
+                                    <Text style={styles.modalTitle}>Chọn {label}</Text>
+                                    <TouchableOpacity onPress={() => setVisible(false)}>
+                                        <AntDesign name="close" size={20} color="#4b5563" />
                                     </TouchableOpacity>
-                                )}
-                                contentContainerStyle={{ paddingBottom: 20 }}
-                                showsVerticalScrollIndicator={false}
-                            />
+                                </View>
+                                <FlatList
+                                    data={options}
+                                    keyExtractor={(item) => item}
+                                    renderItem={({ item }) => (
+                                        <TouchableOpacity
+                                            style={[styles.optionItem, value === item && styles.selectedOption]}
+                                            onPress={() => {
+                                                onSelect(item);
+                                                setVisible(false);
+                                            }}
+                                        >
+                                            <Text style={[styles.optionText, value === item && styles.selectedOptionText]}>
+                                                {item}
+                                            </Text>
+                                            {value === item && <AntDesign name="check" size={16} color="#EE4D2D" />}
+                                        </TouchableOpacity>
+                                    )}
+                                    contentContainerStyle={{ paddingBottom: 20 }}
+                                    showsVerticalScrollIndicator={false}
+                                />
+                            </View>
                         </View>
-                    </View>
-                </TouchableWithoutFeedback>
-            </Modal>
+                    </TouchableWithoutFeedback>
+                </Modal>
+            )}
         </View>
     );
 }
@@ -140,7 +146,6 @@ export default function EditAddressScreen() {
     const [receiverName, setReceiverName] = useState("");
     const [receiverPhone, setReceiverPhone] = useState("");
     const [addressLine, setAddressLine] = useState("");
-    const [street, setStreet] = useState("");
     const [ward, setWard] = useState("");
     const [city, setCity] = useState("");
     const [isDefault, setIsDefault] = useState(false);
@@ -160,8 +165,7 @@ export default function EditAddressScreen() {
             setReceiverName(addressDetail.RecipientName || "null");
             setReceiverPhone(addressDetail.Phone || "null");
             setAddressLine(addressDetail.AddressLine || "null");
-            setStreet(addressDetail.Ward || "null");
-            setWard(addressDetail.District || "null");
+            setWard(addressDetail.Ward || "null");
             setCity(addressDetail.City || "null");
             setIsDefault(addressDetail.IsDefault || false);
         }
@@ -181,7 +185,7 @@ export default function EditAddressScreen() {
                 RecipientName: receiverName,
                 Phone: receiverPhone,
                 AddressLine: addressLine,
-                Ward: street,
+                Ward: ward,
                 District: ward,
                 City: city,
                 IsDefault: isDefault,
@@ -210,7 +214,7 @@ export default function EditAddressScreen() {
                 RecipientName: receiverName,
                 Phone: receiverPhone,
                 AddressLine: addressLine,
-                Ward: street,
+                Ward: ward,
                 District: ward,
                 City: city,
                 IsDefault: isDefault,
@@ -229,6 +233,28 @@ export default function EditAddressScreen() {
             alert("Thêm địa chỉ thất bại!");
         }
     });
+
+    const { data: provincesData } = useQuery({
+        queryKey: ['provinces'],
+        queryFn: () => addressService.getProvinces(),
+    });
+
+    const provincesList = provincesData?.items || mockProvinces;
+
+    const selectedProvince = useMemo(() => {
+        if (!city || !provincesList) return null;
+        return provincesList.find(
+            (p) => p.fullName === city || p.name === city
+        );
+    }, [city, provincesData]);
+
+    const { data: wardsData } = useQuery({
+        queryKey: ['wards', selectedProvince?.code],
+        queryFn: () => addressService.getWards(selectedProvince!.code),
+        enabled: !!selectedProvince?.code,
+    });
+
+    const wardsList = wardsData?.items || mockWards.filter(w => w.provinceCode === selectedProvince?.code);
 
     const handleSave = () => {
         if (!label || !receiverName || !receiverPhone || !addressLine) {
@@ -301,27 +327,23 @@ export default function EditAddressScreen() {
 
                     {/* 3 Dropdown ComboBoxes at the bottom */}
                     <ComboBox
-                        label="Đường"
-                        value={street}
-                        options={STREET_OPTIONS}
-                        onSelect={setStreet}
-                        placeholder="Chọn đường"
+                        label="Thành phố"
+                        value={city}
+                        options={provincesList.map(p => p.fullName || p.name) || []}
+                        onSelect={(val) => {
+                            setCity(val);
+                            setWard(""); // Reset ward when city changes
+                        }}
+                        placeholder="Chọn thành phố"
                     />
 
                     <ComboBox
                         label="Phường"
                         value={ward}
-                        options={WARD_OPTIONS}
+                        options={city ? (wardsList.map(w => w.fullName || w.name) || []) : []}
                         onSelect={setWard}
-                        placeholder="Chọn phường"
-                    />
-
-                    <ComboBox
-                        label="Thành phố"
-                        value={city}
-                        options={CITY_OPTIONS}
-                        onSelect={setCity}
-                        placeholder="Chọn thành phố"
+                        placeholder={city ? "Chọn phường" : "Vui lòng chọn thành phố trước"}
+                        disabled={!city}
                     />
 
                     {/* Checkbox for default address */}

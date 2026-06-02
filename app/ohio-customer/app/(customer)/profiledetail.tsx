@@ -19,6 +19,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/services/api";
 import { useAuthStore } from "@/store/authStore";
+import { userService } from "@/services/userService";
 
 export default function ProfileDetail() {
     const router = useRouter();
@@ -31,12 +32,14 @@ export default function ProfileDetail() {
     // Form inputs state
     const [fullName, setFullName] = useState('');
     const [avatarUrl, setAvatarUrl] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
 
     // Sync input states with Zustand user context when loaded
     useEffect(() => {
         if (user) {
-            setFullName(user.name || '');
-            setAvatarUrl(user.avatar_url || '');
+            setFullName(user.fullName || '');
+            setAvatarUrl(user.avatarUrl || '');
+            setPhoneNumber(user.phoneNumber || '');
         }
     }, [user]);
 
@@ -68,24 +71,20 @@ export default function ProfileDetail() {
 
     // Mutation to update profile on backend (PUT /users/{id})
     const updateProfileMutation = useMutation({
-        mutationFn: async () => {
-            const payload = {
+        mutationFn: () => userService.updateProfile(user?.id!,
+            {
                 fullName,
-                avatarUrl
-            };
-            if (userId) {
-                const response = await api.put(`/users/${userId}`, payload);
-                return response.data;
-            }
-            return null;
-        },
+                avatarUrl,
+                phoneNumber
+            }),
         onSuccess: () => {
             // Update the local state in Zustand
             if (user) {
                 setUser({
                     ...user,
-                    name: fullName,
-                    avatar_url: avatarUrl,
+                    fullName: fullName,
+                    avatarUrl: avatarUrl,
+                    phoneNumber: phoneNumber,
                 });
             }
 
@@ -101,8 +100,9 @@ export default function ProfileDetail() {
             if (user) {
                 setUser({
                     ...user,
-                    name: fullName,
-                    avatar_url: avatarUrl,
+                    fullName: fullName,
+                    avatarUrl: avatarUrl,
+                    phoneNumber: phoneNumber,
                 });
             }
             queryClient.invalidateQueries({ queryKey: ['profile', userId] });
@@ -164,6 +164,13 @@ export default function ProfileDetail() {
                         onChangeText={setFullName}
                     />
 
+                    <Text style={styles.text}>Số điện thoại</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Nhập số điện thoại của bạn"
+                        value={phoneNumber}
+                        onChangeText={setPhoneNumber}
+                    />
 
                     {/* Action Button */}
                     <TouchableOpacity

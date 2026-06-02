@@ -1,23 +1,63 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import { SearchBar } from "../../components/ui/SearchBar";
 import { ReturnButton } from "../../components/ui/ReturnButton";
 import { RestaurantCard } from "../../components/features/RestaurantCard";
 import { mock_nearbyrestaurant } from "../../mock/home";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { useQuery } from "@tanstack/react-query";
+import { homeService } from "@/services/catalogService";
+import { useEffect, useState } from "react";
+import { Feather } from "@expo/vector-icons";
 
 
 export default function SearchResult() {
+    const { searchQuery: search } = useLocalSearchParams();
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchFinalQuery, setSearchFinalQuery] = useState('');
     const router = useRouter();
+
+    useEffect(() => {
+        setSearchQuery(search as string);
+        setSearchFinalQuery(search as string);
+    }, []);
+
+    const { data: products, isLoading } = useQuery({
+        queryKey: ['products'],
+        queryFn: homeService.getProducts,
+    });
+
+    const filteredProducts = products?.items?.filter((product) =>
+        product.name?.toLowerCase().includes(searchQuery.toLowerCase())
+    ) || [];
+
+    const filteredMerchants = [...new Set(filteredProducts.map((product) => {
+        return product.merchantId;
+    }))];
+
+
+    const searchHandle = () => {
+        setSearchFinalQuery(searchQuery);
+    }
+
     return (
         <View style={styles.container}>
             <View style={styles.header}>
                 <ReturnButton onpressfunction={router.back} />
-                <SearchBar />
+                <SearchBar value={searchQuery} onChangeText={setSearchQuery} onPressfunction={searchHandle} />
             </View>
             <ScrollView style={styles.body}>
-                <View style={{ gap: 20 }}>
-                    {mock_nearbyrestaurant.map((item, index) => <RestaurantCard key={index} {...item} />)}
-                </View>
+                {isLoading ? (
+                    <ActivityIndicator size="large" color="#EE4D2D" />
+                ) : filteredMerchants.length === 0 ? (
+                    <View style={{ justifyContent: "center", alignItems: "center", gap: 20, paddingTop: 160 }}>
+                        <Feather name="shopping-cart" size={60} color="#9ca3af" />
+                        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#9ca3af" }}>Không có sản phẩm phù hợp</Text>
+                    </View>
+                ) : (
+                    <View style={{ gap: 20 }}>
+                        {filteredMerchants.map((item, index) => <RestaurantCard key={index} id={item} searchQuery={searchQuery} />)}
+                    </View>
+                )}
                 <View style={{ height: 80, width: '100%' }} />
             </ScrollView>
 

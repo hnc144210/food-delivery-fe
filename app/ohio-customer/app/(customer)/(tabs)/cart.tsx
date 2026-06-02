@@ -9,9 +9,10 @@ import {
     RefreshControl
 } from "react-native";
 import { CartCard, OrderCard_ForCustomer } from "@/components/features/OrderCard";
-import { mock_cart_new, mock_odercard_forcustomer } from "@/mock/customer_cart";
+import { mock_cart_new, mock_odercard_forcustomer, mock_order_history_items, mock_order_ongoing_items } from "@/mock/customer_cart";
 import { useQuery } from "@tanstack/react-query";
 import { orderService } from "@/services/orderService";
+import { Feather } from "@expo/vector-icons";
 
 export default function CartScreen() {
     const [cartState, setCartState] = useState(1);
@@ -22,7 +23,14 @@ export default function CartScreen() {
         queryFn: orderService.getCart,
     });
 
+    const { data: orderHistory } = useQuery({
+        queryKey: ['order-history'],
+        queryFn: orderService.getMyOrderHistory,
+    });
+    const ongoingOrders = orderHistory?.items.filter((item) => item.status !== 'DELIVERED' && item.status !== 'CANCELLED') || mock_order_ongoing_items;
+    const historyOrders = orderHistory?.items.filter((item) => item.status === 'DELIVERED' || item.status === 'CANCELLED') || mock_order_history_items;
     const myCarts = carts?.items || mock_cart_new;
+
     return (
         <View style={styles.container}>
             {/* Header */}
@@ -62,8 +70,14 @@ export default function CartScreen() {
                         >
                             <View style={{ gap: 20, paddingBottom: 24 }}>
                                 {myCarts.map((item: any, index: number) => (
-                                    <CartCard key={index} {...item} />
+                                    <CartCard key={index} merchantId={item.merchantId} items={item.items} refetchCart={refetchCart} />
                                 ))}
+                                {myCarts.length === 0 && (
+                                    <View style={{ justifyContent: "center", alignItems: "center", gap: 20, paddingTop: 160 }}>
+                                        <Feather name="shopping-cart" size={60} color="#9ca3af" />
+                                        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#9ca3af" }}>Không có giỏ hàng</Text>
+                                    </View>
+                                )}
                             </View>
                         </ScrollView>
                     )
@@ -73,8 +87,7 @@ export default function CartScreen() {
                 {cartState === 2 && (
                     <ScrollView showsVerticalScrollIndicator={false}>
                         <View style={{ gap: 20, paddingBottom: 24 }}>
-                            {mock_odercard_forcustomer
-                                .filter((item) => item.status === 'PENDING' || item.status === 'CONFIRMED' || item.status === 'PREPARING' || item.status === 'DELIVERING' || item.status === 'READY')
+                            {ongoingOrders
                                 .map((item, index) => (
                                     <OrderCard_ForCustomer key={`mock-ongoing-${index}`} {...item} />
                                 ))
@@ -87,8 +100,7 @@ export default function CartScreen() {
                 {cartState === 3 && (
                     <ScrollView showsVerticalScrollIndicator={false}>
                         <View style={{ gap: 20, paddingBottom: 24 }}>
-                            {mock_odercard_forcustomer
-                                .filter((item) => item.status === 'DELIVERED' || item.status === 'CANCELLED')
+                            {historyOrders
                                 .map((item, index) => (
                                     <OrderCard_ForCustomer key={`history-${index}`} {...item} />
                                 ))

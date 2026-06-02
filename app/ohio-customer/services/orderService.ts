@@ -1,6 +1,8 @@
 import { CartListResponse, CartRequestDto, CartUpdateItemRequestDto } from "@/types/cart";
 import api from "./api";
 import { VoucherListResponse } from "@/types/voucher";
+import { MyOrderResponse, OrderDetailResponse } from "@/types/order";
+import axios from "axios";
 
 export type ApiResponse<T> = {
     ok: true;
@@ -12,69 +14,153 @@ export type ConfirmationResponse = {
 };
 export type ApiConfirmationResponse = ApiResponse<ConfirmationResponse>;
 
+const handleApiError = (error: any, methodName: string) => {
+    if (axios.isAxiosError(error)) {
+        console.error(`[orderService.${methodName}] API Error:`, {
+            url: error.config?.url,
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            responseData: error.response?.data,
+            message: error.message,
+        });
+        const backendMessage = error.response?.data?.message || error.response?.data?.errors?.[0] || error.message;
+        throw new Error(backendMessage);
+    }
+    console.error(`[orderService.${methodName}] Unknown Error:`, error);
+    throw error;
+};
+
 export const orderService = {
     getCart: async (): Promise<CartListResponse['data']> => {
-        const response = await api.get<CartListResponse>('/orders/cart');
-        const resData = response.data;
-        if (!resData.ok) {
-            throw new Error(resData.message);
+        try {
+            const response = await api.get<CartListResponse>('/api/orders/cart');
+            const resData = response.data;
+            if (!resData.ok) {
+                throw new Error(resData.message);
+            }
+            return resData.data;
+        } catch (error) {
+            throw handleApiError(error, 'getCart');
         }
-        return resData.data;
     },
     clearCart: async (): Promise<ApiConfirmationResponse['data']> => {
-        const response = await api.delete<ApiConfirmationResponse>('/orders/cart');
-        const resData = response.data;
-        if (!resData.ok) {
-            throw new Error(resData.message);
+        try {
+            const response = await api.delete<ApiConfirmationResponse>('/api/orders/cart');
+            const resData = response.data;
+            if (!resData.ok) {
+                throw new Error(resData.message);
+            }
+            return resData.data;
+        } catch (error) {
+            throw handleApiError(error, 'clearCart');
         }
-        return resData.data;
     },
     getCartByMerchant: async (merchantId: string): Promise<CartListResponse['data']> => {
-        const response = await api.get<CartListResponse>(`/orders/cart/merchant/${merchantId}`);
-        const resData = response.data;
-        if (!resData.ok) {
-            throw new Error(resData.message);
+        try {
+            const response = await api.get<CartListResponse>(`/api/orders/cart/merchant/${merchantId}`);
+            const resData = response.data;
+            if (!resData.ok) {
+                throw new Error(resData.message);
+            }
+            return resData.data;
+        } catch (error) {
+            throw handleApiError(error, 'getCartByMerchant');
         }
-        return resData.data;
     },
     clearMerchantCart: async (merchantId: string): Promise<ApiConfirmationResponse['data']> => {
-        const response = await api.delete<ApiConfirmationResponse>(`/orders/cart/merchant/${merchantId}`);
-        const resData = response.data;
-        if (!resData.ok) {
-            throw new Error(resData.message);
+        try {
+            const response = await api.delete<ApiConfirmationResponse>(`/api/orders/cart/merchant/${merchantId}`);
+            const resData = response.data;
+            if (!resData.ok) {
+                throw new Error(resData.message);
+            }
+            return resData.data;
+        } catch (error) {
+            throw handleApiError(error, 'clearMerchantCart');
         }
-        return resData.data;
     },
     addItemCart: async (cartItem: CartRequestDto): Promise<ApiConfirmationResponse['data']> => {
-        const response = await api.post<ApiConfirmationResponse>('/orders/cart/items', cartItem);
-        const resData = response.data;
-        if (!resData.ok) {
-            throw new Error(resData.message);
+        try {
+            const response = await api.post<ApiConfirmationResponse>('/api/orders/cart/items', cartItem);
+            const resData = response.data;
+            if (!resData.ok) {
+                throw new Error(resData.message);
+            }
+            return resData.data;
+        } catch (error) {
+            throw handleApiError(error, 'addItemCart');
         }
-        return resData.data;
     },
     updateItemCart: async (cartItemId: string, cartItem: CartUpdateItemRequestDto): Promise<ApiConfirmationResponse['data']> => {
-        const response = await api.patch<ApiConfirmationResponse>(`/orders/cart/items/${cartItemId}`, cartItem);
-        const resData = response.data;
-        if (!resData.ok) {
-            throw new Error(resData.message);
+        try {
+            const response = await api.patch<ApiConfirmationResponse>(`/api/orders/cart/items/${cartItemId}`, cartItem);
+            const resData = response.data;
+            if (!resData.ok) {
+                throw new Error(resData.message);
+            }
+            return resData.data;
+        } catch (error) {
+            throw handleApiError(error, 'updateItemCart');
         }
-        return resData.data;
     },
     removeItemCart: async (cartItemId: string): Promise<ApiConfirmationResponse['data']> => {
-        const response = await api.delete<ApiConfirmationResponse>(`/orders/cart/items/${cartItemId}`);
-        const resData = response.data;
-        if (!resData.ok) {
-            throw new Error(resData.message);
+        try {
+            const response = await api.delete<ApiConfirmationResponse>(`/api/orders/cart/items/${cartItemId}`);
+            const resData = response.data;
+            if (!resData.ok) {
+                throw new Error(resData.message);
+            }
+            return resData.data;
+        } catch (error) {
+            throw handleApiError(error, 'removeItemCart');
         }
-        return resData.data;
+    },
+    removeCartByMerchant: async (merchantId: string): Promise<ApiConfirmationResponse['data']> => {
+        try {
+            const response = await api.delete<ApiConfirmationResponse>(`/api/orders/cart/merchant/${merchantId}`);
+            const resData = response.data;
+            if (!resData.ok) {
+                throw new Error(resData.message);
+            }
+            return resData.data;
+        } catch (error) {
+            throw handleApiError(error, 'removeCartByMerchant');
+        }
     },
     getVouchers: async (): Promise<VoucherListResponse['data']> => {
-        const response = await api.get<VoucherListResponse>('/orders/vouchers');
-        const resData = response.data;
-        if (!resData.ok) {
-            throw new Error(resData.message);
+        try {
+            const response = await api.get<VoucherListResponse>('/api/orders/vouchers');
+            const resData = response.data;
+            if (!resData.ok) {
+                throw new Error(resData.message);
+            }
+            return resData.data;
+        } catch (error) {
+            throw handleApiError(error, 'getVouchers');
         }
-        return resData.data;
     },
+    getMyOrderHistory: async (): Promise<MyOrderResponse['data']> => {
+        try {
+            const response = await api.get<MyOrderResponse>('/api/orders');
+            const resData = response.data;
+            if (!resData.ok) {
+                throw new Error(resData.message);
+            }
+            return resData.data;
+        } catch (error) {
+            throw handleApiError(error, 'getMyOrderHistory');
+        }
+    },
+    getOrderDetail: async (orderId: string): Promise<OrderDetailResponse['data']> => {
+        try {
+            const response = await api.get<OrderDetailResponse>(`/api/orders/${orderId}`);
+            const resData = response.data;
+            if (!resData.ok) {
+                throw new Error(resData.message);
+            }
+            return resData.data;
+        } catch (error) {
+            throw handleApiError(error, 'getOrderDetail');
+        }
+    }
 };

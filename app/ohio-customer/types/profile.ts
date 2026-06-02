@@ -1,14 +1,16 @@
 import { ApiResponse } from "@/services/userService";
 
 export type UpdateUserProfileRequestDto = {
-    FullName: string;
-    AvatarUrl: string;
+    fullName: string;
+    avatarUrl: string;
+    phoneNumber: string;
 }
 export type UserProfileResponseDto = {
-    Id: string;
-    FullName: string;
-    AvatarUrl: string;
-    Status: string;
+    id: string;
+    fullName: string;
+    avatarUrl: string;
+    phoneNumber: string;
+    status: string;
 }
 export type MerchantProfileResponseDto = {
     id: string;
@@ -27,6 +29,24 @@ export type MerchantProfileResponseDto = {
     status: string;
     createdAt: string;
     updatedAt: string | null;
+}
+export type ShipperProfileRequest = {
+    dateOfBirth: string
+    fullName: string
+    idCardBackUrl: string
+    idCardFrontUrl: string
+    idNumber: string
+    licenseBackUrl: string
+    licenseFrontUrl: string
+    licenseNumber: string
+    selfieUrl: string
+}
+export type MerchantProfileRequest = {
+    storeName: string;
+    storeDescription: string;
+    businessLicense: string;
+    businessLicenseUrl: string;
+    taxId: string;
 }
 export type UserProfileResponse = ApiResponse<UserProfileResponseDto>;
 export type MerchantProfileResponse = ApiResponse<MerchantProfileResponseDto>;
