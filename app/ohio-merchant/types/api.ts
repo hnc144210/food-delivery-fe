@@ -1,3 +1,29 @@
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ForgotPasswordResponse {
+  message: string;
+  expiresInSeconds: string;
+}
+
+export interface VerifyResetOtpRequest {
+  email: string;
+  otp: string;
+}
+
+export interface VerifyResetOtpResponse {
+  message: string;
+  resetToken: string;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  resetToken: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 export interface ApiResponse<T> {
   statusCode: string | number;
   success: boolean;
@@ -77,6 +103,7 @@ export interface RegisterRequest {
   email: string;
   password: string;
   fullName: string;
+  phoneNumber: string;
 }
 
 export interface RegisterResponseData {

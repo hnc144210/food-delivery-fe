@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { menuService } from "@/services/menuService";
 import type { CatalogListParams, ProductPayload } from "@/types/api";
 import { useAuthStore } from "@/store/authStore";
+import { useMerchantStore } from "@/store/merchantStore";
 
 const LIST_STALE_TIME = 30 * 1000;
 
@@ -32,27 +33,26 @@ export function useProduct(id: string) {
 
 export function useCreateProduct() {
   const qc = useQueryClient();
-  const userId = useAuthStore((state) => state.user?.id);
-  console.log('useCreateProduct - userId:', userId);
+  const merchantId = useMerchantStore((s) => s.merchant?.id);
 
   return useMutation({
     mutationFn: (body: Omit<ProductPayload, 'merchantId'>) =>
-      menuService.createProduct({ ...body, merchantId: userId ?? '' }),
+      menuService.createProduct({ ...body, merchantId: merchantId ?? '' }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: ['products'] });
     },
   });
 }
 
 export function useUpdateProduct() {
   const qc = useQueryClient();
-  const userId = useAuthStore((state) => state.user?.id);
-    
+  const merchantId = useMerchantStore((s) => s.merchant?.id);
+
   return useMutation({
     mutationFn: ({ id, body }: { id: string; body: Omit<ProductPayload, 'merchantId'> }) =>
-      menuService.updateProduct(id, { ...body, merchantId: userId ?? '' }),
+      menuService.updateProduct(id, { ...body, merchantId: merchantId ?? '' }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: ['products'] });
     },
   });
 }

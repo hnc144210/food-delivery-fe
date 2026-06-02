@@ -21,10 +21,14 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       accessToken: null,
       refreshToken: null,
-      setAuth: ({ user, accessToken, refreshToken }) =>
-        set({ user, accessToken, refreshToken }),
-      clearAuth: () =>
-        set({ user: null, accessToken: null, refreshToken: null }),
+      setAuth: ({ user, accessToken, refreshToken }) => {
+        console.log("AUTH STORE SET", user.id);
+        set({ user, accessToken, refreshToken });
+      },
+      clearAuth: () => {
+        console.log("AUTH STORE CLEAR CALLED");
+        set({ user: null, accessToken: null, refreshToken: null });
+      },
     }),
     {
       name: 'ohio_merchant_auth',

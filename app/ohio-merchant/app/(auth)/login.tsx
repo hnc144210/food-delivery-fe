@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Image } from "react-native";
 import { router } from "expo-router";
 import { useLogin } from "@/hooks/useAuth";
-import { getApiErrorMessage } from "@/services/api";
+import { getApiErrorMessage } from "@/lib/api";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";

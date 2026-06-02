@@ -1,7 +1,7 @@
 // app/(auth)/otp.tsx
 import { useRef, useState, useEffect } from "react";
 import { router, useLocalSearchParams } from "expo-router";
-import { useResendOtp, useVerifyOtp } from "@/hooks/useAuth";
+import { useResendOtp, useVerifyOtp, useVerifyResetOtp } from "@/hooks/useAuth";
 import { getApiErrorMessage } from "@/lib/api";
 import {
   View,
@@ -17,7 +17,7 @@ import {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const OTP_LENGTH = 4;
+const OTP_LENGTH = 6;
 const RESEND_COUNTDOWN_SECONDS = 50;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -85,34 +85,48 @@ function ResendButton({ countdown, isPending, onResend }: ResendButtonProps) {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function OtpScreen() {
-  const { email } = useLocalSearchParams<{ email: string }>();
+  const { email, mode } = useLocalSearchParams<{
+    email: string;
+    mode?: string;
+  }>();
+  const isResetMode = mode === "reset";
+
   const [digits, setDigits] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [countdown, setCountdown] = useState(RESEND_COUNTDOWN_SECONDS);
   const [serverError, setServerError] = useState("");
 
-  const inputRefs = Array.from({ length: OTP_LENGTH }, () =>
-    useRef<TextInput>(null),
-  );
+  const inputRef0 = useRef<TextInput>(null);
+  const inputRef1 = useRef<TextInput>(null);
+  const inputRef2 = useRef<TextInput>(null);
+  const inputRef3 = useRef<TextInput>(null);
+  const inputRef4 = useRef<TextInput>(null);
+  const inputRef5 = useRef<TextInput>(null);
+  const inputRefs = [
+    inputRef0,
+    inputRef1,
+    inputRef2,
+    inputRef3,
+    inputRef4,
+    inputRef5,
+  ];
 
   useEffect(() => {
     if (countdown === 0) return;
-    const timer = setInterval(() => {
-      setCountdown((prev) => prev - 1);
-    }, 1000);
+    const timer = setInterval(() => setCountdown((prev) => prev - 1), 1000);
     return () => clearInterval(timer);
   }, [countdown]);
 
   const verifyMutation = useVerifyOtp();
+  const verifyResetMutation = useVerifyResetOtp();
   const resendMutation = useResendOtp();
+
+  const isPending = verifyMutation.isPending || verifyResetMutation.isPending;
 
   function handleChangeDigit(value: string, index: number) {
     const newDigits = [...digits];
     newDigits[index] = value;
     setDigits(newDigits);
-
-    if (value && index < OTP_LENGTH - 1) {
-      inputRefs[index + 1].current?.focus();
-    }
+    if (value && index < OTP_LENGTH - 1) inputRefs[index + 1].current?.focus();
   }
 
   function handleKeyPress(
@@ -131,13 +145,28 @@ export default function OtpScreen() {
       setServerError("Vui lòng nhập đủ mã OTP");
       return;
     }
-    verifyMutation.mutate(
-      { email, otp: code },
-      {
-        onSuccess: () => router.replace({ pathname: "/(auth)/login" }),
-        onError: (error) => setServerError(getApiErrorMessage(error)),
-      },
-    );
+
+    if (isResetMode) {
+      verifyResetMutation.mutate(
+        { email, otp: code },
+        {
+          onSuccess: (data) =>
+            router.push({
+              pathname: "/(auth)/create-password",
+              params: { email, resetToken: data.resetToken },
+            }),
+          onError: (error) => setServerError(getApiErrorMessage(error)),
+        },
+      );
+    } else {
+      verifyMutation.mutate(
+        { email, otp: code },
+        {
+          onSuccess: () => router.replace({ pathname: "/(auth)/login" }),
+          onError: (error) => setServerError(getApiErrorMessage(error)),
+        },
+      );
+    }
   }
 
   return (
@@ -147,24 +176,19 @@ export default function OtpScreen() {
         style={styles.logo}
         resizeMode="contain"
       />
-
       <Text style={styles.title}>Verification</Text>
       <Text style={styles.subtitle}>
         We have sent a code to your email{"\n"}
         <Text style={styles.emailText}>{email}</Text>
       </Text>
-
       <Text style={styles.codeLabel}>CODE</Text>
-
       <OtpInput
         digits={digits}
         inputRefs={inputRefs}
         onChangeDigit={handleChangeDigit}
         onKeyPress={handleKeyPress}
       />
-
       {serverError ? <Text style={styles.errorText}>{serverError}</Text> : null}
-
       <ResendButton
         countdown={countdown}
         isPending={resendMutation.isPending}
@@ -175,24 +199,20 @@ export default function OtpScreen() {
               onSuccess: () => {
                 setCountdown(RESEND_COUNTDOWN_SECONDS);
                 setDigits(Array(OTP_LENGTH).fill(""));
-                setServerError("Vui lòng nhập đủ mã OTP");
+                setServerError("");
               },
               onError: (error) => setServerError(getApiErrorMessage(error)),
             },
           )
         }
       />
-
       <TouchableOpacity
-        style={[
-          styles.button,
-          verifyMutation.isPending && styles.buttonDisabled,
-        ]}
+        style={[styles.button, isPending && styles.buttonDisabled]}
         onPress={handlePressVerify}
-        disabled={verifyMutation.isPending}
+        disabled={isPending}
         activeOpacity={0.85}
       >
-        {verifyMutation.isPending ? (
+        {isPending ? (
           <ActivityIndicator color="#fff" />
         ) : (
           <Text style={styles.buttonText}>Verify</Text>

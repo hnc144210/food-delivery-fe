@@ -16,7 +16,8 @@ import {
 } from "@/hooks/useMerchantOrders";
 import type { Order, OrderStatus } from "@/types/api";
 import type { MerchantOrder, MerchantOrderStatus } from "@/mock/merchant";
-
+import { useToggleStoreOpen } from "@/hooks/useMerchantProfile";
+import { useEffect } from "react";
 const ORANGE = "#E8441A";
 const CREAM = "#FEF3E8";
 
@@ -62,7 +63,11 @@ function mapOrder(order: Order): MerchantOrder {
 }
 
 export default function MerchantOrdersScreen() {
-  const { isOpen, setIsOpen } = useMerchantStore();
+  useEffect(() => {
+    console.log("ORDERS SCREEN MOUNTED");
+  }, []);
+  const { merchant } = useMerchantStore();
+  const { isOpen, toggle } = useToggleStoreOpen();
   const [activeTab, setActiveTab] = useState<MerchantOrderStatus>("new");
 
   const activeApiStatus = TABS.find((tab) => tab.key === activeTab)?.apiStatus;
@@ -100,7 +105,9 @@ export default function MerchantOrdersScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.shopName}>Kinetic Kitchen</Text>
+          <Text style={styles.shopName}>
+            {merchant?.storeName ?? "Kinetic Kitchen"}
+          </Text>
           <Text style={styles.shopSub}>Orders Dashboard</Text>
         </View>
         <View style={styles.toggleWrapper}>
@@ -111,7 +118,7 @@ export default function MerchantOrdersScreen() {
           </Text>
           <Switch
             value={isOpen}
-            onValueChange={setIsOpen}
+            onValueChange={toggle}
             trackColor={{ false: "#DDD", true: ORANGE }}
             thumbColor="#fff"
           />

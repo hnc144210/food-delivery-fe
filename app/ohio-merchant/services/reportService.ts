@@ -1,4 +1,4 @@
-import { reportsApi, extractData } from '@/services/api';
+import { reportsApi, extractData } from '@/lib/api';
 import type { ApiResponse, DateRangeParams, ReportOverview, ReportTopProducts } from '@/types/api';
 
 function unwrap<T>(raw: ApiResponse<T> | T): T {

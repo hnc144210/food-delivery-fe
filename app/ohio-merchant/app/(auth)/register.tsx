@@ -25,6 +25,7 @@ import {
 const registerSchema = z.object({
   fullName: z.string().min(1, "Họ tên không được để trống"),
   email: z.string().email("Email không hợp lệ"),
+  phoneNumber: z.string().min(9, "Số điện thoại không hợp lệ"),
   password: z
     .string()
     .min(6, "Mật khẩu phải có ít nhất 6 ký tự")
@@ -58,7 +59,7 @@ export default function RegisterScreen() {
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { fullName: "", email: "", password: "" },
+    defaultValues: { fullName: "", email: "", phoneNumber: "", password: "" },
   });
 
   const registerMutation = useRegister();
@@ -134,7 +135,27 @@ export default function RegisterScreen() {
             <Text style={styles.errorText}>{errors.email.message}</Text>
           )}
         </View>
-
+        {/* Phone */}
+        <View style={styles.fieldWrapper}>
+          <Text style={styles.label}>PHONE NUMBER</Text>
+          <Controller
+            control={control}
+            name="phoneNumber"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                style={[styles.input, errors.phoneNumber && styles.inputError]}
+                placeholder="0901234567"
+                keyboardType="phone-pad"
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value}
+              />
+            )}
+          />
+          {errors.phoneNumber && (
+            <Text style={styles.errorText}>{errors.phoneNumber.message}</Text>
+          )}
+        </View>
         {/* Password */}
         <View style={styles.fieldWrapper}>
           <Text style={styles.label}>PASSWORD</Text>

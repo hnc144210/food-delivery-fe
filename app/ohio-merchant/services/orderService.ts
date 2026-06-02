@@ -1,4 +1,4 @@
-import { extractData, ordersApi } from "@/services/api";
+import { extractData, ordersApi } from "@/lib/api";
 import type { Order, OrderStatus, PaginatedResponse } from "@/types/api";
 
 export interface MerchantOrderListParams {

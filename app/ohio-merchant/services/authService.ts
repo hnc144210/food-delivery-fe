@@ -10,6 +10,11 @@ import type {
   ResendOtpRequest,
   ResendOtpResponse,
   VerifyOtpRequest,
+  ForgotPasswordRequest,
+  ForgotPasswordResponse,
+  VerifyResetOtpRequest,
+  VerifyResetOtpResponse,
+  ResetPasswordRequest,
 } from '@/types/api';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
@@ -77,6 +82,20 @@ export const authService = {
 
   async changePassword(body: ChangePasswordRequest): Promise<MessageResponse> {
     const response = await authApi.post('/api/Auth/change-password', body);
+    return extractData<MessageResponse>(response);
+  },
+  async forgotPassword(body: ForgotPasswordRequest): Promise<ForgotPasswordResponse> {
+    const response = await authApi.post('/api/Auth/forgot-password', body);
+    return extractData<ForgotPasswordResponse>(response);
+  },
+
+  async verifyResetOtp(body: VerifyResetOtpRequest): Promise<VerifyResetOtpResponse> {
+    const response = await authApi.post('/api/Auth/verify-reset-otp', body);
+    return extractData<VerifyResetOtpResponse>(response);
+  },
+
+  async resetPassword(body: ResetPasswordRequest): Promise<MessageResponse> {
+    const response = await authApi.post('/api/Auth/reset-password', body);
     return extractData<MessageResponse>(response);
   },
 };

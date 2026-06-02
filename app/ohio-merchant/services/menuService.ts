@@ -1,4 +1,4 @@
-import { catalogApi, extractData } from "@/services/api";
+import { catalogApi, extractData } from "@/lib/api";
 import type {
   CatalogCategory,
   CatalogListParams,

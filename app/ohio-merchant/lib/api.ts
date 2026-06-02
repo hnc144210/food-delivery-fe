@@ -1,71 +1,83 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { router } from 'expo-router';
 import type { ApiResponse, AuthTokenResponse } from '@/types/api';
 
-const AUTH_BASE_URL = 'http://192.168.48.47:8081';
-const USER_BASE_URL = 'http://192.168.48.47:8082';
+const BASE_URLS = {
+  auth: 'http://192.168.48.47:8081',
+  user: 'http://192.168.48.47:8082',
+  delivery: 'http://192.168.48.47:8084',
+  catalog: 'http://192.168.48.47:8085',
+  orders: 'http://192.168.48.47:8086',
+  reports: 'http://192.168.48.47:8088',
+  wallets: 'http://192.168.48.47:8089',
+};
 
 type RetryConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 
 let refreshPromise: Promise<AuthTokenResponse> | null = null;
 
-export const authApi = axios.create({ baseURL: AUTH_BASE_URL, timeout: 20000 });
-export const userApi = axios.create({ baseURL: USER_BASE_URL, timeout: 20000 });
+function createApi(baseURL: string): AxiosInstance {
+  const instance = axios.create({ baseURL, timeout: 20000 });
 
-const clients = [authApi, userApi];
-
-clients.forEach((client) => {
-  client.interceptors.request.use(async (config) => {
+  instance.interceptors.request.use(async (config) => {
     const token = await AsyncStorage.getItem('access_token');
-
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
+    console.log('REQUEST:', config.url, 'token:', token?.slice(-10));
+    if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   });
 
-  client.interceptors.response.use(
+  instance.interceptors.response.use(
     (response) => response,
     async (error: AxiosError<ApiResponse<unknown>>) => {
-      const originalRequest = error.config as RetryConfig | undefined;
+      console.log('RESPONSE ERROR:', error.response?.status, error.config?.url);
+      const original = error.config as RetryConfig | undefined;
 
-      if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
-        originalRequest._retry = true;
+      if (error.response?.status === 401 && original && !original._retry) {
+        original._retry = true;
 
         try {
-          refreshPromise ??= refreshToken();
+          refreshPromise ??= refreshAccessToken();
           const tokens = await refreshPromise;
           refreshPromise = null;
 
-          originalRequest.headers.Authorization = `Bearer ${tokens.accessToken}`;
-          return client(originalRequest);
+          original.headers.Authorization = `Bearer ${tokens.accessToken}`;
+          return instance(original);
         } catch (refreshError) {
-          refreshPromise = null;
-          await AsyncStorage.multiRemove(['access_token', 'refresh_token']);
-          router.replace('/(auth)/login');
-          return Promise.reject(refreshError);
-        }
+            console.log('REFRESH FAILED, redirecting to login', refreshError);
+            refreshPromise = null;
+            await AsyncStorage.multiRemove(['access_token', 'refresh_token']);
+            router.replace('/(auth)/login');
+            return Promise.reject(refreshError);
+          }
       }
 
       return Promise.reject(toApiError(error));
     }
   );
-});
 
-async function refreshToken(): Promise<AuthTokenResponse> {
+  return instance;
+}
+
+async function refreshAccessToken(): Promise<AuthTokenResponse> {
   const refreshTokenValue = await AsyncStorage.getItem('refresh_token');
+  const deviceId = await AsyncStorage.getItem('device_id');
+  
+  console.log('REFRESH ATTEMPT, token:', refreshTokenValue?.slice(0, 10));
+  if (!refreshTokenValue) throw new Error('Phiên đăng nhập đã hết hạn');
 
-  if (!refreshTokenValue) {
-    throw new Error('Phiên đăng nhập đã hết hạn');
-  }
+  const response = await axios.post<ApiResponse<AuthTokenResponse>>(
+    `${BASE_URLS.auth}/api/Auth/refresh-token`,
+    { refreshToken: refreshTokenValue },
+    {
+      headers: {
+        'X-Device-Id': deviceId ?? 'unknown',
+      },
+    }
+  );
 
-  const response = await authApi.post<ApiResponse<AuthTokenResponse>>('/api/Auth/refresh-token', {
-    refreshToken: refreshTokenValue,
-  });
-
-  const data = extractData<AuthTokenResponse>(response);
+  const data = response.data.data;
+  if (!data) throw new Error(response.data.errors?.[0] ?? 'Refresh token failed');
 
   await AsyncStorage.multiSet([
     ['access_token', data.accessToken],
@@ -76,11 +88,14 @@ async function refreshToken(): Promise<AuthTokenResponse> {
 }
 
 export function extractData<T>(response: AxiosResponse<ApiResponse<T>>): T {
-  if (!response.data.success || response.data.data === null) {
-    throw new Error(response.data.errors[0] ?? 'Request failed');
+  const d = response.data as any;
+  const success = d.success ?? d.ok;
+
+  if (!success || d.data === null) {
+    throw new Error(d.errors?.[0] ?? d.message ?? 'Request failed');
   }
 
-  return response.data.data;
+  return d.data;
 }
 
 export function getApiErrorMessage(error: unknown): string {
@@ -97,3 +112,11 @@ function toApiError(error: AxiosError<ApiResponse<unknown>>): Error {
 
   return new Error(message);
 }
+
+export const authApi = createApi(BASE_URLS.auth);
+export const userApi = createApi(BASE_URLS.user);
+export const deliveryApi = createApi(BASE_URLS.delivery);
+export const catalogApi = createApi(BASE_URLS.catalog);
+export const ordersApi = createApi(BASE_URLS.orders);
+export const reportsApi = createApi(BASE_URLS.reports);
+export const walletsApi = createApi(BASE_URLS.wallets);
