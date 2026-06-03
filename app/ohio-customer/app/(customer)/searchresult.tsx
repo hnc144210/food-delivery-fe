@@ -13,13 +13,13 @@ import { Feather } from "@expo/vector-icons";
 export default function SearchResult() {
     const { searchQuery: search } = useLocalSearchParams();
     const [searchQuery, setSearchQuery] = useState('');
-    const [searchFinalQuery, setSearchFinalQuery] = useState('');
+    const [searchFinalQuery, setSearchFinalQuery] = useState((search as string) || '');
     const router = useRouter();
 
     useEffect(() => {
         setSearchQuery(search as string);
         setSearchFinalQuery(search as string);
-    }, []);
+    }, [search]);
 
     const { data: products, isLoading } = useQuery({
         queryKey: ['products'],
@@ -27,7 +27,7 @@ export default function SearchResult() {
     });
 
     const filteredProducts = products?.items?.filter((product) =>
-        product.name?.toLowerCase().includes(searchQuery.toLowerCase())
+        product.name?.toLowerCase().includes(searchFinalQuery.toLowerCase())
     ) || [];
 
     const filteredMerchants = [...new Set(filteredProducts.map((product) => {
@@ -43,7 +43,7 @@ export default function SearchResult() {
         <View style={styles.container}>
             <View style={styles.header}>
                 <ReturnButton onpressfunction={router.back} />
-                <SearchBar value={searchQuery} onChangeText={setSearchQuery} onPressfunction={searchHandle} />
+                <SearchBar value={searchQuery} onChangeText={setSearchQuery} onSubmit={searchHandle} />
             </View>
             <ScrollView style={styles.body}>
                 {isLoading ? (
@@ -55,7 +55,7 @@ export default function SearchResult() {
                     </View>
                 ) : (
                     <View style={{ gap: 20 }}>
-                        {filteredMerchants.map((item, index) => <RestaurantCard key={index} id={item} searchQuery={searchQuery} />)}
+                        {filteredMerchants.map((item, index) => <RestaurantCard key={index} id={item} searchQuery={searchFinalQuery} />)}
                     </View>
                 )}
                 <View style={{ height: 80, width: '100%' }} />

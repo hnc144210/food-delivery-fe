@@ -5,12 +5,19 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { useRouter } from "expo-router";
 import { useAuthStore } from "@/store/authStore";
+import { useQuery } from "@tanstack/react-query";
+import { fileService } from "@/services/fileService";
 
 
 export default function ProfilePage() {
     const router = useRouter();
     const user = useAuthStore((s) => s.user);
     const clearUser = useAuthStore((s) => s.clearUser);
+    const { data: readUrlResponse } = useQuery({
+        queryKey: ['read-url'],
+        queryFn: () => fileService.getReadUrl(user?.avatarFileKey || ''),
+        enabled: !!user?.avatarFileKey
+    })
     const handleLogout = () => {
         clearUser();
         router.replace('/login');
@@ -18,8 +25,8 @@ export default function ProfilePage() {
     return (
         <View style={styles.container}>
             <View style={styles.profile}>
-                <Image source={{ uri: 'https://wqtjigusdqbtcmdykboy.supabase.co/storage/v1/object/public/photos/aya.jpg' }} style={{ width: 100, height: 100, borderRadius: 10, borderColor: '#ee4d2d41', borderWidth: 3 }} />
-                <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{user?.name}</Text>
+                <Image source={{ uri: readUrlResponse?.readUrl || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png' }} style={{ width: 100, height: 100, borderRadius: 10, borderColor: '#ee4d2d41', borderWidth: 3 }} />
+                <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{user?.fullName}</Text>
                 <TouchableOpacity style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: '#ee4d2d1c', padding: 5, paddingHorizontal: 10, borderRadius: 90 }} onPress={() => router.push('/profiledetail')}>
                     <EvilIcons name="pencil" size={20} color="#EE4D2D" />
                     <Text style={{ color: '#EE4D2D' }}>Chỉnh sửa hồ sơ</Text>

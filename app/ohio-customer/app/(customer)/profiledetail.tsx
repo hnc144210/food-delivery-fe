@@ -9,7 +9,8 @@ import {
     TouchableWithoutFeedback,
     Keyboard,
     ScrollView,
-    ActivityIndicator
+    ActivityIndicator,
+    Alert
 } from "react-native";
 import { ReturnButton } from "../../components/ui/ReturnButton";
 import { useRouter } from "expo-router";
@@ -20,6 +21,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/services/api";
 import { useAuthStore } from "@/store/authStore";
 import { userService } from "@/services/userService";
+import { fileService } from "@/services/fileService";
 
 export default function ProfileDetail() {
     const router = useRouter();
@@ -111,12 +113,37 @@ export default function ProfileDetail() {
         }
     });
 
-    const handleSave = () => {
-        if (!fullName.trim()) {
-            alert("Tên đầy đủ không được để trống!");
+    const handleSave = async () => {
+        if (!fullName.trim() || !phoneNumber.trim()) {
+            alert("Thông tin không được để trống!");
             return;
         }
-        updateProfileMutation.mutate();
+        if (avatarUrl === user?.avatarUrl) {
+            updateProfileMutation.mutate();
+            return;
+        }
+        try {
+            const fileName = avatarUrl.split('/').pop() || "image.jpg";
+            const fileExtension = fileName.split('.').pop()?.toLowerCase();
+            const contentType = fileExtension === 'png' ? 'image/png' : 'image/jpeg';
+
+            const uploadUrlResponse = await fileService.getUploadUrl(fileName, contentType);
+            const { uploadUrl, fileKey } = uploadUrlResponse;
+
+            await fileService.uploadFile(uploadUrl, avatarUrl, contentType);
+
+            const readUrlResponse = await fileService.getReadUrl(fileKey);
+            const { readUrl } = readUrlResponse;
+            console.log('Read URL:', readUrl);
+
+            setAvatarUrl(readUrl);
+
+            await updateProfileMutation.mutateAsync();
+
+        } catch (error) {
+            console.error("Lỗi trong quá trình xử lý:", error);
+            Alert.alert('Lỗi', (error as Error).message || "Có lỗi xảy ra, vui lòng thử lại.");
+        }
     };
 
     return (

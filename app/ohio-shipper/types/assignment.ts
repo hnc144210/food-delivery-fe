@@ -64,7 +64,7 @@ export type ShipperOfferDto = {
 export type UpdateDeliveryStatusRequestDto = {
     note: string | null;
     proofFileKey: string | null;
-    status: 'Pending' | 'Assigned' | 'PickingUp' | 'PickedUp' | 'Delivering' | 'Delivered' | 'Failed';
+    status: 'Pending' | 'Assigned' | 'PickingUp' | 'PickedUp' | 'Delivering' | 'Delivered' | 'Failed' | "Completed";
 }
 
 export type ToggleOnlineRequestDto = {

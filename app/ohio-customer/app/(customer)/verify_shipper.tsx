@@ -1,4 +1,4 @@
-import { KeyboardAvoidingView, Platform, View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from "react-native";
+import { KeyboardAvoidingView, Platform, View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert } from "react-native";
 import { ReturnButton } from "../../components/ui/ReturnButton";
 import { useRouter } from "expo-router";
 import * as ImagePicker from 'expo-image-picker';
@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { ShipperProfileRequest } from "@/types/profile";
 import { userService } from "@/services/userService";
+import { fileService } from "@/services/fileService";
 
 export default function VerifyShipper() {
     const [frontImage, setFrontImage] = useState<string | null>(null);
@@ -19,9 +20,10 @@ export default function VerifyShipper() {
     const [licenseNumber, setLicenseNumber] = useState("");
     const [fullName, setFullName] = useState("");
     const [dob, setDob] = useState("");
+    const [submitting, setSubmitting] = useState(false);
 
     const router = useRouter();
-    const handleTakePhoto = async (type: "front" | "back" | "selfie") => {
+    const handleTakePhoto = async (type: "front" | "back" | "selfie" | "frontLicense" | "backLicense") => {
         try {
             const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
 
@@ -45,6 +47,10 @@ export default function VerifyShipper() {
                     setBackImage(imageUri);
                 } else if (type === "selfie") {
                     setSelfie(imageUri);
+                } else if (type === "frontLicense") {
+                    setFrontLicenseImage(imageUri);
+                } else if (type === "backLicense") {
+                    setBackLicenseImage(imageUri);
                 }
             }
         } catch (error) {
@@ -52,7 +58,7 @@ export default function VerifyShipper() {
         }
     };
 
-    const handleChooseFromLibrary = async (type: "front" | "back" | "selfie") => {
+    const handleChooseFromLibrary = async (type: "front" | "back" | "selfie" | "frontLicense" | "backLicense") => {
         try {
             const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -77,26 +83,32 @@ export default function VerifyShipper() {
                     setBackImage(imageUri);
                 } else if (type === "selfie") {
                     setSelfie(imageUri);
+                } else if (type === "frontLicense") {
+                    setFrontLicenseImage(imageUri);
+                } else if (type === "backLicense") {
+                    setBackLicenseImage(imageUri);
                 }
             }
         } catch (error) {
             console.error('Error choosing from library:', error);
+            Alert.alert('Lỗi', 'Không thể chọn ảnh từ thư viện');
         }
     };
 
     const registerForShipping = useMutation({
-        mutationFn: () => userService.registerForShipping({
-            dateOfBirth: dob,
-            fullName: fullName,
-            idCardBackUrl: backImage!,
-            idCardFrontUrl: frontImage!,
-            idNumber: citizenId,
-            licenseBackUrl: backLicenseImage!,
-            licenseFrontUrl: frontLicenseImage!,
-            licenseNumber: licenseNumber,
-            selfieUrl: selfie!,
+        mutationFn: ({ dateOfBirth, fullName, idCardBackUrl, idCardFrontUrl, idNumber, licenseBackUrl, licenseFrontUrl, licenseNumber, selfieUrl }: ShipperProfileRequest) => userService.registerForShipping({
+            dateOfBirth,
+            fullName,
+            idCardBackUrl,
+            idCardFrontUrl,
+            idNumber,
+            licenseBackUrl,
+            licenseFrontUrl,
+            licenseNumber,
+            selfieUrl,
         }),
         onSuccess: () => {
+            Alert.alert("Thành công", "Đăng ký giao hàng thành công");
             router.back();
         },
         onError: (error: any) => {
@@ -104,9 +116,72 @@ export default function VerifyShipper() {
         },
     });
 
+    const getReadUrl = async (url: string) => {
+        const fileName = url.split('/').pop() || "image.jpg";
+        const fileExtension = fileName.split('.').pop()?.toLowerCase();
+        const contentType = fileExtension === 'png' ? 'image/png' : 'image/jpeg';
+        console.log("url: ", url);
+        console.log("fileName: ", fileName);
+        console.log("contentType: ", contentType);
+        const uploadUrlResponse = await fileService.getUploadUrl(fileName, contentType);
+        const { uploadUrl, fileKey } = uploadUrlResponse;
+        console.log("uploadUrl: ", uploadUrl);
+        console.log("fileKey: ", fileKey);
+
+        await fileService.uploadFile(uploadUrl, url, contentType);
+
+        const readUrlResponse = await fileService.getReadUrl(fileKey);
+        const { readUrl } = readUrlResponse;
+        console.log("readUrl: ", readUrl);
+        return readUrl;
+    }
+
     const handleSubmit = async () => {
-        registerForShipping.mutate();
-    };
+        const dobTrimmed = dob.trim();
+        const dobRegex = /^\d{1,2}\/\d{1,2}\/\d{4}$/;
+        if (!dobRegex.test(dobTrimmed)) {
+            Alert.alert("Lỗi", "Ngày sinh phải đúng định dạng dd/MM/yyyy (ví dụ: 25/12/1995)");
+            return;
+        }
+
+        setSubmitting(true);
+        try {
+            const parts = dobTrimmed.split('/');
+            const day = parts[0].padStart(2, '0');
+            const month = parts[1].padStart(2, '0');
+            const year = parts[2];
+            const formattedDob = `${year}-${month}-${day}T00:00:00.000Z`;
+            console.log("frontImage: ", frontImage);
+            console.log("backImage: ", backImage);
+            console.log("frontLicenseImage: ", frontLicenseImage);
+            console.log("backLicenseImage: ", backLicenseImage);
+            console.log("selfie: ", selfie);
+
+            const readUrl1 = await getReadUrl(frontImage!);
+            const readUrl2 = await getReadUrl(backImage!);
+            const readUrl3 = await getReadUrl(frontLicenseImage!);
+            const readUrl4 = await getReadUrl(backLicenseImage!);
+            const readUrl5 = await getReadUrl(selfie!);
+
+            await registerForShipping.mutateAsync({
+                dateOfBirth: formattedDob,
+                fullName: fullName,
+                idCardBackUrl: readUrl2,
+                idCardFrontUrl: readUrl1,
+                idNumber: citizenId,
+                licenseBackUrl: readUrl4,
+                licenseFrontUrl: readUrl3,
+                licenseNumber: licenseNumber,
+                selfieUrl: readUrl5,
+            });
+
+        } catch (error) {
+            console.error("Lỗi trong quá trình xử lý:", error);
+            Alert.alert('Lỗi', (error as Error).message || "Có lỗi xảy ra, vui lòng thử lại.");
+        } finally {
+            setSubmitting(false);
+        }
+    }
 
     return (
         <KeyboardAvoidingView
@@ -167,7 +242,7 @@ export default function VerifyShipper() {
                         <View style={{ borderLeftWidth: 5, borderLeftColor: '#EE4D2D', paddingLeft: 10, marginBottom: 10, justifyContent: 'center', height: 30 }}>
                             <Text style={{ fontSize: 22, fontWeight: 'bold' }}>Hình ảnh CMND/CCCD</Text>
                         </View>
-                        <View style={{ flexDirection: 'row', width: '100%', gap: 10 }}>
+                        <View style={{ flexDirection: 'column', width: '100%', gap: 10 }}>
                             <View style={styles.sectionContainer}>
                                 {frontImage ? (
                                     <View style={styles.imagePreviewContainer}>
@@ -217,7 +292,7 @@ export default function VerifyShipper() {
                         <View style={{ borderLeftWidth: 5, borderLeftColor: '#EE4D2D', paddingLeft: 10, marginBottom: 10, justifyContent: 'center', height: 30 }}>
                             <Text style={{ fontSize: 22, fontWeight: 'bold' }}>Hình ảnh giấy phép lái xe</Text>
                         </View>
-                        <View style={{ flexDirection: 'row', width: '100%', gap: 10 }}>
+                        <View style={{ flexDirection: 'column', width: '100%', gap: 10 }}>
                             <View style={styles.sectionContainer}>
                                 {frontLicenseImage ? (
                                     <View style={styles.imagePreviewContainer}>
@@ -228,12 +303,12 @@ export default function VerifyShipper() {
                                     </View>
                                 ) : (
                                     <View style={styles.dashedContainer}>
-                                        <TouchableOpacity style={styles.cameraTrigger} onPress={() => handleTakePhoto("front")}>
+                                        <TouchableOpacity style={styles.cameraTrigger} onPress={() => handleTakePhoto("frontLicense")}>
                                             <Ionicons name="camera-reverse" size={32} color="#6B7280" />
                                             <Text style={styles.cameraTriggerText}>Mặt trước</Text>
                                         </TouchableOpacity>
 
-                                        <TouchableOpacity style={styles.libraryButton} onPress={() => handleChooseFromLibrary("front")}>
+                                        <TouchableOpacity style={styles.libraryButton} onPress={() => handleChooseFromLibrary("frontLicense")}>
                                             <MaterialIcons name="image" size={18} color="#9CA3AF" />
                                             <Text style={styles.libraryButtonText}>Thư viện</Text>
                                         </TouchableOpacity>
@@ -250,12 +325,12 @@ export default function VerifyShipper() {
                                     </View>
                                 ) : (
                                     <View style={styles.dashedContainer}>
-                                        <TouchableOpacity style={styles.cameraTrigger} onPress={() => handleTakePhoto("back")}>
+                                        <TouchableOpacity style={styles.cameraTrigger} onPress={() => handleTakePhoto("backLicense")}>
                                             <Ionicons name="camera-reverse" size={32} color="#6B7280" />
                                             <Text style={styles.cameraTriggerText}>Mặt sau</Text>
                                         </TouchableOpacity>
 
-                                        <TouchableOpacity style={styles.libraryButton} onPress={() => handleChooseFromLibrary("back")}>
+                                        <TouchableOpacity style={styles.libraryButton} onPress={() => handleChooseFromLibrary("backLicense")}>
                                             <MaterialIcons name="image" size={18} color="#9CA3AF" />
                                             <Text style={styles.libraryButtonText}>Thư viện</Text>
                                         </TouchableOpacity>
@@ -274,10 +349,14 @@ export default function VerifyShipper() {
                         onPress={handleSubmit}
                         disabled={!citizenId.trim() || !licenseNumber.trim() || !fullName.trim() || !dob.trim() || !frontImage || !backImage || !frontLicenseImage || !backLicenseImage || !selfie}
                     >
-                        <View style={styles.buttonContent}>
-                            <Text style={styles.submitButtonText}>Gửi thông tin đăng ký</Text>
-                            <Ionicons name="arrow-forward" size={20} color="white" />
-                        </View>
+                        {submitting ? (
+                            <ActivityIndicator size="small" color="#ffffff" />
+                        ) : (
+                            <View style={styles.buttonContent}>
+                                <Text style={styles.submitButtonText}>Gửi thông tin đăng ký</Text>
+                                <Ionicons name="arrow-forward" size={20} color="white" />
+                            </View>
+                        )}
                     </TouchableOpacity>
                 </View>
             </View>
@@ -320,7 +399,6 @@ const styles = StyleSheet.create({
         width: '100%',
         height: 200,
         borderRadius: 8,
-        overflow: 'hidden',
         position: 'relative',
     },
     imagePreview: {

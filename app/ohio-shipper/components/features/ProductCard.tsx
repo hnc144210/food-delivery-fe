@@ -5,6 +5,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { OrderitemsData } from "../../mock/shipper";
 import { useRouter } from "expo-router";
 import { useState } from "react";
+import { OrderItemType } from "@/types/order";
 
 export function ProductCard_Large({ food, base_price, discount_price, prep_time, rating }: ProductCardData) {
     const router = useRouter();
@@ -115,15 +116,15 @@ export function ProductCard_InCartDetail({ item }: { item: CartItem }) {
     )
 }
 
-export function ProductCard_ForDriver({ name, quantity, selected_options }: OrderitemsData) {
+export function ProductCard_ForDriver({ productName, quantity, selectedOptions }: OrderItemType) {
     return (
         <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', width: '100%', gap: 15 }}>
             <View style={{ alignItems: 'center', justifyContent: 'center', backgroundColor: '#F6F6F6', width: 40, height: 40, borderRadius: 12 }}>
                 <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#B22203' }}>{quantity}x</Text>
             </View>
             <View style={{ alignItems: 'flex-start', }}>
-                <Text style={{ fontSize: 17, fontWeight: 'bold' }}>{name}</Text>
-                <Text>{selected_options}</Text>
+                <Text style={{ fontSize: 17, fontWeight: 'bold' }}>{productName}</Text>
+                <Text style={{ fontSize: 13, color: '#666666' }}>{selectedOptions.map(option => option.name).join(', ')}</Text>
             </View>
         </View>
     )

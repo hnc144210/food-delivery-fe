@@ -1,21 +1,38 @@
-import { Text, View, StyleSheet, Image, TouchableOpacity, ScrollView, Alert } from "react-native";
+import { Text, View, StyleSheet, Image, TouchableOpacity, ScrollView, Alert, RefreshControl } from "react-native";
 import { useState } from "react";
 import Octicons from '@expo/vector-icons/Octicons';
 import { OrderCard_ForDriver } from "../../../components/features/OrderCard";
 import { router } from "expo-router";
-import { mock_odercard, mock_shipper_new } from "../../../mock/shipper";
+import { mock_assignment, mock_odercard, mock_offer } from "../../../mock/shipper";
 import { useAuthStore } from '@/store/authStore';
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { deliveryService } from "@/services/deliveryService";
 import { userService } from "@/services/userService";
+import { fileService } from "@/services/fileService";
 
 export default function ShipperHomePage() {
     const [status, setStatus] = useState(true);
     const user = useAuthStore((s) => s.user);
 
+    const { data: readUrlResponse } = useQuery({
+        queryKey: ['read-url'],
+        queryFn: () => fileService.getReadUrl(user?.avatarFileKey || ''),
+        enabled: !!user?.avatarFileKey
+    })
+
+    const { data: offerdata } = useQuery({
+        queryKey: ['offers'],
+        queryFn: () => deliveryService.getOffer()
+    })
+
+    const { data: offerAssignmentById } = useQuery({
+        queryKey: ['offer-assignments'],
+        queryFn: () => deliveryService.getAssignmentById(offerdata?.assignmentId || '')
+    })
+
     const { data: shipperdata } = useQuery({
         queryKey: ['shipper'],
-        queryFn: () => userService.getShipperProfileByUserId(user?.id || '')
+        queryFn: () => userService.getShipperByUserId(user?.id || '')
     })
 
     const toggleOnlineMutation = useMutation({
@@ -29,7 +46,7 @@ export default function ShipperHomePage() {
         }
     })
 
-    const { data: assignedDeliveries } = useQuery({
+    const { data: assignedDeliveries, refetch: assignedDeliveriesRefetch, isFetching: isRefreshing } = useQuery({
         queryKey: ['assigned-deliveries'],
         queryFn: () => deliveryService.getAssignedDeliveries(shipperdata?.id || '')
     })
@@ -38,16 +55,18 @@ export default function ShipperHomePage() {
         toggleOnlineMutation.mutate();
     }
 
-    const myAssignments = assignedDeliveries?.items || mock_odercard
+    const myAssignments = assignedDeliveries?.items
+    const myOffer = offerAssignmentById
+
 
     return (
         <View style={styles.container}>
             <View style={styles.header}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Image source={{ uri: user?.avatar_url ? user.avatar_url : 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png' }} style={{ width: 50, height: 50, borderRadius: 100 }} />
+                    <Image source={{ uri: readUrlResponse?.readUrl || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png' }} style={{ width: 50, height: 50, borderRadius: 100 }} />
                     <View>
                         <Text style={{ color: 'white' }}>Hello!</Text>
-                        <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>{user?.name || 'NullUser'}</Text>
+                        <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>{user?.fullName || 'NullUser'}</Text>
                     </View>
                 </View>
                 <TouchableOpacity style={styles.statusbutton} onPress={setOnlineStatus}>
@@ -56,29 +75,21 @@ export default function ShipperHomePage() {
                     <Text style={{ fontSize: 15, fontWeight: 'bold' }}>{status ? 'Online' : 'Offline'}</Text>
                 </TouchableOpacity>
             </View>
-            <ScrollView contentContainerStyle={{ gap: 20, padding: 20 }}>
-                {myAssignments.some(item => item.status === 'PENDING') &&
-                    <View style={{ flexDirection: 'column' }}>
-                        <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>Đang chờ xử lý</Text>
-                        <View style={{ flexDirection: 'column', gap: 20 }}>
-                            {myAssignments.filter(item => item.status === 'PENDING').map((item, index) => <OrderCard_ForDriver key={index} {...item} />)}
-                        </View>
-                    </View>}
-
-                {myAssignments.some(item => item.status === 'READY') &&
-                    <View style={{ flexDirection: 'column' }}>
-                        <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>Sẵn sàng giao hàng</Text>
-                        <View style={{ flexDirection: 'column', gap: 20 }}>
-                            {myAssignments.filter(item => item.status === 'READY').map((item, index) => <OrderCard_ForDriver key={index} {...item} />)}
-                        </View>
-                    </View>}
-                {myAssignments.some(item => item.status === 'DELIVERING') &&
-                    <View style={{ flexDirection: 'column' }}>
-                        <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>Đang giao hàng</Text>
-                        <View style={{ flexDirection: 'column', gap: 20 }}>
-                            {myAssignments.filter(item => item.status === 'DELIVERING').map((item, index) => <OrderCard_ForDriver key={index} {...item} />)}
-                        </View>
-                    </View>}
+            <ScrollView style={{ width: '100%', flex: 1 }} contentContainerStyle={{ gap: 20, padding: 20 }} refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={assignedDeliveriesRefetch} colors={["#EE4D2D"]} />}>
+                {myOffer && <View style={{ flexDirection: 'column', gap: 10, }}>
+                    <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Bạn có đơn hàng đang chờ duyệt!</Text>
+                    <OrderCard_ForDriver {...myOffer} offerId={myOffer.id} />
+                </View>}
+                <View style={{ flexDirection: 'column', gap: 10 }}>
+                    <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Đơn hàng đang hoạt động</Text>
+                    <View style={{ flexDirection: 'column', gap: 20 }}>
+                        {myAssignments?.length || 0 > 0 ? (
+                            myAssignments?.filter(item => item.status !== 'Completed' && item.status !== 'Failed').map((item, index) => <OrderCard_ForDriver key={index} {...item} offerId={""} />)
+                        ) : (
+                            <Text style={{ fontSize: 16, textAlign: 'center', marginTop: 20 }}>Không có đơn hàng</Text>
+                        )}
+                    </View>
+                </View>
             </ScrollView>
         </View>
     );

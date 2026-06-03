@@ -23,6 +23,9 @@ import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { AxiosError } from 'axios';
 import { useAuthStore } from '@/store/authStore';
 import type { User } from '@/types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { userService } from '@/services/userService';
+import api from '@/services/api';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -37,13 +40,35 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 interface LoginResponse {
   success: true;
-  data: { accessToken: string; refreshToken: string; user: User };
+  data: { accessToken: string; refreshToken: string; userId: string, expiresAt: string };
   message: string;
+  errors: string[];
 }
 
 async function loginRequest(payload: LoginFormData): Promise<LoginResponse> {
-  // TODO: đổi lại khi BE xong
-  return mockLoginResponse;
+  try {
+    const response = await api.post<LoginResponse>('/api/Auth/login', { email: payload.identifier, password: payload.password }, {
+      headers: {
+        'X-Device-Id': '1234567890',
+        'X-Device-Name': 'Android'
+      }
+    })
+    const data = response.data;
+    if (!data.success) {
+      throw new Error(data.message);
+    }
+    return data;
+  }
+  catch (error: any) {
+    console.error('Login error:', {
+
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data.errors,  // <- Thông báo lỗi từ server
+      message: error.message,
+    });
+    throw error;
+  }
 }
 
 // ─── Role redirect ────────────────────────────────────────────────────────────
@@ -82,18 +107,25 @@ export default function LoginScreen() {
   });
 
   const loginMutation = useMutation({
-  mutationFn: loginRequest,
-  onSuccess: async ({ data }) => {
-  console.log('onSuccess:', data);
-  setUser(data.user);
-  redirectByRole();
-},
-  onError: (error) => {
-    console.log('onError:', error);
-    const message = (error as AxiosError<{ message: string }>).response?.data?.message ?? 'Đăng nhập thất bại. Vui lòng thử lại.';
-    setServerError(message);
-  },
-});
+    mutationFn: loginRequest,
+    onSuccess: async ({ data }) => {
+      console.log('onSuccess:', data);
+      await AsyncStorage.setItem('access_token', data.accessToken);
+      await AsyncStorage.setItem('refresh_token', data.refreshToken);
+      const profile = await userService.getProfile(data.userId);
+      if (!profile.roles.includes('Shipper')) {
+        setServerError('Bạn không phải là shipper');
+        return;
+      }
+      setUser({ avatarFileKey: profile.avatarFileKey, fullName: profile.fullName, phoneNumber: profile.phoneNumber, id: data.userId, status: profile.status, roles: profile.roles });
+      redirectByRole();
+    },
+    onError: (error) => {
+      console.log('onError:', error);
+      const message = (error as AxiosError<{ message: string }>).response?.data?.message ?? 'Đăng nhập thất bại. Vui lòng thử lại.';
+      setServerError(message);
+    },
+  });
 
   function handlePressLogin(formData: LoginFormData) {
     setServerError('');

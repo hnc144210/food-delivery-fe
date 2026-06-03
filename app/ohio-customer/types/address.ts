@@ -1,31 +1,31 @@
 import { ApiResponse } from "@/services/userService";
 
 export type AddressResponseDto = {
-    Id: string;
-    UserId: string;
-    Label: string | null;
-    RecipientName: string | null;
-    Phone: string | null;
-    AddressLine: string | null;
-    Ward: string | null;
-    District: string | null;
-    City: string | null;
-    Lat: number | null;
-    Lng: number | null;
-    IsDefault: boolean;
-    CreatedAt: string;
+    id: string;
+    userId: string;
+    label: string | null;
+    recipientName: string | null;
+    phone: string | null;
+    addressLine: string | null;
+    ward: string | null;
+    district: string | null;
+    city: string | null;
+    lat: number | null;
+    lng: number | null;
+    isDefault: boolean;
+    createdAt: string;
 };
 export type AddressRequestDto = {
-    Label: string | null;
-    RecipientName: string | null;
-    Phone: string | null;
-    AddressLine: string | null;
-    Ward: string | null;
-    District: string | null;
-    City: string | null;
-    Lat: number | null;
-    Lng: number | null;
-    IsDefault: boolean;
+    label: string | null;
+    recipientName: string | null;
+    phone: string | null;
+    addressLine: string | null;
+    ward: string | null;
+    district: string | null;
+    city: string | null;
+    lat: number | null;
+    lng: number | null;
+    isDefault: boolean;
 };
 export type AddressListResponseDto = {
     items: AddressResponseDto[];

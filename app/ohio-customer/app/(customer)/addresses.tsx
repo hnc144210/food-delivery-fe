@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { ReturnButton } from "../../components/ui/ReturnButton";
 import { useRouter } from "expo-router";
 import { AntDesign } from "@expo/vector-icons";
@@ -13,7 +13,7 @@ export default function AddressesScreen() {
     const user = useAuthStore((s) => s.user);
     const userId = user?.id;
 
-    const { data: addresses } = useQuery({
+    const { data: addresses, isLoading } = useQuery({
         queryKey: ['addresses', userId],
         queryFn: () => userService.getAddresses(userId!),
         enabled: !!userId,
@@ -36,9 +36,19 @@ export default function AddressesScreen() {
                 </TouchableOpacity>
             </View>
             <ScrollView style={{ width: '100%', paddingHorizontal: 20 }} >
-                {addressList.map((addr) => (
-                    <AddressCard key={addr.Id} {...addr} />
-                ))}
+                {isLoading ? (
+                    <View style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+                        <ActivityIndicator size="large" color="#EE4D2D" />
+                    </View>
+                ) : addressList.length === 0 ? (
+                    <View style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#EE4D2D' }}>Chưa có địa chỉ nào</Text>
+                    </View>
+                ) : (
+                    addressList.map((addr) => (
+                        <AddressCard key={addr.id} {...addr} />
+                    ))
+                )}
             </ScrollView>
         </View>
     );

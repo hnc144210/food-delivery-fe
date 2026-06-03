@@ -23,7 +23,7 @@ export default function CartScreen() {
         queryFn: orderService.getCart,
     });
 
-    const { data: orderHistory } = useQuery({
+    const { data: orderHistory, refetch: refetchOrderHistory, isRefetching: isOrderHistoryRefetching } = useQuery({
         queryKey: ['order-history'],
         queryFn: orderService.getMyOrderHistory,
     });
@@ -85,28 +85,60 @@ export default function CartScreen() {
 
                 {/* TAB 2: ONGOING ORDERS */}
                 {cartState === 2 && (
-                    <ScrollView showsVerticalScrollIndicator={false}>
-                        <View style={{ gap: 20, paddingBottom: 24 }}>
-                            {ongoingOrders
-                                .map((item, index) => (
-                                    <OrderCard_ForCustomer key={`mock-ongoing-${index}`} {...item} />
-                                ))
-                            }
+                    isOrderHistoryRefetching ? (
+                        <View style={styles.centerContainer}>
+                            <ActivityIndicator size="large" color="#EE4D2D" />
+                            <Text style={styles.loadingText}>Đang tải đơn hàng...</Text>
                         </View>
-                    </ScrollView>
+                    ) : (
+                        <ScrollView
+                            showsVerticalScrollIndicator={false}
+                            refreshControl={<RefreshControl refreshing={isOrderHistoryRefetching} onRefresh={refetchOrderHistory} colors={["#EE4D2D"]} />}
+                        >
+                            <View style={{ gap: 20, paddingBottom: 24 }}>
+                                {ongoingOrders
+                                    .map((item, index) => (
+                                        <OrderCard_ForCustomer key={`mock-ongoing-${index}`} {...item} />
+                                    ))
+                                }
+                                {ongoingOrders.length === 0 && (
+                                    <View style={{ justifyContent: "center", alignItems: "center", gap: 20, paddingTop: 160 }}>
+                                        <Feather name="shopping-cart" size={60} color="#9ca3af" />
+                                        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#9ca3af" }}>Không có đơn hàng</Text>
+                                    </View>
+                                )}
+                            </View>
+                        </ScrollView>
+                    )
                 )}
 
                 {/* TAB 3: ORDER HISTORY */}
                 {cartState === 3 && (
-                    <ScrollView showsVerticalScrollIndicator={false}>
-                        <View style={{ gap: 20, paddingBottom: 24 }}>
-                            {historyOrders
-                                .map((item, index) => (
-                                    <OrderCard_ForCustomer key={`history-${index}`} {...item} />
-                                ))
-                            }
+                    isOrderHistoryRefetching ? (
+                        <View style={styles.centerContainer}>
+                            <ActivityIndicator size="large" color="#EE4D2D" />
+                            <Text style={styles.loadingText}>Đang tải đơn hàng...</Text>
                         </View>
-                    </ScrollView>
+                    ) : (
+                        <ScrollView
+                            showsVerticalScrollIndicator={false}
+                            refreshControl={<RefreshControl refreshing={isOrderHistoryRefetching} onRefresh={refetchOrderHistory} colors={["#EE4D2D"]} />}
+                        >
+                            <View style={{ gap: 20, paddingBottom: 24 }}>
+                                {historyOrders
+                                    .map((item, index) => (
+                                        <OrderCard_ForCustomer key={`history-${index}`} {...item} />
+                                    ))
+                                }
+                                {historyOrders.length === 0 && (
+                                    <View style={{ justifyContent: "center", alignItems: "center", gap: 20, paddingTop: 160 }}>
+                                        <Feather name="shopping-cart" size={60} color="#9ca3af" />
+                                        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#9ca3af" }}>Không có đơn hàng</Text>
+                                    </View>
+                                )}
+                            </View>
+                        </ScrollView>
+                    )
                 )}
             </View>
         </View>
