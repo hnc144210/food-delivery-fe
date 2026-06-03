@@ -95,10 +95,10 @@ export default function HomeScreen() {
     });
 
     // Find default or first address to display in header
-    const addressList = addresses?.items || mock_addresses_new;
-    const addressLabel = addressList?.find(addr => addr.IsDefault)?.Label || addressList[0]?.Label || 'null';
+    const addressList = addresses?.items || [];
+    const addressLabel = addressList?.find(addr => addr.isDefault)?.label || addressList[0]?.label || 'Chưa có địa chỉ';
 
-    const categoryList = categories?.items || mock_categories_new;
+    const categoryList = categories?.items || [];
 
     const handlePressSearch = () => {
         router.push({ pathname: '/(customer)/searchresult', params: { searchQuery } });
@@ -122,7 +122,7 @@ export default function HomeScreen() {
             : [];
 
     // Filter products recursively based on the category subtree
-    const allProducts = products?.items || mock_productdata_new;
+    const allProducts = products?.items || [];
     const filteredProducts = categoriesFilter !== ''
         ? allProducts.filter(p => p.categoryId && allowedCategoryIds.includes(p.categoryId))
         : allProducts;

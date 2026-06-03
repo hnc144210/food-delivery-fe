@@ -1,4 +1,4 @@
-import { AssignmentAcceptRequestDto, AssignmentRejectRequestDto, ShipperListAssignmentResponse, ShipperOfferResponse, ToggleOnlineRequestDto, UpdateDeliveryStatusRequestDto } from "@/types/assignment";
+import { AssignmentAcceptRequestDto, AssignmentRejectRequestDto, ShipperAssignmentDto, ShipperAssignmentResponse, ShipperListAssignmentResponse, ShipperOfferResponse, ToggleOnlineRequestDto, UpdateDeliveryStatusRequestDto } from "@/types/assignment";
 import api from "./api";
 
 export type ApiResponse<T> = {
@@ -15,6 +15,14 @@ export type ApiConfirmationResponse = ApiResponse<ConfirmationResponse>;
 export const deliveryService = {
     getAssignedDeliveries: async (shipperId: string): Promise<ShipperListAssignmentResponse['data']> => {
         const response = await api.get<ShipperListAssignmentResponse>(`/api/Deliveries/shippers/${shipperId}/assignments`);
+        const resData = response.data;
+        if (!resData.success) {
+            throw new Error(resData.errors[0]);
+        }
+        return resData.data;
+    },
+    getAssignmentById: async (assignmentId: string): Promise<ShipperAssignmentResponse['data']> => {
+        const response = await api.get<ShipperAssignmentResponse>(`/api/Deliveries/assignments/${assignmentId}`);
         const resData = response.data;
         if (!resData.success) {
             throw new Error(resData.errors[0]);

@@ -1,4 +1,4 @@
-import { KeyboardAvoidingView, Platform, View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from "react-native";
+import { KeyboardAvoidingView, Platform, View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert } from "react-native";
 import { ReturnButton } from "../../components/ui/ReturnButton";
 import { useRouter } from "expo-router";
 import * as ImagePicker from 'expo-image-picker';
@@ -9,6 +9,8 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import React, { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { userService } from "@/services/userService";
+import { fileService } from "@/services/fileService";
+import * as FileSystem from 'expo-file-system/legacy';
 
 export default function VerifyMerchant() {
     const [merchantName, setMerchantName] = useState("");
@@ -31,8 +33,8 @@ export default function VerifyMerchant() {
             const result = await ImagePicker.launchCameraAsync({
                 mediaTypes: ['images'],
                 allowsEditing: true,
-                aspect: [16, 9],
-                quality: 1,
+                aspect: [9, 16],
+                quality: 0.8,
             });
 
             if (!result.canceled && result.assets && result.assets.length > 0) {
@@ -56,9 +58,8 @@ export default function VerifyMerchant() {
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ['images'],
                 allowsEditing: true,
-                aspect: [16, 9],
-                quality: 1,
-                selectionLimit: 1,
+                aspect: [9, 16],
+                quality: 0.8,
             });
 
             if (!result.canceled && result.assets && result.assets.length > 0) {
@@ -67,29 +68,54 @@ export default function VerifyMerchant() {
             }
         } catch (error) {
             console.error('Error choosing from library:', error);
+            Alert.alert('Lỗi', 'Không thể chọn ảnh từ thư viện');
         }
     };
 
     const registerForMerchantMutation = useMutation({
-        mutationFn: () => userService.registerForMerchant({
+        mutationFn: (variables: { licenseUrl: string }) => userService.registerForMerchant({
             storeName: merchantName,
             storeDescription: description,
             taxId: taxId,
             businessLicense: businessLicense,
-            businessLicenseUrl: businessLicenseUrl,
+            businessLicenseUrl: variables.licenseUrl,
         }),
         onSuccess: () => {
-            alert("Đăng ký bán hàng thành công!");
+            Alert.alert("Thành công", "Đăng ký bán hàng thành công!");
             router.back();
         },
-        onError: (error) => {
-            alert("Đăng ký bán hàng thất bại!");
+        onError: (error: any) => {
+            Alert.alert("Lỗi", error.message || "Đăng ký bán hàng thất bại!");
         }
-    })
+    });
 
     const handleSubmit = async () => {
-        registerForMerchantMutation.mutate();
-    };
+        setSubmitting(true);
+        try {
+            const fileName = businessLicenseUrl.split('/').pop() || "image.jpg";
+            const fileExtension = fileName.split('.').pop()?.toLowerCase();
+            const contentType = fileExtension === 'png' ? 'image/png' : 'image/jpeg';
+
+            const uploadUrlResponse = await fileService.getUploadUrl(fileName, contentType);
+            const { uploadUrl, fileKey } = uploadUrlResponse;
+
+            await fileService.uploadFile(uploadUrl, businessLicenseUrl, contentType);
+
+            const readUrlResponse = await fileService.getReadUrl(fileKey);
+            const { readUrl } = readUrlResponse;
+            console.log('Read URL:', readUrl);
+
+            setBusinessLicenseUrl(readUrl);
+
+            await registerForMerchantMutation.mutateAsync({ licenseUrl: readUrl });
+
+        } catch (error) {
+            console.error("Lỗi trong quá trình xử lý:", error);
+            Alert.alert('Lỗi', (error as Error).message || "Có lỗi xảy ra, vui lòng thử lại.");
+        } finally {
+            setSubmitting(false);
+        }
+    }
 
     return (
         <KeyboardAvoidingView
@@ -141,12 +167,12 @@ export default function VerifyMerchant() {
                                 </View>
                             ) : (
                                 <View style={styles.dashedContainer}>
-                                    <TouchableOpacity style={styles.cameraTrigger} onPress={() => handleTakePhoto}>
-                                        <AntDesign name="cloud-upload" size={24} color="#9CA3AF" />
+                                    <TouchableOpacity style={styles.cameraTrigger} onPress={handleTakePhoto}>
+                                        <MaterialIcons name="photo-camera" size={24} color="#9CA3AF" />
                                         <Text style={styles.cameraTriggerText}>Chụp ảnh</Text>
                                     </TouchableOpacity>
 
-                                    <TouchableOpacity style={styles.libraryButton} onPress={() => handleChooseFromLibrary}>
+                                    <TouchableOpacity style={styles.libraryButton} onPress={handleChooseFromLibrary}>
                                         <MaterialIcons name="image" size={18} color="#9CA3AF" />
                                         <Text style={styles.libraryButtonText}>Thư viện</Text>
                                     </TouchableOpacity>
@@ -211,9 +237,8 @@ const styles = StyleSheet.create({
     },
     imagePreviewContainer: {
         width: '100%',
-        height: 200,
+        height: 590,
         borderRadius: 8,
-        overflow: 'hidden',
         position: 'relative',
     },
     imagePreview: {

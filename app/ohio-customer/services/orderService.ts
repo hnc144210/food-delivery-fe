@@ -141,7 +141,7 @@ export const orderService = {
     },
     getMyOrderHistory: async (): Promise<MyOrderResponse['data']> => {
         try {
-            const response = await api.get<MyOrderResponse>('/api/orders');
+            const response = await api.get<MyOrderResponse>('/api/orders/my');
             const resData = response.data;
             if (!resData.ok) {
                 throw new Error(resData.message);

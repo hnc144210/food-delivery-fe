@@ -3,12 +3,15 @@ import { ApiResponse } from "@/services/userService";
 export type UpdateUserProfileRequestDto = {
     fullName: string;
     avatarUrl: string;
+    phoneNumber: string;
 }
 export type UserProfileResponseDto = {
     id: string;
     fullName: string;
-    avatarUrl: string;
+    avatarFileKey: string;
+    phoneNumber: string;
     status: string;
+    roles: string[];
 }
 export type ShipperProfileResponseDto = {
     id: string;
@@ -19,9 +22,7 @@ export type ShipperProfileResponseDto = {
     updatedAt: string | null;
 }
 export type ShipperUpdateProfileRequestDto = {
-    status: 'Pending' | 'Approved' | 'Rejected' | 'Suspended';
     vehiclePlate: string | null;
-    updatedAt: string | null;
 }
 
 export type MerchantProfileResponseDto = {

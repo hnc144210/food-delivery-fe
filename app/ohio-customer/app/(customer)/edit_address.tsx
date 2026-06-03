@@ -136,7 +136,7 @@ function ComboBox({ label, value, options, onSelect, placeholder, disabled }: Co
 export default function EditAddressScreen() {
     const router = useRouter();
     const queryClient = useQueryClient();
-    const { Id } = useLocalSearchParams<{ Id: string }>();
+    const { id } = useLocalSearchParams<{ id: string }>();
 
     const user = useAuthStore((s) => s.user);
     const userId = user?.id;
@@ -152,22 +152,22 @@ export default function EditAddressScreen() {
 
     // Load current address
     const { data: address } = useQuery({
-        queryKey: ['addresses', userId],
-        queryFn: () => userService.getAddressDetail(userId!, Id!),
-        enabled: !!userId,
+        queryKey: ['address', userId, id],
+        queryFn: () => userService.getAddressDetail(userId!, id!),
+        enabled: !!userId && !!id,
     });
 
-    const addressDetail = address ? address : useMemo(() => mock_addresses_new.find((p) => p.Id === Id), [Id])
+    const addressDetail = address ? address : useMemo(() => mock_addresses_new.find((p) => p.id === id), [id])
     // Populate values on load
     useEffect(() => {
         if (addressDetail) {
-            setLabel(addressDetail.Label || "null");
-            setReceiverName(addressDetail.RecipientName || "null");
-            setReceiverPhone(addressDetail.Phone || "null");
-            setAddressLine(addressDetail.AddressLine || "null");
-            setWard(addressDetail.Ward || "null");
-            setCity(addressDetail.City || "null");
-            setIsDefault(addressDetail.IsDefault || false);
+            setLabel(addressDetail.label || "");
+            setReceiverName(addressDetail.recipientName || "");
+            setReceiverPhone(addressDetail.phone || "");
+            setAddressLine(addressDetail.addressLine || "");
+            setWard(addressDetail.ward || "");
+            setCity(addressDetail.city || "");
+            setIsDefault(addressDetail.isDefault || false);
         }
     }, [addressDetail]);
 
@@ -177,22 +177,22 @@ export default function EditAddressScreen() {
             if (!userId) {
                 throw new Error("User not found");
             }
-            if (!Id) {
+            if (!id) {
                 throw new Error("Address not found");
             }
             const updatedAddress: AddressRequestDto = {
-                Label: label,
-                RecipientName: receiverName,
-                Phone: receiverPhone,
-                AddressLine: addressLine,
-                Ward: ward,
-                District: ward,
-                City: city,
-                IsDefault: isDefault,
-                Lat: addressDetail?.Lat || 0,
-                Lng: addressDetail?.Lng || 0,
+                label: label,
+                recipientName: receiverName,
+                phone: receiverPhone,
+                addressLine: addressLine,
+                ward: ward,
+                district: ward,
+                city: city,
+                isDefault: isDefault,
+                lat: addressDetail?.lat || 0,
+                lng: addressDetail?.lng || 0,
             };
-            return userService.updateAddress(userId, Id, updatedAddress);
+            return userService.updateAddress(userId, id, updatedAddress);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['addresses', userId] });
@@ -210,16 +210,16 @@ export default function EditAddressScreen() {
                 throw new Error("User not found");
             }
             const newAddress: AddressRequestDto = {
-                Label: label,
-                RecipientName: receiverName,
-                Phone: receiverPhone,
-                AddressLine: addressLine,
-                Ward: ward,
-                District: ward,
-                City: city,
-                IsDefault: isDefault,
-                Lat: addressDetail?.Lat || 0,
-                Lng: addressDetail?.Lng || 0,
+                label: label,
+                recipientName: receiverName,
+                phone: receiverPhone,
+                addressLine: addressLine,
+                ward: ward,
+                district: ward,
+                city: city,
+                isDefault: isDefault,
+                lat: addressDetail?.lat || 0,
+                lng: addressDetail?.lng || 0,
             };
             return userService.createAddress(userId, newAddress);
         },
@@ -261,7 +261,7 @@ export default function EditAddressScreen() {
             alert("Vui lòng điền đầy đủ thông tin bắt buộc!");
             return;
         }
-        if (addressDetail?.Id) {
+        if (addressDetail?.id) {
             updateAddressMutation.mutate();
         } else {
             createAddressMutation.mutate();

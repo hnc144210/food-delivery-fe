@@ -1,4 +1,4 @@
-import { ShipperProfileResponse, ShipperUpdateProfileRequestDto, UpdateUserProfileRequestDto, UserProfileResponse } from "@/types/profile";
+import { MerchantProfileResponse, ShipperProfileResponse, ShipperUpdateProfileRequestDto, UpdateUserProfileRequestDto, UserProfileResponse } from "@/types/profile";
 import api from "./api";
 
 export type ApiResponse<T> = {
@@ -12,24 +12,18 @@ export type ConfirmationResponse = {
 };
 export type ApiConfirmationResponse = ApiResponse<ConfirmationResponse>;
 export const userService = {
-    updateUserProfile: async (userId: string, data: UpdateUserProfileRequestDto): Promise<ApiConfirmationResponse['data']> => {
+    updateProfile: async (userId: string, data: UpdateUserProfileRequestDto): Promise<ApiConfirmationResponse['data']> => {
+
         const response = await api.put<ApiConfirmationResponse>(`/api/Users/${userId}`, data);
         const resData = response.data;
         if (!resData.success) {
             throw new Error(resData.errors[0]);
         }
         return resData.data;
+
     },
-    getUserProfile: async (userId: string): Promise<UserProfileResponse['data']> => {
+    getProfile: async (userId: string): Promise<UserProfileResponse['data']> => {
         const response = await api.get<UserProfileResponse>(`/api/Users/${userId}`);
-        const resData = response.data;
-        if (!resData.success) {
-            throw new Error(resData.errors[0]);
-        }
-        return resData.data;
-    },
-    updateShipperProfile: async (shipperId: string, data: ShipperUpdateProfileRequestDto): Promise<ApiConfirmationResponse['data']> => {
-        const response = await api.put<ApiConfirmationResponse>(`/api/shippers/${shipperId}`, data);
         const resData = response.data;
         if (!resData.success) {
             throw new Error(resData.errors[0]);
@@ -44,12 +38,28 @@ export const userService = {
         }
         return resData.data;
     },
-    getShipperProfileByUserId: async (userId: string): Promise<ShipperProfileResponse['data']> => {
-        const response = await api.get<ShipperProfileResponse>(`/api/users/${userId}/shipper`);
+    getShipperByUserId: async (userId: string): Promise<ShipperProfileResponse['data']> => {
+        const response = await api.get<ShipperProfileResponse>(`/api/shippers/by-user/${userId}`);
         const resData = response.data;
         if (!resData.success) {
             throw new Error(resData.errors[0]);
         }
         return resData.data;
-    }
+    },
+    updateShipperProfile: async (shipperId: string, data: ShipperUpdateProfileRequestDto): Promise<ApiConfirmationResponse['data']> => {
+        const response = await api.put<ApiConfirmationResponse>(`/api/shippers/${shipperId}`, data);
+        const resData = response.data;
+        if (!resData.success) {
+            throw new Error(resData.errors[0]);
+        }
+        return resData.data;
+    },
+    getMerchantProfile: async (merchantId: string): Promise<MerchantProfileResponse['data']> => {
+        const response = await api.get<MerchantProfileResponse>(`/api/merchants/${merchantId}`);
+        const resData = response.data;
+        if (!resData.success) {
+            throw new Error(resData.errors[0]);
+        }
+        return resData.data;
+    },
 }

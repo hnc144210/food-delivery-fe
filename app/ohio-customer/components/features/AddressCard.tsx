@@ -7,13 +7,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/authStore";
 import { userService } from "@/services/userService";
 
-export function AddressCard({ Id, Label, Phone, AddressLine, Ward, District, City, IsDefault }: AddressResponseDto) {
+export function AddressCard({ id, label, phone, recipientName, addressLine, ward, district, city, isDefault }: AddressResponseDto) {
     const router = useRouter();
     const queryClient = useQueryClient();
     const user = useAuthStore((s) => s.user);
     const userId = user?.id || '';
     const { mutateAsync: deleteAddress } = useMutation({
-        mutationFn: () => userService.deleteAddress(userId, Id),
+        mutationFn: () => userService.deleteAddress(userId, id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['addresses', userId] });
             Alert.alert('Xóa địa chỉ thành công');
@@ -26,22 +26,23 @@ export function AddressCard({ Id, Label, Phone, AddressLine, Ward, District, Cit
         deleteAddress();
     }
     const handleUpdate = () => {
-        router.push({ pathname: "/(customer)/edit_address", params: { Id } });
+        router.push({ pathname: "/(customer)/edit_address", params: { id } });
     }
     return (
         <View style={styles.container}>
             <View style={styles.content}>
                 <View style={styles.header}>
-                    {IsDefault &&
+                    {isDefault &&
                         <>
                             <AntDesign name="environment" size={24} color={"#EE4D2D"} />
                             <Text style={styles.defaultBadge}>Mặc định</Text>
                         </>
                     }
                 </View>
-                <Text style={styles.name}>{Label}</Text>
-                <Text style={styles.address}>{AddressLine}, {Ward}, {District}, {City}</Text>
-                <Text style={styles.phoneNumber}>{Phone}</Text>
+                <Text style={styles.name}>{label}</Text>
+                <Text style={styles.recipientName}>Người nhận: {recipientName}</Text>
+                <Text style={styles.phoneNumber}>Điện thoại: {phone}</Text>
+                <Text style={styles.address}>Địa chỉ: {addressLine}, {ward}, {district}, {city}</Text>
             </View>
 
             <View style={styles.divider} />
@@ -99,6 +100,11 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         marginBottom: 4,
+    },
+    recipientName: {
+        fontSize: 14,
+        color: 'gray',
+        marginBottom: 2,
     },
     address: {
         fontSize: 14,
