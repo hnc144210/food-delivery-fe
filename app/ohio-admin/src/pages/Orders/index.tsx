@@ -1,6 +1,5 @@
-import { useState, useMemo } from "react";
-import { mockOrders } from "@/mock";
-import type { Order, OrderStatus } from "@/types";
+//src/pages/Orders/index.tsx
+import { useState } from "react";
 import {
   cn,
   formatCurrency,
@@ -10,9 +9,11 @@ import {
 } from "@/lib/utils";
 import { Eye } from "lucide-react";
 import OrderModal from "./OrderModal";
+import { useOrders, useCancelOrder } from "@/hooks/useOrders";
+import type { ApiOrder } from "@/types/api";
 
-const STATUSES: Array<{ v: OrderStatus | "ALL"; label: string }> = [
-  { v: "ALL", label: "Tất cả" },
+const STATUSES = [
+  { v: "", label: "Tất cả" },
   { v: "PENDING", label: "Chờ" },
   { v: "DELIVERING", label: "Đang giao" },
   { v: "COMPLETED", label: "Hoàn thành" },
@@ -20,19 +21,13 @@ const STATUSES: Array<{ v: OrderStatus | "ALL"; label: string }> = [
 ];
 
 export default function OrdersPage() {
-  const [tab, setTab] = useState<OrderStatus | "ALL">("ALL");
-  const [orders, setOrders] = useState(mockOrders);
-  const [selected, setSelected] = useState<Order | null>(null);
+  const [tab, setTab] = useState("");
+  const [selected, setSelected] = useState<ApiOrder | null>(null);
 
-  const filtered = useMemo(
-    () => orders.filter((o) => tab === "ALL" || o.status === tab),
-    [orders, tab],
-  );
+  const { data, isLoading } = useOrders(1, 20, tab || undefined);
+  const { mutate: cancel } = useCancelOrder();
 
-  const cancel = (id: string) =>
-    setOrders((p) =>
-      p.map((o) => (o.id === id ? { ...o, status: "CANCELLED" } : o)),
-    );
+  const orders = data?.items ?? [];
 
   return (
     <div className="space-y-4">
@@ -54,75 +49,76 @@ export default function OrdersPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-gray-400 border-b border-gray-100">
-                {[
-                  "Mã đơn",
-                  "Khách",
-                  "Nhà hàng",
-                  "Tài xế",
-                  "Tổng",
-                  "Trạng thái",
-                  "Thời gian",
-                  "",
-                ].map((h) => (
-                  <th
-                    key={h}
-                    className="pb-3 font-medium pr-4 whitespace-nowrap"
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {filtered.map((o) => (
-                <tr key={o.id} className="hover:bg-gray-50">
-                  <td className="py-3 pr-4 font-mono text-xs text-gray-600">
-                    {o.id}
-                  </td>
-                  <td className="py-3 pr-4 font-medium">{o.customer.name}</td>
-                  <td className="py-3 pr-4 text-gray-500">{o.merchant.name}</td>
-                  <td className="py-3 pr-4 text-gray-500">
-                    {o.shipper?.name ?? "—"}
-                  </td>
-                  <td className="py-3 pr-4 font-medium">
-                    {formatCurrency(o.total)}
-                  </td>
-                  <td className="py-3 pr-4">
-                    <span
-                      className={cn(
-                        "px-2 py-0.5 rounded-full text-xs font-medium",
-                        ORDER_STATUS_COLOR[o.status],
-                      )}
+        {isLoading ? (
+          <p className="text-sm text-gray-400">Đang tải...</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-gray-400 border-b border-gray-100">
+                  {[
+                    "Mã đơn",
+                    "Nhà hàng",
+                    "Tổng",
+                    "Trạng thái",
+                    "Thời gian",
+                    "",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="pb-3 font-medium pr-4 whitespace-nowrap"
                     >
-                      {ORDER_STATUS_LABEL[o.status]}
-                    </span>
-                  </td>
-                  <td className="py-3 pr-4 text-gray-400 text-xs whitespace-nowrap">
-                    {formatDate(o.created_at)}
-                  </td>
-                  <td className="py-3">
-                    <button
-                      onClick={() => setSelected(o)}
-                      className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500"
-                    >
-                      <Eye size={14} />
-                    </button>
-                  </td>
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {orders.map((o) => (
+                  <tr key={o.id} className="hover:bg-gray-50">
+                    <td className="py-3 pr-4 font-mono text-xs text-gray-600">
+                      {o.orderNumber ?? o.id.slice(0, 8)}
+                    </td>
+                    <td className="py-3 pr-4 text-gray-500">
+                      {o.merchantName ?? o.merchantId}
+                    </td>
+                    <td className="py-3 pr-4 font-medium">
+                      {formatCurrency(o.totalAmount)}
+                    </td>
+                    <td className="py-3 pr-4">
+                      <span
+                        className={cn(
+                          "px-2 py-0.5 rounded-full text-xs font-medium",
+                          ORDER_STATUS_COLOR[o.status] ??
+                            "bg-gray-100 text-gray-600",
+                        )}
+                      >
+                        {ORDER_STATUS_LABEL[o.status] ?? o.status}
+                      </span>
+                    </td>
+                    <td className="py-3 pr-4 text-gray-400 text-xs whitespace-nowrap">
+                      {formatDate(o.createdAt)}
+                    </td>
+                    <td className="py-3">
+                      <button
+                        onClick={() => setSelected(o)}
+                        className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500"
+                      >
+                        <Eye size={14} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <OrderModal
         order={selected}
         onClose={() => setSelected(null)}
-        onCancel={cancel}
+        onCancel={(id) => cancel({ id, reason: "Admin cancelled" })}
       />
     </div>
   );

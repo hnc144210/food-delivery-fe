@@ -1,4 +1,5 @@
-import type { Order } from "@/types";
+//src/pages/Orders/OrderModal.tsx
+import type { ApiOrder } from "@/types/api";
 import { X } from "lucide-react";
 import {
   cn,
@@ -9,12 +10,12 @@ import {
 } from "@/lib/utils";
 
 interface Props {
-  order: Order | null;
+  order: ApiOrder | null;
   onClose: () => void;
   onCancel: (id: string) => void;
 }
 
-const TIMELINE: Array<Order["status"]> = [
+const TIMELINE = [
   "PENDING",
   "CONFIRMED",
   "PREPARING",
@@ -25,20 +26,23 @@ const TIMELINE: Array<Order["status"]> = [
 
 export default function OrderModal({ order, onClose, onCancel }: Props) {
   if (!order) return null;
-  const idx = TIMELINE.indexOf(order.status as (typeof TIMELINE)[number]);
+  const idx = TIMELINE.indexOf(order.status);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-5 border-b sticky top-0 bg-white">
           <div>
-            <h2 className="font-semibold text-gray-800">#{order.id}</h2>
+            <h2 className="font-semibold text-gray-800">
+              #{order.orderNumber ?? order.id.slice(0, 8)}
+            </h2>
             <span
               className={cn(
                 "px-2 py-0.5 rounded-full text-xs font-medium",
-                ORDER_STATUS_COLOR[order.status],
+                ORDER_STATUS_COLOR[order.status] ?? "bg-gray-100 text-gray-600",
               )}
             >
-              {ORDER_STATUS_LABEL[order.status]}
+              {ORDER_STATUS_LABEL[order.status] ?? order.status}
             </span>
           </div>
           <button
@@ -48,6 +52,7 @@ export default function OrderModal({ order, onClose, onCancel }: Props) {
             <X size={16} />
           </button>
         </div>
+
         <div className="p-5 space-y-4">
           <div className="flex gap-1">
             {TIMELINE.map((s, i) => (
@@ -62,12 +67,13 @@ export default function OrderModal({ order, onClose, onCancel }: Props) {
               />
             ))}
           </div>
+
           <div className="grid grid-cols-2 gap-3 text-sm">
             {[
-              ["Khách hàng", order.customer.name],
-              ["SĐT", order.customer.phone],
-              ["Nhà hàng", order.merchant.name],
-              ["Tài xế", order.shipper?.name ?? "—"],
+              ["Nhà hàng", order.merchantName ?? order.merchantId],
+              ["Địa chỉ", order.address],
+              ["Ghi chú", order.note ?? "—"],
+              ["Thanh toán", order.paymentStatus],
             ].map(([k, v]) => (
               <div key={k}>
                 <p className="text-gray-400 text-xs">{k}</p>
@@ -75,22 +81,19 @@ export default function OrderModal({ order, onClose, onCancel }: Props) {
               </div>
             ))}
           </div>
-          <div>
-            <p className="text-xs text-gray-400 mb-1">Địa chỉ</p>
-            <p className="text-sm">{order.address}</p>
-          </div>
+
           <div className="border-t pt-3 space-y-1">
-            {order.items.map((i) => (
-              <div key={i.id} className="flex justify-between text-sm">
+            {order.items?.map((i, idx) => (
+              <div key={idx} className="flex justify-between text-sm">
                 <span>
-                  {i.product_name} x{i.quantity}
+                  {i.productName} x{i.quantity}
                 </span>
                 <span>{formatCurrency(i.price * i.quantity)}</span>
               </div>
             ))}
             <div className="flex justify-between text-sm text-gray-400 pt-1">
               <span>Phí ship</span>
-              <span>{formatCurrency(order.delivery_fee)}</span>
+              <span>{formatCurrency(order.deliveryFee)}</span>
             </div>
             {order.discount > 0 && (
               <div className="flex justify-between text-sm text-green-600">
@@ -100,12 +103,12 @@ export default function OrderModal({ order, onClose, onCancel }: Props) {
             )}
             <div className="flex justify-between font-semibold border-t pt-1">
               <span>Tổng</span>
-              <span>{formatCurrency(order.total)}</span>
+              <span>{formatCurrency(order.totalAmount)}</span>
             </div>
           </div>
-          <p className="text-xs text-gray-400">
-            {formatDate(order.created_at)}
-          </p>
+
+          <p className="text-xs text-gray-400">{formatDate(order.createdAt)}</p>
+
           {!["COMPLETED", "CANCELLED"].includes(order.status) && (
             <button
               onClick={() => {

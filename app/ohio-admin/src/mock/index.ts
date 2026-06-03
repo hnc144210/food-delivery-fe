@@ -1,3 +1,4 @@
+//src/mock/index.ts
 import type { User, Merchant, Order, Voucher, DailyRevenue, Withdrawal } from '@/types'
 
 export const mockUsers: User[] = [

@@ -1,14 +1,13 @@
-// src/pages/Merchants/index.tsx
 import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { Eye } from "lucide-react";
-import MerchantModal from "./MerchantModal";
+import ShipperModal from "./ShipperModal";
 import {
-  useMerchants,
-  useMerchantRequests,
-  useReviewMerchantRequest,
-} from "@/hooks/useMerchants";
-import type { ApiMerchant, ApiMerchantRequest } from "@/types/api";
+  useShippers,
+  useShipperRequests,
+  useReviewShipperRequest,
+} from "@/hooks/useShippers";
+import type { ApiShipper, ApiShipperRequest } from "@/types/api";
 
 const STATUS_COLOR: Record<string, string> = {
   Pending: "bg-yellow-100 text-yellow-800",
@@ -18,24 +17,24 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 const TABS = [
-  { v: "merchants", label: "Nhà hàng" },
+  { v: "shippers", label: "Tài xế" },
   { v: "requests", label: "Chờ duyệt" },
 ];
 
-export default function MerchantsPage() {
-  const [tab, setTab] = useState<"merchants" | "requests">("merchants");
+export default function ShippersPage() {
+  const [tab, setTab] = useState<"shippers" | "requests">("shippers");
   const [selected, setSelected] = useState<
-    ApiMerchant | ApiMerchantRequest | null
+    ApiShipper | ApiShipperRequest | null
   >(null);
 
-  const { data: merchantsData, isLoading: loadingMerchants } = useMerchants();
+  const { data: shippersData, isLoading: loadingShippers } = useShippers();
   const { data: requestsData, isLoading: loadingRequests } =
-    useMerchantRequests();
-  const { mutate: review } = useReviewMerchantRequest();
+    useShipperRequests();
+  const { mutate: review } = useReviewShipperRequest();
 
-  const merchants = merchantsData?.items ?? [];
+  const shippers = shippersData?.items ?? [];
   const requests = requestsData?.items ?? [];
-  const isLoading = tab === "merchants" ? loadingMerchants : loadingRequests;
+  const isLoading = tab === "shippers" ? loadingShippers : loadingRequests;
 
   const handleApprove = (id: string) =>
     review({ requestId: id, body: { verificationStatus: "Approved" } });
@@ -75,54 +74,58 @@ export default function MerchantsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-gray-400 border-b border-gray-100">
-                  {tab === "merchants"
-                    ? ["Nhà hàng", "Trạng thái", "Mở cửa", ""].map((h) => (
-                        <th
-                          key={h}
-                          className="pb-3 font-medium pr-4 whitespace-nowrap"
-                        >
-                          {h}
-                        </th>
-                      ))
-                    : ["Nhà hàng", "Mã số thuế", "Trạng thái", ""].map((h) => (
-                        <th
-                          key={h}
-                          className="pb-3 font-medium pr-4 whitespace-nowrap"
-                        >
-                          {h}
-                        </th>
-                      ))}
+                  {tab === "shippers"
+                    ? ["Tài xế", "Biển số", "Trạng thái", "Ngày tạo", ""].map(
+                        (h) => (
+                          <th
+                            key={h}
+                            className="pb-3 font-medium pr-4 whitespace-nowrap"
+                          >
+                            {h}
+                          </th>
+                        ),
+                      )
+                    : ["Họ tên", "CMND/CCCD", "Bằng lái", "Trạng thái", ""].map(
+                        (h) => (
+                          <th
+                            key={h}
+                            className="pb-3 font-medium pr-4 whitespace-nowrap"
+                          >
+                            {h}
+                          </th>
+                        ),
+                      )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {tab === "merchants"
-                  ? merchants.map((m) => (
-                      <tr key={m.id} className="hover:bg-gray-50">
+                {tab === "shippers"
+                  ? shippers.map((s) => (
+                      <tr key={s.id} className="hover:bg-gray-50">
                         <td className="py-3 pr-4">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-xs font-bold text-[#E8441A]">
-                              {m.storeName?.[0]}
-                            </div>
-                            <span className="font-medium">{m.storeName}</span>
+                          <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-xs font-bold text-[#E8441A]">
+                            T
                           </div>
+                        </td>
+                        <td className="py-3 pr-4 font-mono text-gray-600">
+                          {s.vehiclePlate}
                         </td>
                         <td className="py-3 pr-4">
                           <span
                             className={cn(
                               "px-2 py-0.5 rounded-full text-xs font-medium",
-                              STATUS_COLOR[m.status] ??
+                              STATUS_COLOR[s.status] ??
                                 "bg-gray-100 text-gray-600",
                             )}
                           >
-                            {m.status}
+                            {s.status}
                           </span>
                         </td>
-                        <td className="py-3 pr-4 text-gray-500">
-                          {m.isOpen ? "🟢 Đang mở" : "🔴 Đóng"}
+                        <td className="py-3 pr-4 text-gray-400 text-xs">
+                          {formatDate(s.createdAt)}
                         </td>
                         <td className="py-3">
                           <button
-                            onClick={() => setSelected(m)}
+                            onClick={() => setSelected(s)}
                             className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500"
                           >
                             <Eye size={14} />
@@ -132,24 +135,22 @@ export default function MerchantsPage() {
                     ))
                   : requests.map((r) => (
                       <tr key={r.id} className="hover:bg-gray-50">
-                        <td className="py-3 pr-4">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-xs font-bold text-[#E8441A]">
-                              {r.storeName?.[0]}
-                            </div>
-                            <span className="font-medium">{r.storeName}</span>
-                          </div>
+                        <td className="py-3 pr-4 font-medium">{r.fullName}</td>
+                        <td className="py-3 pr-4 text-gray-500 font-mono text-xs">
+                          {r.idNumber}
                         </td>
-                        <td className="py-3 pr-4 text-gray-500">{r.taxId}</td>
+                        <td className="py-3 pr-4 text-gray-500 font-mono text-xs">
+                          {r.licenseNumber}
+                        </td>
                         <td className="py-3 pr-4">
                           <span
                             className={cn(
                               "px-2 py-0.5 rounded-full text-xs font-medium",
-                              STATUS_COLOR[r.verificationStatus] ??
+                              STATUS_COLOR[r.status] ??
                                 "bg-gray-100 text-gray-600",
                             )}
                           >
-                            {r.verificationStatus}
+                            {r.status}
                           </span>
                         </td>
                         <td className="py-3">
@@ -168,7 +169,7 @@ export default function MerchantsPage() {
         )}
       </div>
 
-      <MerchantModal
+      <ShipperModal
         item={selected}
         onClose={() => setSelected(null)}
         onApprove={handleApprove}

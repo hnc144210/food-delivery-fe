@@ -1,3 +1,4 @@
+//src/pages/Finance/index.tsx
 import { useState } from "react";
 import { mockWithdrawals, mockDailyRevenue } from "@/mock";
 import type { WithdrawalStatus } from "@/types";

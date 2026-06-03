@@ -1,3 +1,4 @@
+//src/types/index.ts
 export type UserRole = 'CUSTOMER' | 'MERCHANT' | 'SHIPPER' | 'ADMIN'
 export type UserStatus = 'ACTIVE' | 'LOCKED' | 'PENDING'
 export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'DELIVERING' | 'COMPLETED' | 'CANCELLED'
@@ -96,4 +97,15 @@ export interface DailyRevenue {
   date: string
   revenue: number
   orders: number
+}
+
+export interface ApiUserMapped {
+  id: string
+  name: string
+  email: string
+  phone: string
+  role: UserRole
+  status: UserStatus
+  avatar_url?: string
+  created_at: string
 }
