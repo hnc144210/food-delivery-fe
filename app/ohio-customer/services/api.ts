@@ -7,6 +7,7 @@ const api = axios.create({ baseURL: API_BASE_URL });
 api.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem('access_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
+  console.log("API Request:", config.method?.toUpperCase(), (config.baseURL ?? "") + (config.url ?? ""));
   return config;
 });
 
