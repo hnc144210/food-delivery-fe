@@ -3,6 +3,7 @@ import api from "./api";
 import { VoucherListResponse } from "@/types/voucher";
 import { MyOrderResponse, OrderDetailResponse } from "@/types/order";
 import axios from "axios";
+import { CheckoutPreviewResponseDto, CreateOrderResponseDto } from "@/types/order";
 
 export type ApiResponse<T> = {
     ok: true;
@@ -11,6 +12,21 @@ export type ApiResponse<T> = {
 };
 export type ConfirmationResponse = {
     message: string;
+};
+
+export type CheckoutPreviewRequestDto = {
+    merchantId: string;
+    addressId: string;
+    voucherCode?: string | null;
+    paymentMethod: 'COD' | 'VNPAY' | 'WALLET';
+};
+
+export type CreateOrderRequestDto = {
+    merchantId: string;
+    addressId: string;
+    voucherCode?: string | null;
+    paymentMethod: 'COD' | 'VNPAY' | 'WALLET';
+    note?: string | null;
 };
 export type ApiConfirmationResponse = ApiResponse<ConfirmationResponse>;
 
@@ -23,6 +39,7 @@ const handleApiError = (error: any, methodName: string) => {
             responseData: error.response?.data,
             message: error.message,
         });
+        console.error('fieldErrors:', JSON.stringify(error.response?.data?.data?.fieldErrors, null, 2));
         const backendMessage = error.response?.data?.message || error.response?.data?.errors?.[0] || error.message;
         throw new Error(backendMessage);
     }
@@ -162,5 +179,38 @@ export const orderService = {
         } catch (error) {
             throw handleApiError(error, 'getOrderDetail');
         }
+    },
+    checkoutPreview: async (payload: CheckoutPreviewRequestDto): Promise<CheckoutPreviewResponseDto> => {
+    try {
+        const response = await api.post<ApiResponse<CheckoutPreviewResponseDto>>(
+          '/api/orders/checkout/preview', 
+          {
+            ...payload,
+            voucherCode: payload.voucherCode ?? undefined,
+          }
+        );
+        const resData = response.data;
+        if (!resData.ok) throw new Error(resData.message);
+        return resData.data;
+    } catch (error) {
+        throw handleApiError(error, 'checkoutPreview');
     }
+},
+
+createOrder: async (payload: CreateOrderRequestDto): Promise<CreateOrderResponseDto> => {
+    try {
+        const response = await api.post<ApiResponse<CreateOrderResponseDto>>(
+          '/api/orders/my', 
+          {
+            ...payload,
+            voucherCode: payload.voucherCode ?? undefined,
+          }
+        );
+        const resData = response.data;
+        if (!resData.ok) throw new Error(resData.message);
+        return resData.data;
+    } catch (error) {
+        throw handleApiError(error, 'createOrder');
+    }
+},
 };
