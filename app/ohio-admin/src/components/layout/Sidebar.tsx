@@ -15,6 +15,7 @@ import {
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
 import { Bike } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 const NAV = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -50,10 +51,10 @@ export default function Sidebar({ collapsed, onToggle }: Props) {
     >
       <div className="flex items-center h-16 px-4 border-b border-white/10">
         {!collapsed && (
-          <span className="font-bold text-lg text-[#E8441A]">OHIO Admin</span>
+          <img src={logo} alt="OHIO Admin" className="h-8 object-contain" />
         )}
         {collapsed && (
-          <span className="font-bold text-[#E8441A] mx-auto">O</span>
+          <img src={logo} alt="O" className="h-8 w-8 object-contain mx-auto" />
         )}
       </div>
 

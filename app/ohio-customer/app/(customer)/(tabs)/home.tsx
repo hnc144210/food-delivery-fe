@@ -1,116 +1,58 @@
 import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View, ScrollView, TouchableWithoutFeedback, Keyboard, ActivityIndicator } from "react-native";
-import { SearchBar } from "../../../components/ui/SearchBar";
+import { StyleSheet, Text, TouchableOpacity, View, ScrollView, TouchableWithoutFeedback, Keyboard, ActivityIndicator, Image } from "react-native";
+import { SearchBar } from "@/components/ui/SearchBar";
 import EvilIcons from '@expo/vector-icons/EvilIcons';
 import AntDesign from '@expo/vector-icons/AntDesign';
-import { ReturnButton } from "../../../components/ui/ReturnButton";
-import { DealsOfTheDay } from "../../../components/features/DealsofthedayCard";
-import { NearbyRestaurant } from "../../../components/features/NearbyrestaurantCard";
-import { CategoriesList } from "../../../components/features/CategoriesList";
-import { VoucherList } from "../../../components/features/VoucherList";
+import { ReturnButton } from "@/components/ui/ReturnButton";
+import { DealsOfTheDay } from "@/components/features/DealsofthedayCard";
+import { NearbyRestaurant } from "@/components/features/NearbyrestaurantCard";
+import { CategoriesList } from "@/components/features/CategoriesList";
+import { VoucherList } from "@/components/features/VoucherList";
 import { useRouter } from "expo-router";
 
 import { useQuery } from '@tanstack/react-query';
-import api from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
-import { mock_categories, mock_productdata, mock_vouchers, mock_addresses } from "../../../mock/home";
+import { mock_addresses_new, mock_vouchers_new, mock_categories_new, mock_productdata_new } from "@/mock/home";
+import { homeService } from "@/services/catalogService";
+import { userService } from "@/services/userService";
+import { orderService } from "@/services/orderService";
+import { CategoryTreeNodeDto } from "@/types/category";
 
-// ─── API Request Functions ───────────────────────────────────────────────────
+// ─── Recursive Helpers for Category Tree ───────────────────────────────────
 
-async function fetchCategories() {
-    try {
-        const response = await api.get('/catalog/categories');
-        const resData = response.data;
-        // Map ApiResponse<T> where T might be wrapped in .data or returned directly
-        const rawData = resData.success ? resData.data : resData;
-        if (Array.isArray(rawData)) {
-            return rawData.map((cat: any) => ({
-                id: cat.id,
-                name: cat.name,
-                icon_url: cat.iconUrl || cat.icon_url || 'https://via.placeholder.com/150',
-            }));
+function findCategoryNode(nodes: CategoryTreeNodeDto[], id: string): CategoryTreeNodeDto | null {
+    for (const node of nodes) {
+        if (node.id === id) return node;
+        if (node.children && node.children.length > 0) {
+            const found = findCategoryNode(node.children, id);
+            if (found) return found;
         }
-        return mock_categories;
-    } catch (error) {
-        console.log('Error fetching categories from backend, using mock:', error);
-        return mock_categories;
     }
+    return null;
 }
 
-async function fetchVouchers() {
-    try {
-        const response = await api.get('/orders/vouchers');
-        const resData = response.data;
-        const rawData = resData.success ? resData.data : resData;
-        if (Array.isArray(rawData)) {
-            return rawData.map((v: any) => ({
-                description: v.description || v.name || `${v.code} - Giảm ${v.discountValue}`,
-                start_date: new Date(v.startDate).toLocaleDateString('vi-VN'),
-                end_date: new Date(v.endDate).toLocaleDateString('vi-VN'),
-                image_url: 'https://cdn.pixabay.com/photo/2015/04/08/13/13/food-712665_1280.jpg',
-            }));
+function findCategoryPath(nodes: CategoryTreeNodeDto[], targetId: string, currentPath: CategoryTreeNodeDto[] = []): CategoryTreeNodeDto[] | null {
+    for (const node of nodes) {
+        const newPath = [...currentPath, node];
+        if (node.id === targetId) {
+            return newPath;
         }
-        return mock_vouchers;
-    } catch (error) {
-        console.log('Error fetching vouchers from backend, using mock:', error);
-        return mock_vouchers;
+        if (node.children && node.children.length > 0) {
+            const path = findCategoryPath(node.children, targetId, newPath);
+            if (path) return path;
+        }
     }
+    return null;
 }
 
-async function fetchProducts() {
-    try {
-        const response = await api.get('/catalog/products');
-        const resData = response.data;
-        const rawData = resData.success ? resData.data : resData;
-        if (Array.isArray(rawData)) {
-            return rawData.map((p: any) => ({
-                food: {
-                    id: p.id,
-                    restaurantId: p.merchantId,
-                    categoryId: p.categoryId || '',
-                    name: p.name,
-                    price: Number(p.basePrice),
-                    image: p.imageUrl || 'https://via.placeholder.com/150',
-                    isAvailable: p.isAvailable,
-                    options: [],
-                },
-                base_price: Number(p.basePrice),
-                discount_price: p.discountPrice ? Number(p.discountPrice) : Number(p.basePrice),
-                prep_time: p.prepTime || 15,
-                rating: p.averageRating ? Number(p.averageRating) : 5.0,
-            }));
+function getAllDescendantIds(node: CategoryTreeNodeDto): string[] {
+    let ids = [node.id];
+    if (node.children && node.children.length > 0) {
+        for (const child of node.children) {
+            ids = ids.concat(getAllDescendantIds(child));
         }
-        return mock_productdata;
-    } catch (error) {
-        console.log('Error fetching products from backend, using mock:', error);
-        return mock_productdata;
     }
-}
-
-async function fetchAddresses(userId?: string) {
-    if (!userId) return mock_addresses;
-    try {
-        const response = await api.get(`/users/${userId}/addresses`);
-        const resData = response.data;
-        const rawData = resData.success ? resData.data : resData;
-        if (Array.isArray(rawData)) {
-            return rawData.map((addr: any) => ({
-                id: addr.id,
-                addressLabel: addr.label || 'Địa chỉ',
-                receiverName: addr.recipientName || '',
-                receiverPhone: addr.phone || '',
-                addressLine: addr.addressLine || '',
-                street: addr.ward || '',
-                district: addr.district || '',
-                city: addr.city || '',
-                defaultAddress: addr.isDefault || false,
-            }));
-        }
-        return mock_addresses;
-    } catch (error) {
-        console.log('Error fetching addresses from backend, using mock:', error);
-        return mock_addresses;
-    }
+    return ids;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -118,6 +60,7 @@ async function fetchAddresses(userId?: string) {
 export default function HomeScreen() {
     const [isSearching, setIsSearching] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [categoriesFilter, setCategoriesFilter] = useState('');
 
     const router = useRouter();
     const user = useAuthStore((s) => s.user);
@@ -125,39 +68,64 @@ export default function HomeScreen() {
 
     // ─── React Query Hooks ────────────────────────────────────────────────────
 
-    const { data: categories = mock_categories } = useQuery({
+    const { data: categories } = useQuery({
         queryKey: ['categories'],
-        queryFn: fetchCategories,
-        placeholderData: mock_categories,
+        queryFn: homeService.getCategories,
     });
 
-    const { data: vouchers = mock_vouchers } = useQuery({
+    const { data: categoryTree } = useQuery({
+        queryKey: ['categoryTree'],
+        queryFn: homeService.getCategoryTree,
+    });
+
+    const { data: vouchers } = useQuery({
         queryKey: ['vouchers'],
-        queryFn: fetchVouchers,
-        placeholderData: mock_vouchers,
+        queryFn: orderService.getVouchers,
     });
 
-    const { data: products = mock_productdata } = useQuery({
+    const { data: products } = useQuery({
         queryKey: ['products'],
-        queryFn: fetchProducts,
-        placeholderData: mock_productdata,
+        queryFn: homeService.getProducts,
     });
 
-    const { data: addresses = mock_addresses } = useQuery({
+    const { data: addresses } = useQuery({
         queryKey: ['addresses', userId],
-        queryFn: () => fetchAddresses(userId),
-        placeholderData: mock_addresses,
+        queryFn: () => userService.getAddresses(userId!),
         enabled: !!userId,
     });
 
     // Find default or first address to display in header
-    const defaultAddress = addresses.find(addr => addr.defaultAddress) || addresses[0];
-    const addressLabel = defaultAddress ? defaultAddress.addressLabel : 'Home';
+    const addressList = addresses?.items || mock_addresses_new;
+    const addressLabel = addressList?.find(addr => addr.IsDefault)?.Label || addressList[0]?.Label || 'null';
+
+    const categoryList = categories?.items || mock_categories_new;
 
     const handlePressSearch = () => {
-        //do something
-        router.push('/searchresult');
-    }
+        router.push({ pathname: '/(customer)/searchresult', params: { searchQuery } });
+    };
+
+    // ─── Tree-based Product Filtering and Tree Rendering ─────────────────────
+
+    const activeNode = categoryTree && categoriesFilter
+        ? findCategoryNode(categoryTree, categoriesFilter)
+        : null;
+
+    const categoryPath = categoryTree && categoriesFilter
+        ? findCategoryPath(categoryTree, categoriesFilter)
+        : null;
+
+    // Get all descendant category IDs (including the selected category itself)
+    const allowedCategoryIds = activeNode
+        ? getAllDescendantIds(activeNode)
+        : categoriesFilter
+            ? [categoriesFilter]
+            : [];
+
+    // Filter products recursively based on the category subtree
+    const allProducts = products?.items || mock_productdata_new;
+    const filteredProducts = categoriesFilter !== ''
+        ? allProducts.filter(p => p.categoryId && allowedCategoryIds.includes(p.categoryId))
+        : allProducts;
 
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -182,15 +150,102 @@ export default function HomeScreen() {
                 </View>
 
                 {/**body */}
-                {!isSearching && <ScrollView style={styles.body}>
-                    <VoucherList vouchers={vouchers} />
-                    <CategoriesList categories={categories} />
-                    <DealsOfTheDay dealoftheday={products} />
-                    <NearbyRestaurant nearbyrestaurants={products} />
+                {!isSearching && <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
+                    {categoriesFilter === '' ? (
+                        <View style={{ flexDirection: 'column', gap: 10 }}>
+                            {/**vouchers */}
+                            <VoucherList vouchers={vouchers?.items || mock_vouchers_new} />
+
+                            {/**categories */}
+                            <CategoriesList categories={categoryList} onCategorySelected={(categoryId) => setCategoriesFilter(categoryId)} />
+
+                            {/**products */}
+                            <DealsOfTheDay dealoftheday={allProducts} title="Món ăn đặc biệt hôm nay" categoryfilter={categoriesFilter} />
+                            <NearbyRestaurant nearbyrestaurants={allProducts} title="Nhà hàng lân cận" categoryfilter={categoriesFilter} />
+                        </View>
+                    ) : (
+                        <View style={{ flexDirection: 'column', gap: 16 }}>
+                            {/* Category Header with Back Button */}
+                            <View style={styles.categoryTitleRow}>
+                                <TouchableOpacity style={styles.backButtonCircle} onPress={() => setCategoriesFilter('')}>
+                                    <AntDesign name="arrow-left" size={20} color="#1F2937" />
+                                </TouchableOpacity>
+                                <Text style={styles.categoryTitleText}>
+                                    {activeNode?.name || categoryList.find(ca => ca.id === categoriesFilter)?.name}
+                                </Text>
+                                <View style={{ width: 40 }} />
+                            </View>
+
+                            {/* Breadcrumbs Path */}
+                            {categoryPath && categoryPath.length > 0 && (
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.breadcrumbsContainer}>
+                                    <TouchableOpacity onPress={() => setCategoriesFilter('')}>
+                                        <Text style={styles.breadcrumbItemText}>Tất cả</Text>
+                                    </TouchableOpacity>
+                                    {categoryPath.map((pathNode, idx) => (
+                                        <View key={pathNode.id} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                            <AntDesign name="right" size={10} color="#9CA3AF" style={{ marginHorizontal: 6 }} />
+                                            <TouchableOpacity
+                                                onPress={() => setCategoriesFilter(pathNode.id)}
+                                                disabled={idx === categoryPath.length - 1}
+                                            >
+                                                <Text style={[
+                                                    styles.breadcrumbItemText,
+                                                    idx === categoryPath.length - 1 && styles.breadcrumbItemActiveText
+                                                ]}>
+                                                    {pathNode.name}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    ))}
+                                </ScrollView>
+                            )}
+
+                            {/* Children Tree rendering (tree của nó) */}
+                            {activeNode && activeNode.children && activeNode.children.length > 0 && (
+                                <View style={styles.subtreeCard}>
+                                    <Text style={styles.subtreeHeader}>Danh mục phụ</Text>
+                                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.subtreeScrollView}>
+                                        {activeNode.children.map((childNode) => (
+                                            <TouchableOpacity
+                                                key={childNode.id}
+                                                style={styles.subtreeChip}
+                                                onPress={() => setCategoriesFilter(childNode.id)}
+                                            >
+                                                <View style={styles.subtreeChipIconPlaceholder}>
+                                                    {childNode.iconUrl ? (
+                                                        <Image source={{ uri: childNode.iconUrl }} style={styles.subtreeChipIcon} />
+                                                    ) : (
+                                                        <AntDesign name="appstore" size={16} color="#EE4D2D" />
+                                                    )}
+                                                </View>
+                                                <Text style={styles.subtreeChipText}>{childNode.name}</Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </ScrollView>
+                                </View>
+                            )}
+
+                            {/* Filtered Products List */}
+                            <View style={{ flexDirection: 'column', gap: 10 }}>
+                                {filteredProducts.length === 0 ? (
+                                    <View style={styles.emptyProductsContainer}>
+                                        <AntDesign name="inbox" size={48} color="#D1D5DB" />
+                                        <Text style={styles.emptyProductsText}>Chưa có sản phẩm nào trong danh mục này</Text>
+                                    </View>
+                                ) : (
+                                    <>
+                                        <DealsOfTheDay dealoftheday={filteredProducts} title="Sản phẩm nổi bật" categoryfilter="" />
+                                        <NearbyRestaurant nearbyrestaurants={filteredProducts} title="Nhà hàng lân cận" categoryfilter="" />
+                                    </>
+                                )}
+                            </View>
+                        </View>
+                    )}
                     <View style={{ height: 80, width: '100%' }} />
                 </ScrollView>}
                 {isSearching && <View style={styles.body}>
-                    <CategoriesList categories={categories} />
+                    <CategoriesList categories={categoryList} onCategorySelected={(categoryId) => { setIsSearching(false); setCategoriesFilter(categoryId) }} />
                 </View>}
             </View>
         </TouchableWithoutFeedback>
@@ -225,5 +280,109 @@ const styles = StyleSheet.create({
         flex: 1,
         width: '100%',
         padding: 20,
+    },
+
+    categoryTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: '100%',
+    },
+    backButtonCircle: {
+        width: 40,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 20,
+        backgroundColor: 'white',
+        shadowColor: '#000',
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    categoryTitleText: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#EE4D2D',
+        textAlign: 'center',
+    },
+
+    breadcrumbsContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 4,
+    },
+    breadcrumbItemText: {
+        fontSize: 13,
+        color: '#6B7280',
+        fontWeight: '500',
+    },
+    breadcrumbItemActiveText: {
+        color: '#EE4D2D',
+        fontWeight: '700',
+    },
+
+    subtreeCard: {
+        backgroundColor: 'white',
+        borderRadius: 16,
+        padding: 16,
+        shadowColor: '#000',
+        shadowOpacity: 0.03,
+        shadowRadius: 6,
+        elevation: 2,
+    },
+    subtreeHeader: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#374151',
+        marginBottom: 12,
+    },
+    subtreeScrollView: {
+        gap: 12,
+        paddingBottom: 4,
+    },
+    subtreeChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFF0ED',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#FFEBE7',
+        gap: 8,
+    },
+    subtreeChipIconPlaceholder: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: 'white',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    subtreeChipIcon: {
+        width: 16,
+        height: 16,
+        resizeMode: 'contain',
+    },
+    subtreeChipText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#EE4D2D',
+    },
+
+    emptyProductsContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 40,
+        backgroundColor: 'white',
+        borderRadius: 16,
+    },
+    emptyProductsText: {
+        marginTop: 12,
+        color: '#9CA3AF',
+        fontSize: 14,
+        textAlign: 'center',
+        paddingHorizontal: 20,
     },
 });

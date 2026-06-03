@@ -1,4 +1,5 @@
 import { Address, User } from "@/types";
+import { ShipperProfileResponseDto, UserProfileResponseDto } from "@/types/profile";
 
 export const mock_users: User[] = [
     { id: "1", name: 'Super Peak', role: 'MERCHANT', phone: '0123456789', email: '', avatar_url: '' },
@@ -110,4 +111,13 @@ export const mock_chat_messages: ChatMessage[] = [
         isRead: true,
     }
 ];
+
+export const mock_shipper_new: ShipperProfileResponseDto = {
+    id: "1",
+    userId: "1",
+    vehiclePlate: "123",
+    status: "Online",
+    createdAt: "2026-05-31T12:00:00Z",
+    updatedAt: "2026-05-31T12:00:00Z"
+}
 

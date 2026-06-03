@@ -10,13 +10,14 @@ export function useMerchantOverview(params?: DateRangeParams) {
     queryKey: ['merchant-reports', 'overview', params],
     queryFn: () => reportService.getMerchantOverview(params),
     staleTime: REPORT_STALE_TIME,
+    retry: false,
   });
 }
-
 export function useMerchantTopProducts(params?: DateRangeParams) {
   return useQuery({
     queryKey: ['merchant-reports', 'top-products', params],
     queryFn: () => reportService.getMerchantTopProducts(params),
     staleTime: REPORT_STALE_TIME,
+    retry: false,
   });
 }

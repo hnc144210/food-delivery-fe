@@ -30,9 +30,10 @@ export default function UsersPage() {
       users.filter((u: ApiUser) => {
         if (search && !u.fullName.toLowerCase().includes(search.toLowerCase()))
           return false;
+        if (tab !== "ALL" && !u.roles?.includes(tab)) return false;
         return true;
       }),
-    [users, search],
+    [users, search, tab],
   );
 
   return (

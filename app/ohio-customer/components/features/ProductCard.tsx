@@ -5,27 +5,28 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { OrderitemsData } from "../../mock/shipper";
 import { useRouter } from "expo-router";
 import { useState } from "react";
+import { ProductResponseDto } from "@/types/product";
 
-export function ProductCard_Large({ food, base_price, discount_price, prep_time, rating }: ProductCardData) {
+export function ProductCard_Large({ id, name, imageUrl, basePrice, discountPrice, prepTime, averageRating }: ProductResponseDto) {
     const router = useRouter();
     return (
-        <TouchableOpacity style={styles.large} onPress={() => router.push({ pathname: '/(customer)/product', params: { id: food.id } })}>
-            <Image source={{ uri: food.image }} style={{ height: 160, width: 240, borderTopLeftRadius: 12, borderTopRightRadius: 12 }} />
+        <TouchableOpacity style={styles.large} onPress={() => router.push({ pathname: '/(customer)/product', params: { id: id } })}>
+            <Image source={{ uri: imageUrl || '' }} style={{ height: 160, width: 240, borderTopLeftRadius: 12, borderTopRightRadius: 12 }} />
             <View style={{ paddingVertical: 7, paddingHorizontal: 15 }}>
-                <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{food.name}</Text>
+                <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{name}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#B22203' }}>{discount_price}đ</Text>
+                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#B22203' }}>{discountPrice ? discountPrice : basePrice}đ</Text>
                     <View style={{ width: 10 }} />
-                    {discount_price !== base_price && (
-                        <Text style={{ fontSize: 12, color: '#999', textDecorationLine: 'line-through' }}>{base_price}đ</Text>
+                    {discountPrice && (
+                        <Text style={{ fontSize: 12, color: '#999', textDecorationLine: 'line-through' }}>{basePrice}đ</Text>
                     )}
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <AntDesign name="star" size={10} color="black" />
-                    <Text> {rating}</Text>
+                    <Text> {averageRating}</Text>
                     <View style={{ width: 20 }} />
                     <AntDesign name="field-time" size={10} color="black" />
-                    <Text> {prep_time} mins</Text>
+                    <Text> {prepTime} mins</Text>
                 </View>
 
             </View>
@@ -34,40 +35,40 @@ export function ProductCard_Large({ food, base_price, discount_price, prep_time,
     );
 }
 
-export function ProductCard_Medium({ food, discount_price }: ProductCardData) {
+export function ProductCard_Medium({ id, name, imageUrl, basePrice, discountPrice, prepTime, averageRating }: ProductResponseDto) {
     const router = useRouter();
     return (
-        <TouchableOpacity style={styles.medium} onPress={() => router.push({ pathname: '/(customer)/product', params: { id: food.id } })}>
-            <Image source={{ uri: food.image }} style={{ height: 145, width: 145, borderRadius: 20 }} />
+        <TouchableOpacity style={styles.medium} onPress={() => router.push({ pathname: '/(customer)/product', params: { id: id } })}>
+            <Image source={{ uri: imageUrl || '' }} style={{ height: 145, width: 145, borderRadius: 20 }} />
             <View style={{ padding: 0, marginTop: 5 }}>
-                <Text style={{ fontSize: 14, fontWeight: 'bold' }}>{food.name}</Text>
-                <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#B22203' }}>{discount_price}đ</Text>
+                <Text style={{ fontSize: 14, fontWeight: 'bold' }}>{name}</Text>
+                <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#B22203' }}>{discountPrice ? discountPrice : basePrice}đ</Text>
             </View>
 
         </TouchableOpacity>
     );
 }
 
-export function ProductCard_Small({ food, base_price, discount_price, prep_time, rating }: ProductCardData) {
+export function ProductCard_Small({ id, name, imageUrl, basePrice, discountPrice, prepTime, averageRating }: ProductResponseDto) {
     const router = useRouter();
     return (
-        <TouchableOpacity style={styles.small} onPress={() => router.push({ pathname: '/(customer)/product', params: { id: food.id } })}>
-            <Image source={{ uri: food.image }} style={{ width: 100, height: 100, borderRadius: 12 }} />
+        <TouchableOpacity style={styles.small} onPress={() => router.push({ pathname: '/(customer)/product', params: { id: id } })}>
+            <Image source={{ uri: imageUrl || '' }} style={{ width: 110, height: 110, borderRadius: 12 }} />
             <View style={{ padding: 20 }}>
-                <Text style={{ fontSize: 15, fontWeight: 'bold' }}>{food.name}</Text>
+                <Text style={{ fontSize: 15, fontWeight: 'bold' }}>{name}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#B22203' }}>{discount_price}đ</Text>
+                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#B22203' }}>{discountPrice ? discountPrice : basePrice}đ</Text>
                     <View style={{ width: 10 }} />
-                    {discount_price !== base_price && (
-                        <Text style={{ fontSize: 12, color: '#999', textDecorationLine: 'line-through' }}>{base_price}đ</Text>
+                    {discountPrice && (
+                        <Text style={{ fontSize: 12, color: '#999', textDecorationLine: 'line-through' }}>{basePrice}đ</Text>
                     )}
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <AntDesign name="star" size={10} color="black" />
-                    <Text> {rating}</Text>
+                    <Text> {averageRating}</Text>
                     <View style={{ width: 20 }} />
                     <AntDesign name="field-time" size={10} color="black" />
-                    <Text> {prep_time} mins</Text>
+                    <Text> {prepTime} mins</Text>
                 </View>
             </View>
 
@@ -134,7 +135,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         borderRadius: 12,
         width: '100%',
-        height: 100,
+        height: 110,
         alignItems: 'center',
         shadowColor: '#000',
         shadowOpacity: 0.06,
@@ -151,7 +152,6 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
         borderRadius: 12,
         width: 240,
-        height: 245,
         marginBottom: 20,
         shadowColor: '#000',
         shadowOpacity: 0.06,

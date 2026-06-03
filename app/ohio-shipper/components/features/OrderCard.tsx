@@ -3,15 +3,38 @@ import Octicons from "@expo/vector-icons/Octicons";
 import Entypo from '@expo/vector-icons/Entypo';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from "expo-router";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { OrderCardType } from "../../mock/shipper";
 import { mock_nearbyrestaurant } from "@/mock/home";
 import { useMemo } from "react";
 import { number } from "zod";
+import { useMutation } from "@tanstack/react-query";
+import { AssignmentAcceptRequestDto, UpdateDeliveryStatusRequestDto } from "@/types/assignment";
+import { deliveryService } from "@/services/deliveryService";
 
 export function OrderCard_ForDriver({ id, status, merchantId, totalamount, pickuplocation, deliverylocation }: OrderCardType) {
     const router = useRouter();
     const restaurant = useMemo(() => mock_nearbyrestaurant.find(f => f.id === merchantId), [merchantId]);
+
+    const acceptOfferMutation = useMutation({
+        mutationFn: (data: AssignmentAcceptRequestDto) => deliveryService.acceptOffer(data),
+        onSuccess: () => {
+            Alert.alert("Thành công", "Cảm ơn bạn đã xác nhận");
+        },
+        onError: (error) => {
+            Alert.alert("Lỗi", error.message);
+        }
+    })
+
+    const updateStatusMutation = useMutation({
+        mutationFn: ({ assignmentId, data }: { assignmentId: string, data: UpdateDeliveryStatusRequestDto }) => deliveryService.updateDeliveryStatus(assignmentId, data),
+        onSuccess: () => {
+            Alert.alert("Thành công", "Cập nhật trạng thái đơn hàng thành công");
+        },
+        onError: (error) => {
+            Alert.alert("Lỗi", error.message);
+        }
+    })
 
     const statuscolor = () => {
         if (status === 'PENDING') return '#808080ff';
@@ -30,17 +53,22 @@ export function OrderCard_ForDriver({ id, status, merchantId, totalamount, picku
     }
     const handleAccept = () => {
         if (status === 'PENDING') {
-            // API update
+            acceptOfferMutation.mutate({ offerId: "", assignmentId: "", isAccepted: true, rejectionReason: null })
+        }
+    }
+    const handleReject = () => {
+        if (status === 'PENDING') {
+            acceptOfferMutation.mutate({ offerId: "", assignmentId: "", isAccepted: false, rejectionReason: "Tôi không thể giao hàng vào lúc này" })
         }
     }
     const handlePickup = () => {
         if (status === 'READY') {
-            // API update
+            updateStatusMutation.mutate({ assignmentId: "", data: { status: "Delivering", note: "Đã lấy hàng", proofFileKey: null } })
         }
     }
     const handleComplete = () => {
         if (status === 'DELIVERING') {
-            router.push({ pathname: '/(shipper)/completion', params: { id } })
+            updateStatusMutation.mutate({ assignmentId: "", data: { status: "Delivered", note: "Đã giao hàng", proofFileKey: null } })
         }
     }
     return (
@@ -101,9 +129,19 @@ export function OrderCard_ForDriver({ id, status, merchantId, totalamount, picku
 
                 </View>
             </View>
-            <TouchableOpacity style={{ justifyContent: 'center', alignItems: 'center', height: 60, width: '100%', backgroundColor: statuscolor() }} onPress={status === 'PENDING' ? handleAccept : status === 'READY' ? handlePickup : handleComplete}>
+            {status === "PENDING" && <View style={{ flexDirection: 'row' }}>
+                <TouchableOpacity style={{ justifyContent: 'center', alignItems: 'center', height: 60, flex: 1, backgroundColor: '#b1b1b1ff' }} onPress={handleReject}>
+                    <Text style={{ color: 'white', fontSize: 17, fontWeight: 'bold' }}>Từ chối</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={{ justifyContent: 'center', alignItems: 'center', height: 60, flex: 2, backgroundColor: statuscolor() }} onPress={handleAccept}>
+                    <Text style={{ color: 'white', fontSize: 17, fontWeight: 'bold' }}>{buttontext()}</Text>
+                </TouchableOpacity>
+            </View>
+            }
+            {status !== "PENDING" && <TouchableOpacity style={{ justifyContent: 'center', alignItems: 'center', height: 60, width: '100%', backgroundColor: statuscolor() }} onPress={status === 'READY' ? handlePickup : handleComplete}>
                 <Text style={{ color: 'white', fontSize: 17, fontWeight: 'bold' }}>{buttontext()}</Text>
-            </TouchableOpacity>
+            </TouchableOpacity>}
+
         </View>
     );
 }
@@ -265,7 +303,7 @@ const styles = StyleSheet.create({
     },
     status: {
         height: 35,
-        width: 100,
+        width: 110,
         backgroundColor: 'lightgray',
         alignItems: 'center',
         justifyContent: 'center',

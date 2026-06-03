@@ -1,30 +1,47 @@
-import { View, StyleSheet, Text, TouchableOpacity } from "react-native";
+import { View, StyleSheet, Text, TouchableOpacity, Alert } from "react-native";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { AddressCardProps } from "@/types";
 import { useRouter } from "expo-router";
+import { AddressResponseDto } from "@/types/address";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuthStore } from "@/store/authStore";
+import { userService } from "@/services/userService";
 
-export function AddressCard({ id, addressLabel, receiverName, receiverPhone, addressLine, street, district, city, defaultAddress }: AddressCardProps) {
+export function AddressCard({ Id, Label, Phone, AddressLine, Ward, District, City, IsDefault }: AddressResponseDto) {
     const router = useRouter();
+    const queryClient = useQueryClient();
+    const user = useAuthStore((s) => s.user);
+    const userId = user?.id || '';
+    const { mutateAsync: deleteAddress } = useMutation({
+        mutationFn: () => userService.deleteAddress(userId, Id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['addresses', userId] });
+            Alert.alert('Xóa địa chỉ thành công');
+        },
+        onError: () => {
+            Alert.alert('Xóa địa chỉ thất bại');
+        },
+    });
     const handleDelete = () => {
-
+        deleteAddress();
     }
     const handleUpdate = () => {
-        router.push({ pathname: "/(customer)/edit_address", params: { id, addressLabel, receiverName, receiverPhone, addressLine, street, district, city, defaultAddress: defaultAddress?.toString() } });
+        router.push({ pathname: "/(customer)/edit_address", params: { Id } });
     }
     return (
         <View style={styles.container}>
             <View style={styles.content}>
                 <View style={styles.header}>
-                    {defaultAddress &&
+                    {IsDefault &&
                         <>
                             <AntDesign name="environment" size={24} color={"#EE4D2D"} />
                             <Text style={styles.defaultBadge}>Mặc định</Text>
                         </>
                     }
                 </View>
-                <Text style={styles.name}>{addressLabel}</Text>
-                <Text style={styles.address}>{addressLine}, {street}, {district}, {city}</Text>
-                <Text style={styles.phoneNumber}>{receiverPhone}</Text>
+                <Text style={styles.name}>{Label}</Text>
+                <Text style={styles.address}>{AddressLine}, {Ward}, {District}, {City}</Text>
+                <Text style={styles.phoneNumber}>{Phone}</Text>
             </View>
 
             <View style={styles.divider} />

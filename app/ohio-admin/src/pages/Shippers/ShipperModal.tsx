@@ -89,24 +89,24 @@ export default function ShipperModal({
                 )}
               </div>
               {item.status === "Pending" && (
-                <div className="flex gap-2 pt-2">
+                <div className="flex gap-3 pt-3">
                   <button
                     onClick={() => {
                       onApprove(item.id);
                       onClose();
                     }}
-                    className="flex-1 flex items-center justify-center gap-2 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600"
+                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-green-500 text-white rounded-xl text-base font-semibold hover:bg-green-600"
                   >
-                    <CheckCircle size={15} /> Duyệt
+                    <CheckCircle size={18} /> Duyệt
                   </button>
                   <button
                     onClick={() => {
                       onReject(item.id);
                       onClose();
                     }}
-                    className="flex-1 flex items-center justify-center gap-2 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600"
+                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-500 text-white rounded-xl text-base font-semibold hover:bg-red-600"
                   >
-                    <XCircle size={15} /> Từ chối
+                    <XCircle size={18} /> Từ chối
                   </button>
                 </div>
               )}

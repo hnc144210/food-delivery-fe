@@ -49,11 +49,10 @@ export type UserRole = 'CUSTOMER' | 'MERCHANT' | 'SHIPPER' | 'ADMIN';
 
 export interface User {
   id: string;
-  name: string;
-  phone: string;
-  email: string;
-  role: UserRole;
-  avatar_url: string;
+  fullName: string;
+  avatarUrl: string;
+  phoneNumber: string;
+  status: string;
 }
 
 export interface Address {
@@ -118,3 +117,5 @@ export interface Voucher {
   maxDiscount: number;
   expiresAt: string;
 }
+
+export * from './review';

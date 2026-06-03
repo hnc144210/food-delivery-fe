@@ -152,7 +152,7 @@ export default function ProfileScreen() {
           <MenuItem
             icon="lock-closed-outline"
             label="Đổi mật khẩu"
-            onPress={() => router.push("/(merchant)/change-password")}
+            onPress={() => router.push("/(auth)/change-password")}
           />
         </View>
 

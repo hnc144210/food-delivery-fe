@@ -4,6 +4,7 @@ export interface ApiUser {
   avatarUrl: string
   phoneNumber: string
   status: string
+  roles: string[] 
 }
 export interface AdminOverview {
   from: string

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
     StyleSheet,
     Text,
@@ -12,13 +12,17 @@ import {
     Keyboard,
     ActivityIndicator
 } from "react-native";
-import { ReturnButton } from "../../components/ui/ReturnButton";
+import { ReturnButton } from "@/components/ui/ReturnButton";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/services/api";
 import { useAuthStore } from "@/store/authStore";
-import { mock_addresses } from "../../mock/home";
+import { mock_addresses, mock_addresses_new } from "@/mock/home";
+import { userService } from "@/services/userService";
+import { AddressRequestDto } from "@/types/address";
+import { addressService } from "@/services/addressService";
+import { mockProvinces, mockWards } from "@/mock/addressitem";
 
 // ─── Dropdown Options ────────────────────────────────────────────────────────
 
@@ -55,34 +59,6 @@ const STREET_OPTIONS = [
     "Đường Nguyễn Thị Minh Khai"
 ];
 
-// ─── Helper API Fetcher ──────────────────────────────────────────────────────
-
-async function fetchAddresses(userId?: string) {
-    if (!userId) return mock_addresses;
-    try {
-        const response = await api.get(`/users/${userId}/addresses`);
-        const resData = response.data;
-        const rawData = resData.success ? resData.data : resData;
-        if (Array.isArray(rawData)) {
-            return rawData.map((addr: any) => ({
-                id: addr.id,
-                addressLabel: addr.label || 'Địa chỉ',
-                receiverName: addr.recipientName || '',
-                receiverPhone: addr.phone || '',
-                addressLine: addr.addressLine || '',
-                street: addr.ward || '', // Ward matches the "street" key in mock/type
-                district: addr.district || '',
-                city: addr.city || '',
-                defaultAddress: addr.isDefault || false,
-            }));
-        }
-        return mock_addresses;
-    } catch (error) {
-        console.log('Error fetching addresses, using mock:', error);
-        return mock_addresses;
-    }
-}
-
 // ─── ComboBox Sub-component ──────────────────────────────────────────────────
 
 interface ComboBoxProps {
@@ -91,62 +67,66 @@ interface ComboBoxProps {
     options: string[];
     onSelect: (val: string) => void;
     placeholder: string;
+    disabled?: boolean;
 }
 
-function ComboBox({ label, value, options, onSelect, placeholder }: ComboBoxProps) {
+function ComboBox({ label, value, options, onSelect, placeholder, disabled }: ComboBoxProps) {
     const [visible, setVisible] = useState(false);
 
     return (
         <View style={styles.content}>
             <Text style={styles.labelText}>{label}:</Text>
             <TouchableOpacity
-                style={styles.dropdownTrigger}
+                style={[styles.dropdownTrigger, disabled && { backgroundColor: '#e5e7eb', borderColor: '#d1d5db' }]}
                 onPress={() => {
+                    if (disabled) return;
                     Keyboard.dismiss();
                     setVisible(true);
                 }}
-                activeOpacity={0.8}
+                activeOpacity={disabled ? 1 : 0.8}
             >
-                <Text style={{ flex: 1, color: value ? '#111827' : '#9ca3af', fontSize: 15 }}>
+                <Text style={{ flex: 1, color: disabled ? '#9ca3af' : (value ? '#111827' : '#9ca3af'), fontSize: 15 }}>
                     {value || placeholder}
                 </Text>
-                <AntDesign name="down" size={14} color="#6b7280" />
+                <AntDesign name="down" size={14} color={disabled ? '#d1d5db' : '#6b7280'} />
             </TouchableOpacity>
 
-            <Modal visible={visible} transparent animationType="fade">
-                <TouchableWithoutFeedback onPress={() => setVisible(false)}>
-                    <View style={styles.modalOverlay}>
-                        <View style={styles.modalContent}>
-                            <View style={styles.modalHeader}>
-                                <Text style={styles.modalTitle}>Chọn {label}</Text>
-                                <TouchableOpacity onPress={() => setVisible(false)}>
-                                    <AntDesign name="close" size={20} color="#4b5563" />
-                                </TouchableOpacity>
-                            </View>
-                            <FlatList
-                                data={options}
-                                keyExtractor={(item) => item}
-                                renderItem={({ item }) => (
-                                    <TouchableOpacity
-                                        style={[styles.optionItem, value === item && styles.selectedOption]}
-                                        onPress={() => {
-                                            onSelect(item);
-                                            setVisible(false);
-                                        }}
-                                    >
-                                        <Text style={[styles.optionText, value === item && styles.selectedOptionText]}>
-                                            {item}
-                                        </Text>
-                                        {value === item && <AntDesign name="check" size={16} color="#EE4D2D" />}
+            {!disabled && (
+                <Modal visible={visible} transparent animationType="fade">
+                    <TouchableWithoutFeedback onPress={() => setVisible(false)}>
+                        <View style={styles.modalOverlay}>
+                            <View style={styles.modalContent}>
+                                <View style={styles.modalHeader}>
+                                    <Text style={styles.modalTitle}>Chọn {label}</Text>
+                                    <TouchableOpacity onPress={() => setVisible(false)}>
+                                        <AntDesign name="close" size={20} color="#4b5563" />
                                     </TouchableOpacity>
-                                )}
-                                contentContainerStyle={{ paddingBottom: 20 }}
-                                showsVerticalScrollIndicator={false}
-                            />
+                                </View>
+                                <FlatList
+                                    data={options}
+                                    keyExtractor={(item) => item}
+                                    renderItem={({ item }) => (
+                                        <TouchableOpacity
+                                            style={[styles.optionItem, value === item && styles.selectedOption]}
+                                            onPress={() => {
+                                                onSelect(item);
+                                                setVisible(false);
+                                            }}
+                                        >
+                                            <Text style={[styles.optionText, value === item && styles.selectedOptionText]}>
+                                                {item}
+                                            </Text>
+                                            {value === item && <AntDesign name="check" size={16} color="#EE4D2D" />}
+                                        </TouchableOpacity>
+                                    )}
+                                    contentContainerStyle={{ paddingBottom: 20 }}
+                                    showsVerticalScrollIndicator={false}
+                                />
+                            </View>
                         </View>
-                    </View>
-                </TouchableWithoutFeedback>
-            </Modal>
+                    </TouchableWithoutFeedback>
+                </Modal>
+            )}
         </View>
     );
 }
@@ -156,7 +136,7 @@ function ComboBox({ label, value, options, onSelect, placeholder }: ComboBoxProp
 export default function EditAddressScreen() {
     const router = useRouter();
     const queryClient = useQueryClient();
-    const { id } = useLocalSearchParams<{ id: string }>();
+    const { Id } = useLocalSearchParams<{ Id: string }>();
 
     const user = useAuthStore((s) => s.user);
     const userId = user?.id;
@@ -166,71 +146,126 @@ export default function EditAddressScreen() {
     const [receiverName, setReceiverName] = useState("");
     const [receiverPhone, setReceiverPhone] = useState("");
     const [addressLine, setAddressLine] = useState("");
-    const [street, setStreet] = useState("");
     const [ward, setWard] = useState("");
     const [city, setCity] = useState("");
     const [isDefault, setIsDefault] = useState(false);
 
     // Load current address
-    const { data: addresses = mock_addresses } = useQuery({
+    const { data: address } = useQuery({
         queryKey: ['addresses', userId],
-        queryFn: () => fetchAddresses(userId),
-        placeholderData: mock_addresses,
+        queryFn: () => userService.getAddressDetail(userId!, Id!),
         enabled: !!userId,
     });
 
-    const addressToEdit = addresses.find(addr => addr.id === id);
-
+    const addressDetail = address ? address : useMemo(() => mock_addresses_new.find((p) => p.Id === Id), [Id])
     // Populate values on load
     useEffect(() => {
-        if (addressToEdit) {
-            setLabel(addressToEdit.addressLabel || "");
-            setReceiverName(addressToEdit.receiverName || "");
-            setReceiverPhone(addressToEdit.receiverPhone || "");
-            setAddressLine(addressToEdit.addressLine || "");
-            setStreet(addressToEdit.street || "");
-            setWard(addressToEdit.district || "");
-            setCity(addressToEdit.city || "");
-            setIsDefault(addressToEdit.defaultAddress || false);
+        if (addressDetail) {
+            setLabel(addressDetail.Label || "null");
+            setReceiverName(addressDetail.RecipientName || "null");
+            setReceiverPhone(addressDetail.Phone || "null");
+            setAddressLine(addressDetail.AddressLine || "null");
+            setWard(addressDetail.Ward || "null");
+            setCity(addressDetail.City || "null");
+            setIsDefault(addressDetail.IsDefault || false);
         }
-    }, [addressToEdit]);
+    }, [addressDetail]);
 
     // Mutation to save changes (Updates locally / mocks or hits BE endpoint)
     const updateAddressMutation = useMutation({
-        mutationFn: async () => {
-            const payload = {
-                label,
-                recipientName: receiverName,
-                phone: receiverPhone,
-                addressLine,
-                ward: street, // ward maps to street in frontend representation
-                district: ward, // ward maps to district in frontend representation
-                city,
-                isDefault,
-            };
-
-            if (userId) {
-                return await api.put(`/users/${userId}/addresses/${id}`, payload);
+        mutationFn: () => {
+            if (!userId) {
+                throw new Error("User not found");
             }
-            return null;
+            if (!Id) {
+                throw new Error("Address not found");
+            }
+            const updatedAddress: AddressRequestDto = {
+                Label: label,
+                RecipientName: receiverName,
+                Phone: receiverPhone,
+                AddressLine: addressLine,
+                Ward: ward,
+                District: ward,
+                City: city,
+                IsDefault: isDefault,
+                Lat: addressDetail?.Lat || 0,
+                Lng: addressDetail?.Lng || 0,
+            };
+            return userService.updateAddress(userId, Id, updatedAddress);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['addresses', userId] });
+            alert("Cập nhật địa chỉ thành công!");
             router.back();
         },
         onError: (error) => {
             console.log("Error updating address:", error);
-            // Even if offline/error, return to screen to simulate successful save
-            router.back();
+            alert("Cập nhật địa chỉ thất bại!");
         }
     });
+    const createAddressMutation = useMutation({
+        mutationFn: () => {
+            if (!userId) {
+                throw new Error("User not found");
+            }
+            const newAddress: AddressRequestDto = {
+                Label: label,
+                RecipientName: receiverName,
+                Phone: receiverPhone,
+                AddressLine: addressLine,
+                Ward: ward,
+                District: ward,
+                City: city,
+                IsDefault: isDefault,
+                Lat: addressDetail?.Lat || 0,
+                Lng: addressDetail?.Lng || 0,
+            };
+            return userService.createAddress(userId, newAddress);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['addresses', userId] });
+            alert("Thêm địa chỉ thành công!");
+            router.back();
+        },
+        onError: (error) => {
+            console.log("Error creating address:", error);
+            alert("Thêm địa chỉ thất bại!");
+        }
+    });
+
+    const { data: provincesData } = useQuery({
+        queryKey: ['provinces'],
+        queryFn: () => addressService.getProvinces(),
+    });
+
+    const provincesList = provincesData?.items || mockProvinces;
+
+    const selectedProvince = useMemo(() => {
+        if (!city || !provincesList) return null;
+        return provincesList.find(
+            (p) => p.fullName === city || p.name === city
+        );
+    }, [city, provincesData]);
+
+    const { data: wardsData } = useQuery({
+        queryKey: ['wards', selectedProvince?.code],
+        queryFn: () => addressService.getWards(selectedProvince!.code),
+        enabled: !!selectedProvince?.code,
+    });
+
+    const wardsList = wardsData?.items || mockWards.filter(w => w.provinceCode === selectedProvince?.code);
 
     const handleSave = () => {
         if (!label || !receiverName || !receiverPhone || !addressLine) {
             alert("Vui lòng điền đầy đủ thông tin bắt buộc!");
             return;
         }
-        updateAddressMutation.mutate();
+        if (addressDetail?.Id) {
+            updateAddressMutation.mutate();
+        } else {
+            createAddressMutation.mutate();
+        }
     };
 
     return (
@@ -292,27 +327,23 @@ export default function EditAddressScreen() {
 
                     {/* 3 Dropdown ComboBoxes at the bottom */}
                     <ComboBox
-                        label="Đường"
-                        value={street}
-                        options={STREET_OPTIONS}
-                        onSelect={setStreet}
-                        placeholder="Chọn đường"
+                        label="Thành phố"
+                        value={city}
+                        options={provincesList.map(p => p.fullName || p.name) || []}
+                        onSelect={(val) => {
+                            setCity(val);
+                            setWard(""); // Reset ward when city changes
+                        }}
+                        placeholder="Chọn thành phố"
                     />
 
                     <ComboBox
                         label="Phường"
                         value={ward}
-                        options={WARD_OPTIONS}
+                        options={city ? (wardsList.map(w => w.fullName || w.name) || []) : []}
                         onSelect={setWard}
-                        placeholder="Chọn phường"
-                    />
-
-                    <ComboBox
-                        label="Thành phố"
-                        value={city}
-                        options={CITY_OPTIONS}
-                        onSelect={setCity}
-                        placeholder="Chọn thành phố"
+                        placeholder={city ? "Chọn phường" : "Vui lòng chọn thành phố trước"}
+                        disabled={!city}
                     />
 
                     {/* Checkbox for default address */}

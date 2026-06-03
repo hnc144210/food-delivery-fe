@@ -1,28 +1,34 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Image, TextInput } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Image, TextInput, ActivityIndicator, Alert } from "react-native";
 import { ReturnButton } from "../../components/ui/ReturnButton";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { ProductOption, ProductOptions, ProductOptionValue } from "../../components/features/ProductOptions";
 import { foods, mock_productdata, mock_nearbyrestaurant } from "../../mock/home";
+import { homeService } from "@/services/catalogService";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { ProductOptionResponseDto, ProductOptionValueResponseDto } from "@/types/product";
+import { userService } from "@/services/userService";
+import { orderService } from "@/services/orderService";
+import { CartRequestDto, OptionValueRequestDto } from "@/types/cart";
 
 function formatPrice(price: number) {
     return price.toLocaleString('vi-VN') + 'đ';
 }
 
 // Chuyển OptionGroup từ FoodItem sang ProductOption[] để dùng cho UI
-function buildOptionsFromFood(food: typeof foods[0]): ProductOption[] {
-    if (!food.options) return [];
-    return food.options.map((group) => ({
+function buildOptionsFromFood(options: ProductOptionResponseDto[]) {
+    if (!options) return [];
+    return options.map((group) => ({
         id: group.id,
         name: group.name,
-        max_selection: group.maxSelect,
-        options: group.options.map((opt, idx) => ({
+        max_selection: group.maxSelections,
+        options: group.values.map((opt) => ({
             id: opt.id,
             name: opt.name,
-            extra_price: opt.priceDiff,
-            is_selected: group.required && idx === 0, // mặc định chọn option đầu nếu required
+            extra_price: opt.additionalPrice,
+            is_selected: false, // mặc định chọn option đầu nếu required
         })),
     }));
 }
@@ -30,26 +36,37 @@ function buildOptionsFromFood(food: typeof foods[0]): ProductOption[] {
 export default function ProductScreen() {
     const router = useRouter();
     const { id } = useLocalSearchParams<{ id: string }>();
-
-    // Tìm food item theo id
-    const food = useMemo(() => foods.find(f => f.id === id), [id]);
-    const restaurant = useMemo(() => mock_nearbyrestaurant.find(f => f.id === food?.restaurantId), [food?.restaurantId]);
-    // Tìm thêm thông tin từ productdata (giá gốc, giá giảm, rating, prep_time)
-    const productData = useMemo(() => mock_productdata.find(p => p.food.id === id), [id]);
+    const { data: productdata, isLoading } = useQuery({
+        queryKey: ['product', id],
+        queryFn: () => homeService.getProductDetail(id!)
+    })
+    const { data: restaurantdata } = useQuery({
+        queryKey: ['restaurant', productdata?.merchantId],
+        queryFn: () => userService.getMerchantProfile(productdata?.merchantId!),
+        enabled: !!productdata?.merchantId
+    })
 
     const [quantity, setQuantity] = useState(1);
-    const [options, setOptions] = useState<ProductOption[]>(
-        food ? buildOptionsFromFood(food) : []
-    );
+    const [options, setOptions] = useState<ProductOptionResponseDto[]>([]);
+    const [note, setNote] = useState('');
 
-    const handleSelectOption = (option: ProductOption, optionValue: ProductOptionValue) => {
+    useEffect(() => {
+        if (productdata) {
+            setOptions(productdata.options.map(opt => ({
+                ...opt,
+                values: opt.values.map(ov => ({ ...ov, isAvailable: false }))
+            })));
+        }
+    }, [productdata]);
+
+    const handleSelectOption = (option: ProductOptionResponseDto, optionValue: ProductOptionValueResponseDto) => {
         setOptions(prev => prev.map(o => {
             if (o.id === option.id) {
                 return {
                     ...o,
-                    options: o.options?.map(ov => {
+                    values: o.values.map(ov => {
                         if (ov.id === optionValue.id) {
-                            return { ...ov, is_selected: !ov.is_selected };
+                            return { ...ov, isAvailable: !ov.isAvailable };
                         }
                         return ov;
                     }),
@@ -59,11 +76,44 @@ export default function ProductScreen() {
         }));
     }
 
-    const handleAddCart = () => {
+    const addItemCartMutation = useMutation({
+        mutationFn: (cartItem: CartRequestDto) => orderService.addItemCart(cartItem),
+        onSuccess: () => {
+            Alert.alert('Thêm vào giỏ hàng thành công');
+            router.back();
+        },
+        onError: (error: any) => {
+            Alert.alert('Thêm vào giỏ hàng thất bại', error.message);
+        }
+    })
 
+    const handleAddCart = () => {
+        if (options.some(option => option.isRequired && !option.values.some(value => value.isAvailable))) {
+            Alert.alert('Vui lòng chọn đầy đủ các tùy chọn bắt buộc');
+            return;
+        }
+        const optionRequests: OptionValueRequestDto[] = options.map(option => ({
+            optionId: option.id,
+            valueIds: option.values.filter(value => value.isAvailable).map(value => value.id),
+        }));
+        addItemCartMutation.mutate({
+            productId: id,
+            quantity: quantity,
+            note: note,
+            selectedOptions: optionRequests,
+        });
     }
 
-    if (!food) {
+    if (isLoading) {
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color="#EE4D2D" />
+                <Text style={{ marginTop: 12, color: '#888' }}>Đang tải dữ liệu món ăn...</Text>
+            </View>
+        );
+    }
+
+    if (!productdata) {
         return (
             <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
                 <Text style={{ fontSize: 18, color: '#888' }}>Không tìm thấy sản phẩm</Text>
@@ -74,11 +124,10 @@ export default function ProductScreen() {
         );
     }
 
-    const rating = productData?.rating ?? 0;
-    const prep_time = productData?.prep_time ?? 0;
-    const discount_price = productData?.discount_price ?? food.price;
-
-    const totalPrice = (discount_price + options.reduce((acc, option) => acc + option.options.reduce((acc2, optionValue) => acc2 + (optionValue.is_selected ? optionValue.extra_price : 0), 0) || 0, 0)) * quantity;
+    const rating = productdata.averageRating ?? 0;
+    const prep_time = productdata.prepTime ?? 0;
+    const discount_price = productdata.discountPrice ?? productdata.basePrice;
+    const totalPrice = (discount_price + options.reduce((acc, option) => acc + option.values.reduce((acc2, optionValue) => acc2 + (optionValue.isAvailable ? optionValue.additionalPrice : 0), 0) || 0, 0)) * quantity;
 
     return (
         <View style={styles.container}>
@@ -90,33 +139,36 @@ export default function ProductScreen() {
             <ScrollView style={{ width: '100%' }} >
                 {/* Card thông tin món */}
                 <Image
-                    source={{ uri: food.image }}
+                    source={{ uri: productdata.imageUrl || '' }}
                     style={{ width: '100%', height: 240, position: "absolute", top: 0, alignSelf: 'center' }}
                 />
                 <View style={{ paddingHorizontal: 30 }}>
                     <View style={styles.card}>
                         <Text style={{ fontSize: 26, fontWeight: '700', color: '#1a1a1a', flex: 1 }}>
-                            {food.name}
+                            {productdata.name}
                         </Text>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                             <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#EE4D2D' }}>{formatPrice(discount_price)}</Text>
-                            {discount_price !== food.price && (
-                                <Text style={{ fontSize: 13, color: '#999', textDecorationLine: 'line-through' }}>{formatPrice(food.price)}</Text>
+                            {discount_price !== productdata.basePrice && (
+                                <Text style={{ fontSize: 13, color: '#999', textDecorationLine: 'line-through' }}>{formatPrice(productdata.basePrice)}</Text>
                             )}
                         </View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff3f0', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, alignSelf: 'flex-start', marginTop: 8, gap: 4 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff3f0', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, alignSelf: 'flex-start', gap: 4 }}>
                                 <AntDesign name="star" size={12} color="#EE4D2D" />
                                 <Text style={{ fontSize: 13, fontWeight: '600', color: '#EE4D2D' }}>{rating}</Text>
                             </View>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8 }}>
-                                <Text style={{ fontSize: 12, color: '#888' }}><AntDesign name="clock-circle" size={11} color="#888" /> {prep_time} mins</Text>
-                            </View>
+                            <TouchableOpacity onPress={() => { router.push({ pathname: '/(customer)/reviewbyproduct', params: { id: productdata.id } }) }}>
+                                <Text style={{ fontSize: 13, fontWeight: '600', color: '#EE4D2D' }}>Xem đánh giá</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8 }}>
+                            <Text style={{ fontSize: 12, color: '#888' }}><AntDesign name="clock-circle" size={11} color="#888" /> {prep_time} mins</Text>
                         </View>
 
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-                            <Text style={styles.name}>{restaurant?.name}</Text>
-                            <TouchableOpacity onPress={() => { router.push({ pathname: '/(customer)/restaurant', params: { id: restaurant?.id } }) }}>
+                            <Text style={styles.name}>{restaurantdata?.storeName}</Text>
+                            <TouchableOpacity onPress={() => { router.push({ pathname: '/(customer)/restaurant', params: { id: productdata.merchantId } }) }}>
                                 <Text style={styles.menu_button}>Xem chi tiết</Text>
                             </TouchableOpacity>
                         </View>
@@ -125,6 +177,19 @@ export default function ProductScreen() {
                     {options.map((option, index) => (
                         <ProductOptions key={index} option={option} onSelectOption={handleSelectOption} />
                     ))}
+
+                    <View style={styles.notebox}>
+                        <Text style={[styles.name, { marginBottom: 5 }]}>Yêu cầu thêm</Text>
+                        <TextInput
+                            placeholder="Ghi chú cho cửa hàng (vd: nhiều ớt, không hành)"
+                            placeholderTextColor="#999"
+                            value={note}
+                            onChangeText={setNote}
+                            style={styles.noteInput}
+                            multiline
+                            numberOfLines={3}
+                        />
+                    </View>
                 </View>
             </ScrollView>
 
@@ -173,6 +238,16 @@ export const styles = StyleSheet.create({
         borderRadius: 20,
         padding: 20,
         marginTop: 160,
+        marginBottom: 12,
+        shadowColor: '#000',
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    notebox: {
+        backgroundColor: 'white',
+        borderRadius: 20,
+        padding: 20,
         marginBottom: 12,
         shadowColor: '#000',
         shadowOpacity: 0.06,

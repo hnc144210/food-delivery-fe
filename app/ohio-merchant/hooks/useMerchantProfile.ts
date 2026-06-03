@@ -26,12 +26,17 @@ export function useUpdateMerchant() {
   const qc = useQueryClient();
   const merchantId = useMerchantStore((s) => s.merchant?.id);
   const setMerchant = useMerchantStore((s) => s.setMerchant);
+  const userId = useAuthStore((s) => s.user?.id);  // thêm dòng này
 
   return useMutation({
     mutationFn: (body: UpdateMerchantRequest) =>
       merchantService.updateMerchant(merchantId!, body),
     onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ['merchant'] });
+      if (userId) {
+        const updated = await merchantService.getMerchantByUser(userId);  // truyền userId
+        setMerchant(updated);
+      }
+      qc.invalidateQueries({ queryKey: ['merchant'] });
     },
   });
 }

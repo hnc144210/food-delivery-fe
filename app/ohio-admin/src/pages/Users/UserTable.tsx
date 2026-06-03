@@ -21,7 +21,7 @@ export default function UserTable({ users, onView, onDelete }: Props) {
       <table className="w-full text-sm">
         <thead>
           <tr className="text-left text-gray-400 border-b border-gray-100">
-            {["Người dùng", "SĐT", "Trạng thái", ""].map((h) => (
+            {["Người dùng", "SĐT", "Vai trò", "Trạng thái", ""].map((h) => (
               <th key={h} className="pb-3 font-medium pr-4 whitespace-nowrap">
                 {h}
               </th>
@@ -42,6 +42,9 @@ export default function UserTable({ users, onView, onDelete }: Props) {
                 </div>
               </td>
               <td className="py-3 pr-4 text-gray-500">{u.phoneNumber}</td>
+              <td className="py-3 pr-4 text-gray-500 text-xs">
+                {u.roles?.join(", ") ?? "—"}
+              </td>
               <td className="py-3 pr-4">
                 <span
                   className={cn(

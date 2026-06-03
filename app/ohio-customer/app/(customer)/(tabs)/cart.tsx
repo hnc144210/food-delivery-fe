@@ -8,60 +8,28 @@ import {
     ActivityIndicator,
     RefreshControl
 } from "react-native";
-import { OrderCard_ForCustomer } from "../../../components/features/OrderCard";
-import { mock_cart_order, mock_odercard_forcustomer } from "@/mock/customer_cart";
+import { CartCard, OrderCard_ForCustomer } from "@/components/features/OrderCard";
+import { mock_cart_new, mock_odercard_forcustomer, mock_order_history_items, mock_order_ongoing_items } from "@/mock/customer_cart";
 import { useQuery } from "@tanstack/react-query";
-import api from "@/services/api";
-import { useAuthStore } from "@/store/authStore";
-import { User } from "@/types";
-
-async function getCartItems(user: User | null) {
-    if (!user) return mock_cart_order;
-    const userId = user?.id
-    try {
-        if (!userId) return mock_cart_order;
-        const response = await api.get('/orders/cart');
-        const resData = response.data;
-        const rawData = resData.success ? resData.data : resData;
-        const items = rawData?.items || rawData;
-
-        if (Array.isArray(items) && items.length > 0) {
-            return items.map((cart: any) => ({
-                status: '',
-                restaurantname: `Cửa hàng ${cart.merchantId?.slice(0, 5).toUpperCase() || 'Food'}`,
-                recipientname: user?.name || 'Khách hàng',
-                subtotal: cart.subtotal || 0,
-                deliveryfee: 25000,
-                discountamount: 0,
-                totalamount: (cart.subtotal || 0) + 25000,
-                pickuplocation: 'Nhà hàng đối tác',
-                deliverylocation: 'Địa chỉ của tôi',
-                orderedtime: 'Chưa hoàn thành',
-                orderitems: (cart.items || []).map((item: any) => ({
-                    name: item.productName || 'Món ăn',
-                    quantity: item.quantity || 1
-                }))
-            }));
-        }
-        return mock_cart_order;
-    } catch (error) {
-        console.log('Error fetching cart from backend, using mock:', error);
-        return mock_cart_order;
-    }
-}
+import { orderService } from "@/services/orderService";
+import { Feather } from "@expo/vector-icons";
 
 export default function CartScreen() {
     const [cartState, setCartState] = useState(1);
 
-    const user = useAuthStore((s) => s.user);
-    const userId = user?.id;
-
     // Fetch dynamic cart items with elegant mock fallback (similar to categories & vouchers on Home)
-    const { data: cartItems, isLoading: isCartLoading, refetch: refetchCart, isRefetching } = useQuery({
-        queryKey: ['cart', userId],
-        queryFn: async () => await getCartItems(user),
-        enabled: !!userId,
+    const { data: carts, isLoading: isCartLoading, refetch: refetchCart, isRefetching } = useQuery({
+        queryKey: ['cart'],
+        queryFn: orderService.getCart,
     });
+
+    const { data: orderHistory } = useQuery({
+        queryKey: ['order-history'],
+        queryFn: orderService.getMyOrderHistory,
+    });
+    const ongoingOrders = orderHistory?.items.filter((item) => item.status !== 'DELIVERED' && item.status !== 'CANCELLED') || mock_order_ongoing_items;
+    const historyOrders = orderHistory?.items.filter((item) => item.status === 'DELIVERED' || item.status === 'CANCELLED') || mock_order_history_items;
+    const myCarts = carts?.items || mock_cart_new;
 
     return (
         <View style={styles.container}>
@@ -101,9 +69,15 @@ export default function CartScreen() {
                             refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetchCart} colors={["#EE4D2D"]} />}
                         >
                             <View style={{ gap: 20, paddingBottom: 24 }}>
-                                {(cartItems || mock_cart_order).map((item: any, index: number) => (
-                                    <OrderCard_ForCustomer key={index} {...item} />
+                                {myCarts.map((item: any, index: number) => (
+                                    <CartCard key={index} merchantId={item.merchantId} items={item.items} refetchCart={refetchCart} />
                                 ))}
+                                {myCarts.length === 0 && (
+                                    <View style={{ justifyContent: "center", alignItems: "center", gap: 20, paddingTop: 160 }}>
+                                        <Feather name="shopping-cart" size={60} color="#9ca3af" />
+                                        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#9ca3af" }}>Không có giỏ hàng</Text>
+                                    </View>
+                                )}
                             </View>
                         </ScrollView>
                     )
@@ -113,8 +87,7 @@ export default function CartScreen() {
                 {cartState === 2 && (
                     <ScrollView showsVerticalScrollIndicator={false}>
                         <View style={{ gap: 20, paddingBottom: 24 }}>
-                            {mock_odercard_forcustomer
-                                .filter((item) => item.status === 'PENDING' || item.status === 'CONFIRMED' || item.status === 'PREPARING' || item.status === 'DELIVERING' || item.status === 'READY')
+                            {ongoingOrders
                                 .map((item, index) => (
                                     <OrderCard_ForCustomer key={`mock-ongoing-${index}`} {...item} />
                                 ))
@@ -127,8 +100,7 @@ export default function CartScreen() {
                 {cartState === 3 && (
                     <ScrollView showsVerticalScrollIndicator={false}>
                         <View style={{ gap: 20, paddingBottom: 24 }}>
-                            {mock_odercard_forcustomer
-                                .filter((item) => item.status === 'DELIVERED' || item.status === 'CANCELLED')
+                            {historyOrders
                                 .map((item, index) => (
                                     <OrderCard_ForCustomer key={`history-${index}`} {...item} />
                                 ))
