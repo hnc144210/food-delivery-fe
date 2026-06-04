@@ -115,15 +115,8 @@ export default function MenuScreen() {
     updateAvailability.mutate({ id, isAvailable: value });
   }
 
-  function handleEdit(id: string) {
-    router.push({ pathname: "/(merchant)/add-dish", params: { dishId: id } });
-  }
-
-  function handleManageOptions(id: string) {
-    router.push({
-      pathname: "/(merchant)/add-dish",
-      params: { dishId: id, section: "options" },
-    });
+  function handlePressCard(id: string) {
+    router.push({ pathname: "/(merchant)/product-detail", params: { id } });
   }
 
   return (
@@ -161,13 +154,6 @@ export default function MenuScreen() {
             onChangeText={setSearchQuery}
           />
         </View>
-        <TouchableOpacity
-          style={styles.layoutBtn}
-          onPress={() => router.push("/(merchant)/category-layout")}
-        >
-          <Ionicons name="grid-outline" size={16} color={ORANGE} />
-          <Text style={styles.layoutBtnText}>Layout</Text>
-        </TouchableOpacity>
       </View>
 
       <View style={styles.tabWrapper}>
@@ -204,8 +190,7 @@ export default function MenuScreen() {
           <DishCard
             dish={item}
             onToggleAvailable={handleToggleAvailable}
-            onEdit={handleEdit}
-            onManageOptions={handleManageOptions}
+            onPress={handlePressCard}
           />
         )}
         contentContainerStyle={styles.listContent}

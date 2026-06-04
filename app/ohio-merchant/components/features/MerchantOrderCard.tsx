@@ -11,6 +11,7 @@ interface Props {
   onAccept?: (id: string) => void;
   onReject?: (id: string) => void;
   onReady?: (id: string) => void;
+  onStartPreparing?: (id: string) => void;
 }
 
 function getMinutesAgo(isoString: string): number {
@@ -99,10 +100,17 @@ function FullOrderCard({ order, onAccept, onReject }: Props) {
 }
 
 // ─── Compact card (Preparing / Delivering) ────────────────────────────────────
-function CompactOrderCard({ order, onReady }: Props) {
+function CompactOrderCard({ order, onReady, onStartPreparing }: Props) {
   const minutes = getMinutesAgo(order.createdAt);
 
   const buttonConfig = (() => {
+    if (order.status === "confirmed") {
+      return {
+        label: "Bắt đầu chuẩn bị",
+        color: "#10B981",
+        onPress: () => onStartPreparing?.(order.id),
+      };
+    }
     if (order.status === "preparing") {
       return {
         label: "Ready for Pick-up",
@@ -110,12 +118,15 @@ function CompactOrderCard({ order, onReady }: Props) {
         onPress: () => onReady?.(order.id),
       };
     }
-    if (order.deliverySubStatus === "waiting_pickup") {
+    if (order.status === "delivering") {
       return {
         label: "Waiting for Pick-up",
         color: "#F59E0B",
         onPress: undefined,
       };
+    }
+    if (order.status === "cancelled") {
+      return null;
     }
     return { label: "On the way", color: "#10B981", onPress: undefined };
   })();
@@ -131,17 +142,18 @@ function CompactOrderCard({ order, onReady }: Props) {
           {itemsSummary(order.items)}
         </Text>
       </View>
-      <TouchableOpacity
-        style={[styles.compactBtn, { backgroundColor: buttonConfig.color }]}
-        onPress={buttonConfig.onPress}
-        activeOpacity={buttonConfig.onPress ? 0.7 : 1}
-      >
-        <Text style={styles.compactBtnLabel}>{buttonConfig.label}</Text>
-      </TouchableOpacity>
+      {buttonConfig && (
+        <TouchableOpacity
+          style={[styles.compactBtn, { backgroundColor: buttonConfig.color }]}
+          onPress={buttonConfig.onPress}
+          activeOpacity={buttonConfig.onPress ? 0.7 : 1}
+        >
+          <Text style={styles.compactBtnLabel}>{buttonConfig.label}</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
-
 // ─── Export ───────────────────────────────────────────────────────────────────
 export default function MerchantOrderCard(props: Props) {
   if (props.order.status === "new") return <FullOrderCard {...props} />;

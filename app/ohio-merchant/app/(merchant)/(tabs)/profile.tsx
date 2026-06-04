@@ -2,6 +2,7 @@
 import {
   View,
   Text,
+  Image,
   TouchableOpacity,
   ScrollView,
   Switch,
@@ -15,6 +16,7 @@ import { useMerchantStore } from "@/store/merchantStore";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useToggleStoreOpen } from "@/hooks/useMerchantProfile";
 import { useLogout } from "@/hooks/useAuth";
+import { useFileUrl } from "@/hooks/useFileUrl";
 
 const ORANGE = "#E8441A";
 const CREAM = "#FEF3E8";
@@ -47,6 +49,7 @@ function MenuItem({ icon, label, value, onPress, danger }: MenuItemProps) {
 export default function ProfileScreen() {
   const router = useRouter();
   const { merchant } = useMerchantStore();
+  const { data: logoUrl } = useFileUrl(merchant?.storeLogoFileKey ?? null);
   const { isOpen, toggle } = useToggleStoreOpen();
   const logout = useLogout();
   const [notifications, setNotifications] = useState(true);
@@ -65,7 +68,11 @@ export default function ProfileScreen() {
       >
         <View style={styles.storeCard}>
           <View style={styles.avatar}>
-            <Ionicons name="storefront" size={32} color={ORANGE} />
+            {logoUrl ? (
+              <Image source={{ uri: logoUrl }} style={styles.storeLogo} />
+            ) : (
+              <Ionicons name="storefront" size={32} color={ORANGE} />
+            )}
           </View>
           <View style={styles.storeInfo}>
             <Text style={styles.storeName}>
@@ -112,6 +119,11 @@ export default function ProfileScreen() {
             onPress={() => router.push("/(merchant)/store-info")}
           />
           <MenuItem
+            icon="location-outline"
+            label="Địa chỉ cửa hàng"
+            onPress={() => router.push("/(merchant)/store-addresses")}
+          />
+          <MenuItem
             icon="time-outline"
             label="Giờ mở cửa"
             value={`${openingTime} – ${closingTime}`}
@@ -132,9 +144,14 @@ export default function ProfileScreen() {
         <Text style={styles.sectionLabel}>Tài khoản</Text>
         <View style={styles.menuGroup}>
           <MenuItem
+            icon="wallet-outline"
+            label="Ví của tôi"
+            onPress={() => router.push("/(merchant)/wallet")}
+          />
+          <MenuItem
             icon="person-outline"
             label="Thông tin cá nhân"
-            onPress={() => {}}
+            onPress={() => router.push("/(merchant)/personal-info")}
           />
           <View style={styles.menuItem}>
             <View style={styles.menuIcon}>
@@ -257,4 +274,6 @@ const styles = StyleSheet.create({
   menuLabel: { flex: 1, fontSize: 15, color: "#1a1a1a", fontWeight: "500" },
   menuRight: { flexDirection: "row", alignItems: "center", gap: 6 },
   menuValue: { fontSize: 13, color: "#aaa" },
+  avatarImage: { width: 64, height: 64, borderRadius: 16 },
+  storeLogo: { width: 64, height: 64, borderRadius: 16 },
 });

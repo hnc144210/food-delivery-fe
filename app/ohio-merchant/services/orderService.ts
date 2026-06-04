@@ -14,11 +14,12 @@ export interface UpdateMerchantOrderStatusRequest {
 
 export const orderService = {
   async getMerchantOrders(params?: MerchantOrderListParams): Promise<Order[]> {
-    const res = await ordersApi.get("/api/orders/merchant/my", { params });
-    const data = extractData<Order[] | PaginatedResponse<Order>>(res);
-
-    return Array.isArray(data) ? data : data.items;
-  },
+  const res = await ordersApi.get("/api/orders/merchant/my", { params });
+  const resData = res.data;
+  if (!resData.ok) throw new Error(resData.message);
+  const data = resData.data;
+  return data.items ?? [];
+},
 
   async getMerchantOrder(id: string): Promise<Order> {
     const res = await ordersApi.get(`/api/orders/merchant/my/${id}`);

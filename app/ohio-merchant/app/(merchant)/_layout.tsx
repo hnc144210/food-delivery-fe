@@ -25,6 +25,9 @@ export default function MerchantLayout() {
       <Stack.Screen name="store-info" />
       <Stack.Screen name="opening-hours" />
       <Stack.Screen name="change-password" />
+      <Stack.Screen name="personal-info" />
+      <Stack.Screen name="store-addresses" />
+      <Stack.Screen name="wallet" />
     </Stack>
   );
 }

@@ -19,6 +19,8 @@ export interface Merchant {
   minOrderAmount: string;
   avgPrepTime: string;
   status: string;
+  storeLogoFileKey: string | null;
+  storeBannerFileKey: string | null;
 }
 
 export interface UpdateMerchantRequest {
@@ -67,4 +69,19 @@ export const merchantService = {
     const res = await userApi.get(`/api/merchants/${merchantId}/addresses`, { params });
     return extractData<PaginatedResponse<MerchantAddress>>(res);
   },
+
+  async createMerchantAddress(merchantId: string, body: CreateMerchantAddressRequest): Promise<MessageResponse> {
+  const res = await userApi.post(`/api/merchants/${merchantId}/addresses`, body);
+  return extractData<MessageResponse>(res);
+},
+
+async updateMerchantAddress(merchantId: string, addressId: string, body: CreateMerchantAddressRequest): Promise<MessageResponse> {
+  const res = await userApi.put(`/api/merchants/${merchantId}/addresses/${addressId}`, body);
+  return extractData<MessageResponse>(res);
+},
+
+async deleteMerchantAddress(merchantId: string, addressId: string): Promise<MessageResponse> {
+  const res = await userApi.delete(`/api/merchants/${merchantId}/addresses/${addressId}`);
+  return extractData<MessageResponse>(res);
+},
 };
