@@ -1,5 +1,5 @@
 import { Text, View, StyleSheet, Image, TouchableOpacity, ScrollView, Alert, RefreshControl } from "react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Octicons from '@expo/vector-icons/Octicons';
 import { OrderCard_ForDriver } from "../../../components/features/OrderCard";
 import { useAuthStore } from '@/store/authStore';
@@ -13,13 +13,15 @@ import { locationService } from "@/services/locationService";
 
 // Helper to check if status is an offer
 const isOfferStatus = (status?: string) => status === 'Offering' || status === 'Pending';
+const isOnlineAvailability = (status?: string) => !!status && status !== 'Offline';
+const SHIPPER_LOCATION_HEARTBEAT_MS = 5000;
 
 export default function ShipperHomePage() {
-    const [status, setStatus] = useState(true);
+    const [status, setStatus] = useState(false);
     const user = useAuthStore((s) => s.user);
 
     // Setup realtime listeners only (no push notifications)
-    useAssignmentRealtime(status);
+    useAssignmentRealtime(status && !!user?.id);
 
     const { data: readUrlResponse } = useQuery({
         queryKey: ['read-url'],
@@ -31,13 +33,69 @@ export default function ShipperHomePage() {
     const offerQuery = useQuery({
         queryKey: ['active-offer'],
         queryFn: () => deliveryService.getOffer(),
+        enabled: !!user?.id && status,
         refetchInterval: status ? 10000 : false, // Polling fallback: 10s when online
     })
 
     const { data: shipperdata } = useQuery({
         queryKey: ['shipper'],
-        queryFn: () => userService.getShipperByUserId(user?.id || '')
+        queryFn: () => userService.getShipperByUserId(user!.id),
+        enabled: !!user?.id,
     })
+
+    const availabilityQuery = useQuery({
+        queryKey: ['shipper-availability', shipperdata?.id],
+        queryFn: () => deliveryService.getAvailability(shipperdata!.id),
+        enabled: !!shipperdata?.id,
+    })
+
+    useEffect(() => {
+        if (!availabilityQuery.data?.status) return;
+        setStatus(isOnlineAvailability(availabilityQuery.data.status));
+    }, [availabilityQuery.data?.status]);
+
+    const shouldSendLocationHeartbeat =
+        status &&
+        !!shipperdata?.id &&
+        availabilityQuery.data?.status === 'ActiveIdle';
+
+    useEffect(() => {
+        if (!shouldSendLocationHeartbeat || !shipperdata?.id) return;
+
+        let isCancelled = false;
+        let isUpdating = false;
+
+        const sendLocationHeartbeat = async () => {
+            if (isUpdating) return;
+            isUpdating = true;
+
+            try {
+                const location = await locationService.getCurrentLocation();
+                if (!location || isCancelled) return;
+
+                await deliveryService.updateShipperLocation(shipperdata.id, {
+                    orderId: null,
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                });
+            } catch (error) {
+                console.log('[Location] Shipper heartbeat failed:', error);
+                if (!isCancelled) {
+                    availabilityQuery.refetch();
+                }
+            } finally {
+                isUpdating = false;
+            }
+        };
+
+        sendLocationHeartbeat();
+        const intervalId = setInterval(sendLocationHeartbeat, SHIPPER_LOCATION_HEARTBEAT_MS);
+
+        return () => {
+            isCancelled = true;
+            clearInterval(intervalId);
+        };
+    }, [shouldSendLocationHeartbeat, shipperdata?.id, availabilityQuery.refetch]);
 
     // Fix: Use 'offer-assignment' query key with activeAssignmentId
     const activeAssignmentId = offerQuery.data?.assignmentId;
@@ -51,19 +109,33 @@ export default function ShipperHomePage() {
 
     const toggleOnlineMutation = useMutation({
         mutationFn: async () => {
-            // Get real location
-            const location = await locationService.getCurrentLocation();
-            const lat = location?.latitude ?? 12;
-            const lng = location?.longitude ?? 12;
+            if (!shipperdata?.id) {
+                throw new Error('Shipper profile is not loaded yet');
+            }
 
-            return deliveryService.toggleOnline(shipperdata?.id || '', {
-                isGoOnline: !status,
+            const nextOnlineStatus = !status;
+            let lat: number | null = null;
+            let lng: number | null = null;
+
+            if (nextOnlineStatus) {
+                const location = await locationService.getCurrentLocation();
+                if (!location) {
+                    throw new Error('Location permission is required to go online');
+                }
+
+                lat = location.latitude;
+                lng = location.longitude;
+            }
+
+            return deliveryService.toggleOnline(shipperdata.id, {
+                isGoOnline: nextOnlineStatus,
                 lat,
                 lng
             });
         },
-        onSuccess: () => {
+        onSuccess: async () => {
             setStatus(!status);
+            await availabilityQuery.refetch();
         },
         onError: (error) => {
             console.log(error);
@@ -71,9 +143,10 @@ export default function ShipperHomePage() {
         }
     })
 
-    const { data: assignedDeliveries, refetch: assignedDeliveriesRefetch, isFetching: isRefreshing } = useQuery({
+    const { data: assignedDeliveries, refetch: assignedDeliveriesRefetch, isFetching: isAssignedDeliveriesFetching } = useQuery({
         queryKey: ['assigned-deliveries'],
-        queryFn: () => deliveryService.getAssignedDeliveries(shipperdata?.id || '')
+        queryFn: () => deliveryService.getAssignedDeliveries(shipperdata!.id),
+        enabled: !!shipperdata?.id,
     })
 
     const setOnlineStatus = () => {
@@ -82,15 +155,22 @@ export default function ShipperHomePage() {
 
     // Fix: Include all queries in pull-to-refresh
     const handleRefresh = async () => {
-        await Promise.all([
+        const refreshes: Promise<unknown>[] = [
             offerQuery.refetch(),
-            offerAssignmentQuery.refetch(),
+            availabilityQuery.refetch(),
             assignedDeliveriesRefetch(),
-        ]);
+        ];
+
+        if (activeAssignmentId) {
+            refreshes.push(offerAssignmentQuery.refetch());
+        }
+
+        await Promise.all(refreshes);
     };
 
     const myAssignments = assignedDeliveries?.items
     const myOffer = offerAssignmentQuery.data
+    const isRefreshing = isAssignedDeliveriesFetching || offerQuery.isFetching || offerAssignmentQuery.isFetching;
 
     return (
         <View style={styles.container}>

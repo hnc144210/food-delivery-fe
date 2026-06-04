@@ -2,25 +2,25 @@ import type { User } from '@/types';
 
 export const mockCustomerUser: User = {
   id: '2',
-  name: 'Test Customer',
-  phone: '0901234567',
-  email: 'customer@test.com',
-  role: 'CUSTOMER',
-  avatar_url: 'https://wqtjigusdqbtcmdykboy.supabase.co/storage/v1/object/public/photos/aya.jpg',
+  fullName: 'Test Customer',
+  avatarFileKey: '',
+  phoneNumber: '0901234567',
+  status: 'Active',
+  roles: ['Customer'],
 };
 export const mockShipperUser: User = {
   id: '1',
-  name: 'Kimvux',
-  phone: '0933818820',
-  email: 'shipper@test.com',
-  role: 'SHIPPER',
-  avatar_url: 'https://wqtjigusdqbtcmdykboy.supabase.co/storage/v1/object/public/photos/aya.jpg',
+  fullName: 'Kimvux',
+  avatarFileKey: '',
+  phoneNumber: '0933818820',
+  status: 'Active',
+  roles: ['Shipper'],
 };
 export const mockMerchantUser: User = {
   id: '3',
-  name: 'Test Merchant',
-  phone: '0901234567',
-  email: 'merchant@test.com',
-  role: 'MERCHANT',
-  avatar_url: 'https://wqtjigusdqbtcmdykboy.supabase.co/storage/v1/object/public/photos/aya.jpg',
+  fullName: 'Test Merchant',
+  avatarFileKey: '',
+  phoneNumber: '0901234567',
+  status: 'Active',
+  roles: ['Merchant'],
 };

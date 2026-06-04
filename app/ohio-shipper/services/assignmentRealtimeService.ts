@@ -53,4 +53,5 @@ export const realtimeEvents = {
   ASSIGNMENT_EXPIRED: 'AssignmentExpired',
   ASSIGNMENT_ACCEPTED: 'AssignmentAccepted',
   ASSIGNMENT_TAKEN: 'AssignmentTaken',
+  ASSIGNMENT_REJECTED: 'AssignmentRejected',
 } as const;

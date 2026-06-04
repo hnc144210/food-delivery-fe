@@ -30,6 +30,7 @@ export function OrderCard_ForDriver({ data, offerId }: { data: ShipperAssignment
             queryClient.invalidateQueries({ queryKey: ['assigned-deliveries'] });
             queryClient.invalidateQueries({ queryKey: ['offer-assignment'] });
             queryClient.invalidateQueries({ queryKey: ['active-offer'] });
+            queryClient.invalidateQueries({ queryKey: ['shipper-availability'] });
             Alert.alert("Thành công", "Cảm ơn bạn đã xác nhận");
         },
         onError: (error) => {
@@ -47,6 +48,7 @@ export function OrderCard_ForDriver({ data, offerId }: { data: ShipperAssignment
             queryClient.invalidateQueries({ queryKey: ['assigned-deliveries'] });
             queryClient.invalidateQueries({ queryKey: ['offer-assignment'] });
             queryClient.invalidateQueries({ queryKey: ['active-offer'] });
+            queryClient.invalidateQueries({ queryKey: ['shipper-availability'] });
             Alert.alert("Thành công", "Bạn đã từ chối đơn hàng");
         },
         onError: (error) => {
@@ -59,6 +61,7 @@ export function OrderCard_ForDriver({ data, offerId }: { data: ShipperAssignment
             queryClient.invalidateQueries({ queryKey: ['assigned-deliveries'] });
             queryClient.invalidateQueries({ queryKey: ['offer-assignment'] });
             queryClient.invalidateQueries({ queryKey: ['active-offer'] });
+            queryClient.invalidateQueries({ queryKey: ['shipper-availability'] });
             Alert.alert("Thành công", "Cập nhật trạng thái đơn hàng thành công");
         },
         onError: (error) => {

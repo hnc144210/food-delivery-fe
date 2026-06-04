@@ -12,6 +12,12 @@ export function useAssignmentRealtime(enabled: boolean) {
 
     const connection = createAssignmentConnection();
 
+    const invalidateAssignmentState = () => {
+      queryClient.invalidateQueries({ queryKey: ['active-offer'] });
+      queryClient.invalidateQueries({ queryKey: ['assigned-deliveries'] });
+      queryClient.invalidateQueries({ queryKey: ['shipper-availability'] });
+    };
+
     const handleAssignmentOffered = async (payload: AssignmentOfferedPayload) => {
       const assignmentId = String(payload.assignmentId);
       const offerId = String(payload.offerId ?? payload.assignmentId);
@@ -26,8 +32,7 @@ export function useAssignmentRealtime(enabled: boolean) {
       });
 
       // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: ['active-offer'] });
-      queryClient.invalidateQueries({ queryKey: ['assigned-deliveries'] });
+      invalidateAssignmentState();
 
       // Prefetch assignment details
       queryClient.prefetchQuery({
@@ -43,35 +48,38 @@ export function useAssignmentRealtime(enabled: boolean) {
     };
 
     const handleAssignmentExpired = () => {
-      queryClient.invalidateQueries({ queryKey: ['active-offer'] });
-      queryClient.invalidateQueries({ queryKey: ['assigned-deliveries'] });
+      invalidateAssignmentState();
       Alert.alert('Thông báo', 'Đơn hàng đã hết hạn');
     };
 
     const handleAssignmentAccepted = () => {
-      queryClient.invalidateQueries({ queryKey: ['active-offer'] });
-      queryClient.invalidateQueries({ queryKey: ['assigned-deliveries'] });
+      invalidateAssignmentState();
     };
 
     const handleAssignmentTaken = () => {
-      queryClient.invalidateQueries({ queryKey: ['active-offer'] });
-      queryClient.invalidateQueries({ queryKey: ['assigned-deliveries'] });
+      invalidateAssignmentState();
+    };
+
+    const handleAssignmentRejected = () => {
+      invalidateAssignmentState();
     };
 
     connection.on(realtimeEvents.ASSIGNMENT_OFFERED, handleAssignmentOffered);
     connection.on(realtimeEvents.ASSIGNMENT_EXPIRED, handleAssignmentExpired);
     connection.on(realtimeEvents.ASSIGNMENT_ACCEPTED, handleAssignmentAccepted);
     connection.on(realtimeEvents.ASSIGNMENT_TAKEN, handleAssignmentTaken);
+    connection.on(realtimeEvents.ASSIGNMENT_REJECTED, handleAssignmentRejected);
 
     connection
       .start()
-      .catch((err) => console.error('[SignalR] Connection failed:', err));
+      .catch((err: unknown) => console.error('[SignalR] Connection failed:', err));
 
     return () => {
       connection.off(realtimeEvents.ASSIGNMENT_OFFERED);
       connection.off(realtimeEvents.ASSIGNMENT_EXPIRED);
       connection.off(realtimeEvents.ASSIGNMENT_ACCEPTED);
       connection.off(realtimeEvents.ASSIGNMENT_TAKEN);
+      connection.off(realtimeEvents.ASSIGNMENT_REJECTED);
       connection.stop().catch(console.error);
     };
   }, [enabled, queryClient]);

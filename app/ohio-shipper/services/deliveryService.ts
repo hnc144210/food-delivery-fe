@@ -1,4 +1,4 @@
-import { AssignmentAcceptRequestDto, AssignmentRejectRequestDto, ShipperAssignmentDto, ShipperAssignmentResponse, ShipperListAssignmentResponse, ShipperOfferResponse, ToggleOnlineRequestDto, UpdateDeliveryStatusRequestDto } from "@/types/assignment";
+import { AssignmentAcceptRequestDto, AssignmentRejectRequestDto, ShipperAssignmentDto, ShipperAssignmentResponse, ShipperAvailabilityResponse, ShipperListAssignmentResponse, ShipperOfferResponse, ToggleOnlineRequestDto, UpdateDeliveryStatusRequestDto, UpdateShipperLocationRequestDto } from "@/types/assignment";
 import api from "./api";
 
 export type ApiResponse<T> = {
@@ -15,6 +15,22 @@ export type ApiConfirmationResponse = ApiResponse<ConfirmationResponse>;
 export const deliveryService = {
     getAssignedDeliveries: async (shipperId: string): Promise<ShipperListAssignmentResponse['data']> => {
         const response = await api.get<ShipperListAssignmentResponse>(`/api/Deliveries/shippers/${shipperId}/assignments`);
+        const resData = response.data;
+        if (!resData.success) {
+            throw new Error(resData.errors[0]);
+        }
+        return resData.data;
+    },
+    getAvailability: async (shipperId: string): Promise<ShipperAvailabilityResponse['data']> => {
+        const response = await api.get<ShipperAvailabilityResponse>(`/api/Deliveries/shippers/${shipperId}/availability`);
+        const resData = response.data;
+        if (!resData.success) {
+            throw new Error(resData.errors[0]);
+        }
+        return resData.data;
+    },
+    updateShipperLocation: async (shipperId: string, request: UpdateShipperLocationRequestDto): Promise<ApiConfirmationResponse['data']> => {
+        const response = await api.patch<ApiConfirmationResponse>(`/api/Deliveries/shippers/${shipperId}/location`, request);
         const resData = response.data;
         if (!resData.success) {
             throw new Error(resData.errors[0]);
