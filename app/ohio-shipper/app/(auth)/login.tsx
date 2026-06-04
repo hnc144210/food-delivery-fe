@@ -237,15 +237,15 @@ export default function LoginScreen() {
           )}
         </TouchableOpacity>
 
-        {/* Register link */}
+        {/* Register link
         <View style={styles.registerRow}>
           <Text style={styles.registerHint}>Don't have an account? </Text>
           <TouchableOpacity onPress={() => router.push({ pathname: '/(auth)/register' })}>
             <Text style={styles.registerLink}>Sign Up</Text>
           </TouchableOpacity>
-        </View>
+        </View>*/}
 
-        {/* Social login */}
+        {/* Social login 
         <Text style={styles.orText}>or sign up with</Text>
         <View style={styles.socialRow}>
           <TouchableOpacity style={styles.socialButton}>
@@ -254,7 +254,7 @@ export default function LoginScreen() {
           <TouchableOpacity style={styles.socialButton}>
             <FontAwesome name="facebook" size={22} color="#1877F2" />
           </TouchableOpacity>
-        </View>
+        </View>*/}
       </ScrollView>
     </KeyboardAvoidingView>
   );

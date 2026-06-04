@@ -19,14 +19,15 @@ import api from "@/services/api";
 import { mock_odercard, OrderCardType } from "../../mock/shipper";
 import { ShipperAssignmentDto, UpdateDeliveryStatusRequestDto } from "@/types/assignment";
 import { fileService } from "@/services/fileService";
-import { QueryClient, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { deliveryService } from "@/services/deliveryService";
 
-export default function Completion() {
+export default function Pickedup() {
     const router = useRouter();
+    const queryClient = useQueryClient();
     const { data } = useLocalSearchParams();
     const assignment = JSON.parse(data as string) as ShipperAssignmentDto;
-    const queryClient = useQueryClient();
+
     // States
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -112,14 +113,14 @@ export default function Completion() {
                 const fileExtension = fileName.split('.').pop()?.toLowerCase();
                 const contentType = fileExtension === 'png' ? 'image/png' : 'image/jpeg';
 
-                const uploadUrlResponse = await fileService.getUploadUrlForCompletion(assignment.orderId, assignment.shipperId, 'completion', fileName, contentType);
+                const uploadUrlResponse = await fileService.getUploadUrlForCompletion(assignment.orderId, assignment.shipperId, 'pickingup', fileName, contentType);
                 const { uploadUrl, fileKey } = uploadUrlResponse;
 
                 await fileService.uploadFile(uploadUrl, proofImage, contentType);
 
                 finalFileKey = fileKey;
             }
-            updateStatusMutation.mutate({ assignmentId: assignment.id, data: { status: "Delivered", note: "Hoàn thành đơn hàng", proofFileKey: finalFileKey } })
+            updateStatusMutation.mutate({ assignmentId: assignment.id, data: { status: "PickedUp", note: "Đã lấy hàng", proofFileKey: finalFileKey } })
             router.back();
         } catch (error) {
             console.log("Error confirming delivery:", error);
@@ -143,7 +144,7 @@ export default function Completion() {
             {/* Header */}
             <View style={styles.header}>
                 <ReturnButton onpressfunction={router.back} />
-                <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#EE4D2D' }}>Hoàn tất đơn hàng</Text>
+                <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#EE4D2D' }}>Xác nhận đã lấy hàng</Text>
             </View>
 
             <ScrollView style={{ flex: 1, width: '100%' }} contentContainerStyle={styles.scrollContent}>
@@ -155,7 +156,7 @@ export default function Completion() {
                             <Text style={styles.orderCode}>{assignment.id}</Text>
                         </View>
                         <View style={styles.statusBadge}>
-                            <Text style={styles.statusBadgeText}>Đang giao</Text>
+                            <Text style={styles.statusBadgeText}>Nhận đơn</Text>
                         </View>
                     </View>
 
@@ -166,7 +167,7 @@ export default function Completion() {
                 </View>
 
                 {/* Section Title */}
-                <Text style={styles.sectionTitle}>Minh chứng giao hàng</Text>
+                <Text style={styles.sectionTitle}>Xác nhận đã lấy hàng</Text>
 
                 {/* Proof Dotted Box */}
                 <View style={styles.dashedContainer}>
@@ -213,7 +214,7 @@ export default function Completion() {
                     {submitting ? (
                         <ActivityIndicator size="small" color="white" />
                     ) : (
-                        <Text style={styles.confirmButtonText}>XÁC NHẬN ĐÃ GIAO HÀNG</Text>
+                        <Text style={styles.confirmButtonText}>XÁC NHẬN ĐÃ LẤY HÀNG</Text>
                     )}
                 </TouchableOpacity>
             </ScrollView>

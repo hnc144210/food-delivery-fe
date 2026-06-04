@@ -20,6 +20,7 @@ import { router } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import api from '@/services/api';
+import { authService } from '@/services/authService';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -28,20 +29,6 @@ const forgotPasswordSchema = z.object({
 });
 
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
-
-// ─── API ──────────────────────────────────────────────────────────────────────
-
-interface ForgotPasswordResponse {
-  success: true;
-  message: string;
-}
-
-async function forgotPasswordRequest(
-  payload: ForgotPasswordFormData
-): Promise<ForgotPasswordResponse> {
-  // TODO: đổi lại khi BE xong
-  return mockForgotPasswordResponse;
-}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -59,15 +46,16 @@ export default function ForgotPasswordScreen() {
   });
 
   const forgotPasswordMutation = useMutation({
-    mutationFn: forgotPasswordRequest,
-    onSuccess: () => {
+    mutationFn: (data: ForgotPasswordFormData) => authService.forgetPassword(data.email),
+    onSuccess: (data) => {
       router.push({
         pathname: '/(auth)/otp',
-        params: { email: getValues('email') },
+        params: { email: getValues('email'), expiresInSeconds: data.data.expiresInSeconds },
       });
     },
     onError: (error: AxiosError<{ message: string }>) => {
       const message = error.response?.data?.message ?? 'Đã có lỗi xảy ra. Vui lòng thử lại.';
+      console.log(error)
       setServerError(message);
     },
   });
