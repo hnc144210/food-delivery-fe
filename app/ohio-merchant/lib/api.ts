@@ -125,3 +125,7 @@ export const ordersApi = createApi(BASE_URLS.orders);
 export const filesApi = createApi(BASE_URLS.files);
 export const reportsApi = createApi(BASE_URLS.reports);
 export const walletsApi = createApi(BASE_URLS.wallets);
+export const publicCatalogApi = axios.create({ 
+  baseURL: BASE_URLS.catalog, 
+  timeout: 20000 
+});

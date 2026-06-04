@@ -1,5 +1,5 @@
 //services/menuService.ts
-import { catalogApi, extractData } from "@/lib/api";
+import { catalogApi, extractData, publicCatalogApi } from "@/lib/api";
 import {Review} from "@/types/api";
 import type {
   CatalogCategory,
@@ -13,10 +13,11 @@ import type {
 
 export const menuService = {
   async getCategories(params?: CatalogListParams): Promise<CatalogCategory[]> {
-    const res = await catalogApi.get("/api/catalog/categories", { params });
-    const data = extractData<PaginatedResponse<CatalogCategory> | CatalogCategory[]>(res);
-    return Array.isArray(data) ? data : data.items;
-  },
+  const res = await publicCatalogApi.get("/api/catalog/categories", { params });
+  const data = extractData<PaginatedResponse<CatalogCategory> | CatalogCategory[]>(res);
+  return Array.isArray(data) ? data : data.items;
+},
+
 
   async getMyProducts(): Promise<Product[]> {
   const res = await catalogApi.get("/api/catalog/products/merchant/me");
@@ -78,5 +79,6 @@ async deleteCategory(id: string): Promise<MessageResponse> {
 async replyReview(id: string, content: string): Promise<MessageResponse> {
   const res = await catalogApi.patch(`/api/catalog/reviews/${id}/reply`, { merchantReply: content });
   return extractData<MessageResponse>(res);
-},
+  },
+
 };

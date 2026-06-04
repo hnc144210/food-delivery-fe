@@ -1,9 +1,9 @@
 //hooks/useMerchantProfile.ts
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { merchantService, type UpdateMerchantRequest } from '@/services/merchantService';
 import { useMerchantStore } from '@/store/merchantStore';
 import { useAuthStore } from '@/store/authStore';
-
+import { merchantService, type UpdateMerchantRequest} from '@/services/merchantService';
+import type { CreateMerchantAddressRequest } from '@/types/api';
 const STALE_TIME = 5 * 60 * 1000;
 
 export function useMerchantProfile() {
@@ -59,4 +59,47 @@ export function useToggleStoreOpen() {
     },
     isPending: updateMerchant.isPending,
   };
+}
+export function useMerchantAddresses() {
+  const merchantId = useMerchantStore((s) => s.merchant?.id);
+
+  return useQuery({
+    queryKey: ['merchant-addresses', merchantId],
+    queryFn: () => merchantService.getMerchantAddresses(merchantId!),
+    enabled: Boolean(merchantId),
+    staleTime: STALE_TIME,
+  });
+}
+
+export function useCreateMerchantAddress() {
+  const qc = useQueryClient();
+  const merchantId = useMerchantStore((s) => s.merchant?.id);
+
+  return useMutation({
+    mutationFn: (body: CreateMerchantAddressRequest) =>
+      merchantService.createMerchantAddress(merchantId!, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['merchant-addresses', merchantId] }),
+  });
+}
+
+export function useUpdateMerchantAddress() {
+  const qc = useQueryClient();
+  const merchantId = useMerchantStore((s) => s.merchant?.id);
+
+  return useMutation({
+    mutationFn: ({ addressId, body }: { addressId: string; body: CreateMerchantAddressRequest }) =>
+      merchantService.updateMerchantAddress(merchantId!, addressId, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['merchant-addresses', merchantId] }),
+  });
+}
+
+export function useDeleteMerchantAddress() {
+  const qc = useQueryClient();
+  const merchantId = useMerchantStore((s) => s.merchant?.id);
+
+  return useMutation({
+    mutationFn: (addressId: string) =>
+      merchantService.deleteMerchantAddress(merchantId!, addressId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['merchant-addresses', merchantId] }),
+  });
 }

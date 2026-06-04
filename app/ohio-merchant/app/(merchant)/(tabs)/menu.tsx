@@ -22,6 +22,7 @@ import {
 } from "@/hooks/useMenu";
 import type { Product } from "@/types/api";
 import type { Dish } from "@/mock/menu";
+import MerchantHeader from "@/components/common/MerchantHeader";
 
 const ORANGE = "#E8441A";
 
@@ -79,7 +80,7 @@ export default function MenuScreen() {
 
   const categories: CategoryTab[] = useMemo(
     () => [
-      { id: "all", name: "All" },
+      { id: "all", name: "Tất cả" },
       ...(categoriesQuery.data?.map((cat) => ({
         id: cat.id,
         name: cat.name,
@@ -121,34 +122,14 @@ export default function MenuScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.shopName}>
-            {merchant?.storeName ?? "Kinetic Kitchen"}
-          </Text>
-          <Text style={styles.shopSub}>Menu Management</Text>
-        </View>
-        <View style={styles.toggleWrapper}>
-          <Text
-            style={[styles.toggleLabel, { color: isOpen ? ORANGE : "#AAA" }]}
-          >
-            {isOpen ? "OPEN" : "CLOSED"}
-          </Text>
-          <Switch
-            value={isOpen}
-            onValueChange={setIsOpen}
-            trackColor={{ false: "#DDD", true: ORANGE }}
-            thumbColor="#fff"
-          />
-        </View>
-      </View>
+      <MerchantHeader />
 
       <View style={styles.searchRow}>
         <View style={styles.searchBar}>
           <Ionicons name="search-outline" size={18} color="#AAA" />
           <TextInput
             style={styles.searchInput}
-            placeholder="Find dishes..."
+            placeholder="Tìm món ăn..."
             placeholderTextColor="#AAA"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -202,7 +183,7 @@ export default function MenuScreen() {
         }}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>No dishes found</Text>
+            <Text style={styles.emptyText}>Không tìm thấy món ăn</Text>
           </View>
         }
       />

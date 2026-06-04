@@ -20,8 +20,9 @@ import {
 import type { Order, OrderStatus } from "@/types/api";
 import type { MerchantOrder, MerchantOrderStatus } from "@/mock/merchant";
 import { useToggleStoreOpen } from "@/hooks/useMerchantProfile";
-import { useMerchantReviews } from "@/hooks/useMerchantReviews";
+import { useMerchantReviews } from "@/hooks/useMenu";
 import { useEffect } from "react";
+import MerchantHeader from "@/components/common/MerchantHeader";
 const ORANGE = "#E8441A";
 const CREAM = "#FEF3E8";
 
@@ -30,11 +31,11 @@ const TABS: {
   label: string;
   apiStatus: OrderStatus;
 }[] = [
-  { key: "new", label: "New", apiStatus: "PENDING" },
-  { key: "confirmed", label: "Confirmed", apiStatus: "CONFIRMED" },
-  { key: "preparing", label: "Preparing", apiStatus: "PREPARING" },
-  { key: "delivering", label: "Delivering", apiStatus: "DELIVERING" },
-  { key: "cancelled", label: "Cancelled", apiStatus: "CANCELLED" },
+  { key: "new", label: "Mới", apiStatus: "PENDING" },
+  { key: "confirmed", label: "Đã xác nhận", apiStatus: "CONFIRMED" },
+  { key: "preparing", label: "Đang chuẩn bị", apiStatus: "PREPARING" },
+  { key: "delivering", label: "Đang giao", apiStatus: "DELIVERING" },
+  { key: "cancelled", label: "Đã hủy", apiStatus: "CANCELLED" },
 ];
 
 function mapOrderStatus(status: OrderStatus): MerchantOrderStatus {
@@ -50,7 +51,7 @@ function mapOrder(order: any): MerchantOrder {
   return {
     id: order.id,
     orderNumber: order.orderNumber ?? `#${order.id.slice(0, 8)}`,
-    customerName: order.customerName ?? order.merchantName ?? "Customer",
+    customerName: order.orderNumber ?? `#${order.id.slice(0, 8)}`,
     status: mapOrderStatus(order.status),
     createdAt: order.createdAt ?? new Date().toISOString(),
     total: order.totalAmount ?? 0,
@@ -131,34 +132,14 @@ export default function MerchantOrdersScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.shopName}>
-            {merchant?.storeName ?? "Kinetic Kitchen"}
-          </Text>
-          <Text style={styles.shopSub}>Orders Dashboard</Text>
-        </View>
-        <View style={styles.toggleWrapper}>
-          <Text
-            style={[styles.toggleLabel, { color: isOpen ? ORANGE : "#AAA" }]}
-          >
-            {isOpen ? "OPEN" : "CLOSED"}
-          </Text>
-          <Switch
-            value={isOpen}
-            onValueChange={toggle}
-            trackColor={{ false: "#DDD", true: ORANGE }}
-            thumbColor="#fff"
-          />
-        </View>
-      </View>
+      <MerchantHeader />
 
       <View style={styles.statsRow}>
-        <StatBlock label="Active" value={activeCount} />
+        <StatBlock label="Đang xử lý" value={activeCount} />
         <View style={styles.statDivider} />
-        <StatBlock label="Today" value={todayCount} />
+        <StatBlock label="Hôm nay" value={todayCount} />
         <View style={styles.statDivider} />
-        <StatBlock label="Feedbacks" value={feedbackCount} />
+        <StatBlock label="Phản hồi" value={feedbackCount} />
       </View>
       <View
         style={{

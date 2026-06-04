@@ -133,12 +133,28 @@ export function useMerchantReviews(merchantId?: string) {
 }
 
 export function useReplyReview() {
-  const qc = useQueryClient();
+  const queryClient = useQueryClient();
   const merchantId = useMerchantStore((s) => s.merchant?.id);
-
+  
   return useMutation({
     mutationFn: ({ id, content }: { id: string; content: string }) =>
-      menuService.replyReview(id, content),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['reviews', 'merchant', merchantId] }),
+      catalogApi.patch(`/api/catalog/reviews/${id}/reply`, { merchantReply: content }).then(extractData),
+    onSuccess: (_, { id, content }) => {
+      // cập nhật cache ngay, không cần chờ refetch
+      queryClient.setQueryData<PaginatedResponse<Review>>(
+        ["merchant-reviews", merchantId],
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            items: old.items.map((r) =>
+              r.id === id
+                ? { ...r, merchantReply: content, repliedAt: new Date().toISOString() }
+                : r
+            ),
+          };
+        }
+      );
+    },
   });
 }

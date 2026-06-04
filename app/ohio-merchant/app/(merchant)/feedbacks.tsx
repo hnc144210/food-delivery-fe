@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,9 +11,10 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import FeedbackCard from "@/components/features/FeedbackCard";
-import { useMerchantReviews, useReplyReview } from "@/hooks/useMenu";
 import type { Review } from "@/types/api";
 import { useMerchantStore } from "@/store/merchantStore";
+import { useMerchantReviews, useReplyReview } from "@/hooks/useMenu";
+import { catalogApi } from "@/lib/api";
 
 const ORANGE = "#E8441A";
 const CREAM = "#FEF3E8";
@@ -35,6 +36,13 @@ export default function FeedbacksScreen() {
   const handleReply = (id: string, content: string) => {
     replyReview.mutate({ id, content });
   };
+  useEffect(() => {
+    if (merchantId) {
+      catalogApi
+        .get(`/api/catalog/reviews/merchant/${merchantId}`)
+        .then((r) => console.log("REVIEWS", JSON.stringify(r.data)));
+    }
+  }, [merchantId]);
 
   return (
     <View style={styles.container}>
@@ -55,17 +63,12 @@ export default function FeedbacksScreen() {
         renderItem={({ item }) => (
           <FeedbackCard
             review={item}
-            onReply={(id) => handleReply(id, "Cảm ơn bạn đã phản hồi!")}
+            onReply={handleReply}
+            replying={replyReview.isPending}
           />
         )}
         ListHeaderComponent={
           <>
-            <Text style={styles.title}>Customer Feedback</Text>
-            <Text style={styles.subtitle}>
-              Real-time analytics and dish-level metrics curated from your
-              diners.
-            </Text>
-
             <View style={styles.filterRow}>
               {(["all", "unreplied"] as Filter[]).map((f) => (
                 <TouchableOpacity

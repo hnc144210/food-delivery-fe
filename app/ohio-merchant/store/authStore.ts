@@ -1,4 +1,4 @@
-//store/authStore.ts
+// store/authStore.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
@@ -13,6 +13,7 @@ interface AuthState {
     accessToken: string;
     refreshToken: string;
   }) => void;
+  setUser: (user: UserProfile) => void;
   clearAuth: () => void;
 }
 
@@ -26,6 +27,7 @@ export const useAuthStore = create<AuthState>()(
         console.log("AUTH STORE SET", user.id);
         set({ user, accessToken, refreshToken });
       },
+      setUser: (user) => set({ user }),
       clearAuth: () => {
         console.log("AUTH STORE CLEAR CALLED");
         set({ user: null, accessToken: null, refreshToken: null });
