@@ -1,7 +1,6 @@
 import { ApiResponse } from '@/services/catalogService';
 
 export interface CreateReviewDto {
-  userId: string;
   orderId: string;
   merchantId?: string | null;
   productId?: string | null;

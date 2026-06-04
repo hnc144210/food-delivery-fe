@@ -129,6 +129,7 @@ export default function LoginScreen() {
 
         await AsyncStorage.setItem("access_token", data.accessToken);
         await AsyncStorage.setItem("refresh_token", data.refreshToken);
+        await AsyncStorage.setItem("device_id", "1234567890");
         console.log("Login Success:", data);
         await AsyncStorage.setItem("access_token", data.accessToken);
         await AsyncStorage.setItem("refresh_token", data.refreshToken);
