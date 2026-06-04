@@ -8,9 +8,10 @@ export type UpdateUserProfileRequestDto = {
 export type UserProfileResponseDto = {
     id: string;
     fullName: string;
-    avatarUrl: string;
+    avatarFileKey: string;
     phoneNumber: string;
     status: string;
+    roles: string[]
 }
 export type MerchantProfileResponseDto = {
     id: string;

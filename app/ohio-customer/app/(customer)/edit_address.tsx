@@ -157,7 +157,7 @@ export default function EditAddressScreen() {
         enabled: !!userId && !!id,
     });
 
-    const addressDetail = address ? address : useMemo(() => mock_addresses_new.find((p) => p.id === id), [id])
+    const addressDetail = address || null
     // Populate values on load
     useEffect(() => {
         if (addressDetail) {

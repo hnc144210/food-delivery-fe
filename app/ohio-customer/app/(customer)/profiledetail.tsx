@@ -17,11 +17,12 @@ import { useRouter } from "expo-router";
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import * as ImagePicker from 'expo-image-picker';
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/services/api";
 import { useAuthStore } from "@/store/authStore";
 import { userService } from "@/services/userService";
 import { fileService } from "@/services/fileService";
+import { boolean } from "zod";
 
 export default function ProfileDetail() {
     const router = useRouter();
@@ -29,19 +30,25 @@ export default function ProfileDetail() {
 
     const user = useAuthStore((s) => s.user);
     const setUser = useAuthStore((s) => s.setUser);
-    const userId = user?.id;
-
+    console.log(user)
     // Form inputs state
     const [fullName, setFullName] = useState('');
     const [avatarUrl, setAvatarUrl] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
-
+    const { data: readUrlResponse } = useQuery({
+        queryKey: ['read-url'],
+        queryFn: () => fileService.getReadUrl(user?.avatarFileKey || ''),
+        enabled: !!user?.avatarFileKey
+    })
+    let change: boolean = false
     // Sync input states with Zustand user context when loaded
     useEffect(() => {
         if (user) {
             setFullName(user.fullName || '');
-            setAvatarUrl(user.avatarUrl || '');
             setPhoneNumber(user.phoneNumber || '');
+            if (user.avatarFileKey) {
+                setAvatarUrl(readUrlResponse?.readUrl || '');
+            }
         }
     }, [user]);
 
@@ -64,6 +71,7 @@ export default function ProfileDetail() {
             if (!result.canceled && result.assets && result.assets.length > 0) {
                 const selectedUri = result.assets[0].uri;
                 setAvatarUrl(selectedUri);
+                change = true
             }
         } catch (error) {
             console.log('Error picking image:', error);
@@ -73,76 +81,57 @@ export default function ProfileDetail() {
 
     // Mutation to update profile on backend (PUT /users/{id})
     const updateProfileMutation = useMutation({
-        mutationFn: () => userService.updateProfile(user?.id!,
-            {
-                fullName,
-                avatarUrl,
-                phoneNumber
-            }),
-        onSuccess: () => {
-            // Update the local state in Zustand
+        mutationFn: (data: { userId: string, name: string, avatarUrl: string, phoneNumber: string }) => userService.updateProfile(data.userId, { fullName: data.name, avatarUrl: data.avatarUrl, phoneNumber: data.phoneNumber }),
+        onSuccess: (_, variables) => {
             if (user) {
                 setUser({
                     ...user,
-                    fullName: fullName,
-                    avatarUrl: avatarUrl,
-                    phoneNumber: phoneNumber,
+                    fullName: variables.name,
+                    avatarFileKey: variables.avatarUrl,
+                    phoneNumber: variables.phoneNumber,
                 });
             }
-
-            // Invalidate queries so ProfileScreen refreshes
-            queryClient.invalidateQueries({ queryKey: ['profile', userId] });
-            alert("Cập nhật thông tin thành công!");
-            router.back();
+            queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
+            console.log('Thành công', 'Cập nhật thông tin cá nhân thành công');
         },
         onError: (error) => {
-            console.log("Error updating profile in backend, applying local fallback:", error);
-
-            // Offline/Local fallback: update locally in Zustand to guarantee full mock interactivity
-            if (user) {
-                setUser({
-                    ...user,
-                    fullName: fullName,
-                    avatarUrl: avatarUrl,
-                    phoneNumber: phoneNumber,
-                });
-            }
-            queryClient.invalidateQueries({ queryKey: ['profile', userId] });
-            alert("Đã cập nhật thông tin thành công!");
-            router.back();
+            console.log(error);
+            console.log('Lỗi', 'Cập nhật thông tin cá nhân thất bại');
         }
     });
 
     const handleSave = async () => {
         if (!fullName.trim() || !phoneNumber.trim()) {
-            alert("Thông tin không được để trống!");
+            Alert.alert("Thông tin", "Thông tin không được để trống!");
             return;
         }
-        if (avatarUrl === user?.avatarUrl) {
-            updateProfileMutation.mutate();
-            return;
-        }
+
         try {
-            const fileName = avatarUrl.split('/').pop() || "image.jpg";
-            const fileExtension = fileName.split('.').pop()?.toLowerCase();
-            const contentType = fileExtension === 'png' ? 'image/png' : 'image/jpeg';
+            let finalAvatarFileKey = user?.avatarFileKey || '';
 
-            const uploadUrlResponse = await fileService.getUploadUrl(fileName, contentType);
-            const { uploadUrl, fileKey } = uploadUrlResponse;
+            if (change) {
+                const fileName = avatarUrl.split('/').pop() || "image.jpg";
+                const fileExtension = fileName.split('.').pop()?.toLowerCase();
+                const contentType = fileExtension === 'png' ? 'image/png' : 'image/jpeg';
 
-            await fileService.uploadFile(uploadUrl, avatarUrl, contentType);
+                const uploadUrlResponse = await fileService.getUploadUrl(fileName, contentType);
+                const { uploadUrl, fileKey } = uploadUrlResponse;
 
-            const readUrlResponse = await fileService.getReadUrl(fileKey);
-            const { readUrl } = readUrlResponse;
-            console.log('Read URL:', readUrl);
+                await fileService.uploadFile(uploadUrl, avatarUrl, contentType);
 
-            setAvatarUrl(readUrl);
+                finalAvatarFileKey = fileKey;
+            }
 
-            await updateProfileMutation.mutateAsync();
+            updateProfileMutation.mutate({
+                userId: user?.id || '',
+                name: fullName,
+                avatarUrl: finalAvatarFileKey,
+                phoneNumber: phoneNumber
+            });
 
         } catch (error) {
             console.error("Lỗi trong quá trình xử lý:", error);
-            Alert.alert('Lỗi', (error as Error).message || "Có lỗi xảy ra, vui lòng thử lại.");
+            Alert.alert('Lỗi', (error as Error).message || "Có lỗi xảy ra khi upload ảnh.");
         }
     };
 
