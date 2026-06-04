@@ -131,19 +131,17 @@ export default function LoginScreen() {
         await AsyncStorage.setItem("refresh_token", data.refreshToken);
         await AsyncStorage.setItem("device_id", "1234567890");
         console.log("Login Success:", data);
-        await AsyncStorage.setItem("access_token", data.accessToken);
-        await AsyncStorage.setItem("refresh_token", data.refreshToken);
-
         // Gọi API lấy thông tin Profile sau khi đăng nhập thành công
         const profile = await userService.getProfile(data.userId);
 
         // Cập nhật State quản lý User
         setUser({
-          avatarUrl: profile.avatarUrl,
+          avatarFileKey: profile.avatarFileKey,
           fullName: profile.fullName,
           phoneNumber: profile.phoneNumber,
           id: data.userId,
           status: profile.status,
+          roles: profile.roles
         });
 
         redirectByRole();

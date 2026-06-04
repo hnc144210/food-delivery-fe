@@ -6,13 +6,18 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
 import { FontAwesome } from "@expo/vector-icons";
+import { fileService } from "@/services/fileService";
 
 
 export default function ProfileScreen() {
     const router = useRouter();
     const user = useAuthStore((s) => s.user);
     const clearUser = useAuthStore((s) => s.clearUser);
-
+    const { data: readUrlResponse } = useQuery({
+        queryKey: ['read-url'],
+        queryFn: () => fileService.getReadUrl(user?.avatarFileKey || ''),
+        enabled: !!user?.avatarFileKey
+    })
     const handleLogout = () => {
         clearUser();
         router.replace('/login');
@@ -26,7 +31,7 @@ export default function ProfileScreen() {
             <View style={styles.body}>
                 <View style={styles.roundedBox}>
                     <Image
-                        source={{ uri: user?.avatarUrl }}
+                        source={{ uri: readUrlResponse?.readUrl }}
                         style={{ width: 100, height: 100, borderRadius: 10, borderColor: '#ee4d2d41', borderWidth: 3 }}
                     />
                     <View style={{ flex: 1 }}>

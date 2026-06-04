@@ -9,7 +9,7 @@ import { mock_nearbyrestaurant } from "@/mock/home";
 import { useMemo } from "react";
 import { number } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AssignmentAcceptRequestDto, UpdateDeliveryStatusRequestDto, ShipperAssignmentDto } from "@/types/assignment";
+import { UpdateDeliveryStatusRequestDto, ShipperAssignmentDto } from "@/types/assignment";
 import { deliveryService } from "@/services/deliveryService";
 import { userService } from "@/services/userService";
 
@@ -24,13 +24,30 @@ export function OrderCard_ForDriver({ data, offerId }: { data: ShipperAssignment
     const merchant = merchantData || mock_merchant;
 
 
-    const acceptOfferMutation = useMutation({
-        mutationFn: (data: AssignmentAcceptRequestDto) => deliveryService.acceptOffer(data),
+    const acceptAssignmentMutation = useMutation({
+        mutationFn: () => deliveryService.acceptAssignment(data.id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['assigned-deliveries'] });
-            queryClient.invalidateQueries({ queryKey: ['offer-assignments'] });
-            queryClient.invalidateQueries({ queryKey: ['offers'] });
+            queryClient.invalidateQueries({ queryKey: ['offer-assignment'] });
+            queryClient.invalidateQueries({ queryKey: ['active-offer'] });
             Alert.alert("Thành công", "Cảm ơn bạn đã xác nhận");
+        },
+        onError: (error) => {
+            Alert.alert("Lỗi", error.message);
+        }
+    })
+
+    const rejectAssignmentMutation = useMutation({
+        mutationFn: (reason: string) =>
+            deliveryService.rejectAssignment(data.id, {
+                offerId: offerId,
+                reason: reason
+            }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['assigned-deliveries'] });
+            queryClient.invalidateQueries({ queryKey: ['offer-assignment'] });
+            queryClient.invalidateQueries({ queryKey: ['active-offer'] });
+            Alert.alert("Thành công", "Bạn đã từ chối đơn hàng");
         },
         onError: (error) => {
             Alert.alert("Lỗi", error.message);
@@ -40,8 +57,8 @@ export function OrderCard_ForDriver({ data, offerId }: { data: ShipperAssignment
         mutationFn: ({ assignmentId, data }: { assignmentId: string, data: UpdateDeliveryStatusRequestDto }) => deliveryService.updateDeliveryStatus(assignmentId, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['assigned-deliveries'] });
-            queryClient.invalidateQueries({ queryKey: ['offer-assignments'] });
-            queryClient.invalidateQueries({ queryKey: ['offers'] });
+            queryClient.invalidateQueries({ queryKey: ['offer-assignment'] });
+            queryClient.invalidateQueries({ queryKey: ['active-offer'] });
             Alert.alert("Thành công", "Cập nhật trạng thái đơn hàng thành công");
         },
         onError: (error) => {
@@ -50,7 +67,7 @@ export function OrderCard_ForDriver({ data, offerId }: { data: ShipperAssignment
     })
 
     const statusText = () => {
-        if (data.status === 'Pending') return 'Đang xử lý';
+        if (data.status === 'Offering' || data.status === 'Pending') return 'Chờ xác nhận';
         if (data.status === 'Accepted') return 'Đã nhận đơn';
         if (data.status === 'PickingUp') return 'Đang lấy hàng';
         if (data.status === 'PickedUp') return 'Đã lấy hàng';
@@ -60,7 +77,7 @@ export function OrderCard_ForDriver({ data, offerId }: { data: ShipperAssignment
         else return data.status
     }
     const statusColor = () => {
-        if (data.status === 'Pending') return '#b6b6b6ff';
+        if (data.status === 'Offering' || data.status === 'Pending') return '#b6b6b6ff';
         if (data.status === 'Accepted') return '#EA580C';
         if (data.status === 'PickingUp') return '#1bcc91ff';
         if (data.status === 'PickedUp') return '#40d3d8ff';
@@ -76,14 +93,15 @@ export function OrderCard_ForDriver({ data, offerId }: { data: ShipperAssignment
         return '';
     }
     const handleAccept = () => {
-        if (data.status === 'Pending') {
-            acceptOfferMutation.mutate({ offerId: offerId, assignmentId: data.id, isAccepted: true, rejectionReason: null })
-        }
+        const isOffer = data.status === 'Offering' || data.status === 'Pending';
+        if (!isOffer) return;
+        acceptAssignmentMutation.mutate();
     }
+
     const handleReject = () => {
-        if (data.status === 'Pending') {
-            acceptOfferMutation.mutate({ offerId: offerId, assignmentId: data.id, isAccepted: false, rejectionReason: "Tôi không thể giao hàng vào lúc này" })
-        }
+        const isOffer = data.status === 'Offering' || data.status === 'Pending';
+        if (!isOffer) return;
+        rejectAssignmentMutation.mutate("Tôi không thể giao hàng vào lúc này");
     }
     const handlePickup = () => {
         if (data.status === 'Accepted') {

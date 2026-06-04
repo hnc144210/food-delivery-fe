@@ -40,7 +40,7 @@ export default function AddressesScreen() {
                     <View style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
                         <ActivityIndicator size="large" color="#EE4D2D" />
                     </View>
-                ) : addressList.length === 0 ? (
+                ) : (!addressList || addressList.length === 0) ? (
                     <View style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
                         <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#EE4D2D' }}>Chưa có địa chỉ nào</Text>
                     </View>

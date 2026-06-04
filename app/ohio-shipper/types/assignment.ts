@@ -18,7 +18,7 @@ export type ShipperAssignmentDto = {
     dropoffLongitude: number,
     deliveryFee: number,
     distanceKm: number,
-    status: string,
+    status: 'Pending' | 'Offering' | 'Assigned' | 'PickingUp' | 'PickedUp' | 'Delivering' | 'Delivered' | 'Failed' | 'Completed' | string,
     assignedAt: string,
     offerExpiresAt: string,
     acceptedAt: string,

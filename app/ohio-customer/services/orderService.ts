@@ -191,20 +191,31 @@ export const orderService = {
     },
 
     createOrder: async (payload: CreateOrderRequestDto): Promise<CreateOrderResponseDto> => {
-    try {
-        const response = await api.post<ApiResponse<CreateOrderResponseDto>>(
-            '/api/orders', 
-            {
-                ...payload,
-                voucherCode: payload.voucherCode ?? undefined,
-                note: payload.note ?? undefined, 
-            }
-        );
-        const resData = response.data;
-        if (!resData.ok) throw new Error(resData.message);
-        return resData.data;
-    } catch (error) {
-        throw handleApiError(error, 'createOrder');
+        try {
+            const response = await api.post<ApiResponse<CreateOrderResponseDto>>(
+                '/api/orders',
+                {
+                    ...payload,
+                    voucherCode: payload.voucherCode ?? undefined,
+                    note: payload.note ?? undefined,
+                }
+            );
+            const resData = response.data;
+            if (!resData.ok) throw new Error(resData.message);
+            return resData.data;
+        } catch (error) {
+            throw handleApiError(error, 'createOrder');
+        }
+    },
+
+    cancleOrder: async (orderId: string): Promise<ApiConfirmationResponse['data']> => {
+        try {
+            const response = await api.patch<ApiConfirmationResponse>(`/api/orders/${orderId}/cancel`, { cancelReason: "Changed my mind" });
+            const resData = response.data;
+            if (!resData.ok) throw new Error(resData.message);
+            return resData.data;
+        } catch (error) {
+            throw handleApiError(error, 'createOrder');
+        }
     }
-},
 };
