@@ -16,6 +16,8 @@ import { userService } from "@/services/userService";
 export function OrderCard_ForDriver({ data, offerId }: { data: ShipperAssignmentDto, offerId: string }) {
     const router = useRouter();
     const queryClient = useQueryClient();
+    const isOffer = data.status === 'Offering' || data.status === 'Pending';
+    const isPickupReady = data.status === 'Accepted' || data.status === 'Assigned' || data.status === 'PickingUp';
 
     const { data: merchantData } = useQuery({
         queryKey: ['merchant', data.merchantId],
@@ -26,11 +28,19 @@ export function OrderCard_ForDriver({ data, offerId }: { data: ShipperAssignment
 
     const acceptAssignmentMutation = useMutation({
         mutationFn: () => deliveryService.acceptAssignment(data.id),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['assigned-deliveries'] });
-            queryClient.invalidateQueries({ queryKey: ['offer-assignment'] });
-            queryClient.invalidateQueries({ queryKey: ['active-offer'] });
-            queryClient.invalidateQueries({ queryKey: ['shipper-availability'] });
+        onSuccess: async () => {
+            queryClient.setQueryData(['active-offer'], {
+                hasActiveOffer: false,
+                assignmentId: null,
+                offerId: null,
+                orderId: null,
+                expiresAt: null,
+            });
+            await Promise.all([
+                queryClient.refetchQueries({ queryKey: ['assigned-deliveries'] }),
+                queryClient.invalidateQueries({ queryKey: ['offer-assignment'] }),
+                queryClient.invalidateQueries({ queryKey: ['shipper-availability'] }),
+            ]);
             Alert.alert("Thành công", "Cảm ơn bạn đã xác nhận");
         },
         onError: (error) => {
@@ -81,13 +91,18 @@ export function OrderCard_ForDriver({ data, offerId }: { data: ShipperAssignment
     }
     const statusColor = () => {
         if (data.status === 'Offering' || data.status === 'Pending') return '#b6b6b6ff';
+        if (isPickupReady) return '#EA580C';
         if (data.status === 'Accepted') return '#EA580C';
         if (data.status === 'PickingUp') return '#1bcc91ff';
         if (data.status === 'PickedUp') return '#40d3d8ff';
         if (data.status === 'Delivering') return '#16c616ff';
+        if (data.status === 'Completed' || data.status === 'Delivered') return '#34C759';
+        return '#EA580C';
     }
 
     const buttontext = () => {
+        if (data.status === 'Offering') return 'Nhận đơn';
+        if (data.status === 'Assigned') return 'Lấy hàng';
         if (data.status === 'Pending') return 'Nhận đơn';
         if (data.status === 'Accepted') return 'Lấy hàng';
         if (data.status === 'PickingUp') return 'Lấy hàng';
@@ -107,7 +122,7 @@ export function OrderCard_ForDriver({ data, offerId }: { data: ShipperAssignment
         rejectAssignmentMutation.mutate("Tôi không thể giao hàng vào lúc này");
     }
     const handlePickup = () => {
-        if (data.status === 'Accepted') {
+        if (isPickupReady) {
             router.push({ pathname: `/(shipper)/pickedup`, params: { data: JSON.stringify(data) } })
             // updateStatusMutation.mutate({ assignmentId: data.id, data: { status: "PickedUp", note: "Đã lấy hàng", proofFileKey: null } })
         }
@@ -123,6 +138,20 @@ export function OrderCard_ForDriver({ data, offerId }: { data: ShipperAssignment
             // updateStatusMutation.mutate({ assignmentId: data.id, data: { status: "Delivered", note: "Hoàn thành đơn hàng", proofFileKey: null } })
         }
     }
+    const handlePrimaryAction = () => {
+        if (isPickupReady) {
+            handlePickup();
+            return;
+        }
+
+        if (data.status === 'PickedUp') {
+            handleDelivering();
+            return;
+        }
+
+        handleComplete();
+    }
+
     return (
         <View style={styles.ordercard_container}>
             <View style={{ padding: 20, gap: 20 }}>
@@ -183,7 +212,7 @@ export function OrderCard_ForDriver({ data, offerId }: { data: ShipperAssignment
 
                 </View>
             </View>
-            {(data.status === "Offering" || data.status === "Pending") && <View style={{ flexDirection: 'row' }}>
+            {isOffer && <View style={{ flexDirection: 'row' }}>
                 <TouchableOpacity style={{ justifyContent: 'center', alignItems: 'center', height: 60, flex: 1, backgroundColor: '#b1b1b1ff' }} onPress={handleReject}>
                     <Text style={{ color: 'white', fontSize: 17, fontWeight: 'bold' }}>Từ chối</Text>
                 </TouchableOpacity>
@@ -192,7 +221,7 @@ export function OrderCard_ForDriver({ data, offerId }: { data: ShipperAssignment
                 </TouchableOpacity>
             </View>
             }
-            {(data.status !== "Pending" && data.status !== "Offering") && <TouchableOpacity style={{ justifyContent: 'center', alignItems: 'center', height: 60, width: '100%', backgroundColor: statusColor() }} onPress={data.status === 'Accepted' ? handlePickup : data.status === 'PickedUp' ? handleDelivering : handleComplete}>
+            {!isOffer && <TouchableOpacity style={{ justifyContent: 'center', alignItems: 'center', height: 60, width: '100%', backgroundColor: statusColor() }} onPress={handlePrimaryAction}>
                 <Text style={{ color: 'white', fontSize: 17, fontWeight: 'bold' }}>{buttontext()}</Text>
             </TouchableOpacity>}
 

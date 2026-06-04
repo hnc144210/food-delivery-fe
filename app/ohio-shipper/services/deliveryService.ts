@@ -14,7 +14,7 @@ export type ApiConfirmationResponse = ApiResponse<ConfirmationResponse>;
 
 export const deliveryService = {
     getAssignedDeliveries: async (shipperId: string): Promise<ShipperListAssignmentResponse['data']> => {
-        const response = await api.get<ShipperListAssignmentResponse>(`/api/Deliveries/shippers/${shipperId}/assignments`);
+        const response = await api.get<ShipperListAssignmentResponse>(`/api/Deliveries/shippers/${shipperId}/assignments?pageIndex=1&pageSize=100`);
         const resData = response.data;
         if (!resData.success) {
             throw new Error(resData.errors[0]);

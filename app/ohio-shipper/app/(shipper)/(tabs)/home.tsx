@@ -14,7 +14,10 @@ import { locationService } from "@/services/locationService";
 // Helper to check if status is an offer
 const isOfferStatus = (status?: string) => status === 'Offering' || status === 'Pending';
 const isOnlineAvailability = (status?: string) => !!status && status !== 'Offline';
+const isActiveAssignmentStatus = (status?: string) =>
+    !!status && !['Completed', 'Failed', 'Rejected', 'Expired', 'Cancelled', 'Pending', 'Offering'].includes(status);
 const SHIPPER_LOCATION_HEARTBEAT_MS = 5000;
+const ACTIVE_OFFER_REFETCH_MS = 5000;
 
 export default function ShipperHomePage() {
     const [status, setStatus] = useState(false);
@@ -34,7 +37,10 @@ export default function ShipperHomePage() {
         queryKey: ['active-offer'],
         queryFn: () => deliveryService.getOffer(),
         enabled: !!user?.id && status,
-        refetchInterval: status ? 10000 : false, // Polling fallback: 10s when online
+        refetchInterval: status ? ACTIVE_OFFER_REFETCH_MS : false,
+        refetchIntervalInBackground: true,
+        refetchOnMount: 'always',
+        refetchOnReconnect: true,
     })
 
     const { data: shipperdata } = useQuery({
@@ -107,6 +113,15 @@ export default function ShipperHomePage() {
         enabled: !!activeAssignmentId, // Fix: Don't run query with empty ID
     })
 
+    const currentAssignmentId = availabilityQuery.data?.currentAssignmentId;
+    const currentAssignmentQuery = useQuery({
+        queryKey: ['current-assignment', currentAssignmentId],
+        queryFn: () => deliveryService.getAssignmentById(currentAssignmentId!),
+        enabled: !!currentAssignmentId,
+        refetchOnMount: 'always',
+        refetchOnReconnect: true,
+    })
+
     const toggleOnlineMutation = useMutation({
         mutationFn: async () => {
             if (!shipperdata?.id) {
@@ -144,9 +159,11 @@ export default function ShipperHomePage() {
     })
 
     const { data: assignedDeliveries, refetch: assignedDeliveriesRefetch, isFetching: isAssignedDeliveriesFetching } = useQuery({
-        queryKey: ['assigned-deliveries'],
+        queryKey: ['assigned-deliveries', shipperdata?.id],
         queryFn: () => deliveryService.getAssignedDeliveries(shipperdata!.id),
         enabled: !!shipperdata?.id,
+        refetchOnMount: 'always',
+        refetchOnReconnect: true,
     })
 
     const setOnlineStatus = () => {
@@ -165,12 +182,21 @@ export default function ShipperHomePage() {
             refreshes.push(offerAssignmentQuery.refetch());
         }
 
+        if (currentAssignmentId) {
+            refreshes.push(currentAssignmentQuery.refetch());
+        }
+
         await Promise.all(refreshes);
     };
 
     const myAssignments = assignedDeliveries?.items
     const myOffer = offerAssignmentQuery.data
-    const isRefreshing = isAssignedDeliveriesFetching || offerQuery.isFetching || offerAssignmentQuery.isFetching;
+    const assignmentItems = [...(myAssignments ?? [])];
+    if (currentAssignmentQuery.data && !assignmentItems.some(item => item.id === currentAssignmentQuery.data?.id)) {
+        assignmentItems.unshift(currentAssignmentQuery.data);
+    }
+    const activeAssignments = assignmentItems.filter(item => isActiveAssignmentStatus(item.status));
+    const isRefreshing = isAssignedDeliveriesFetching || offerQuery.isFetching || offerAssignmentQuery.isFetching || currentAssignmentQuery.isFetching;
 
     return (
         <View style={styles.container}>
@@ -197,8 +223,8 @@ export default function ShipperHomePage() {
                 <View style={{ flexDirection: 'column', gap: 10 }}>
                     <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Đơn hàng đang hoạt động</Text>
                     <View style={{ flexDirection: 'column', gap: 20 }}>
-                        {myAssignments?.filter(item => item.status !== 'Completed' && item.status !== 'Failed' && item.status !== 'Pending' && item.status !== 'Offering').length || 0 > 0 ? (
-                            myAssignments?.filter(item => item.status !== 'Completed' && item.status !== 'Failed' && item.status !== 'Pending' && item.status !== 'Offering').map((item, index) => <OrderCard_ForDriver key={index} data={item} offerId={""} />)
+                        {activeAssignments.length > 0 ? (
+                            activeAssignments.map((item, index) => <OrderCard_ForDriver key={item.id || index} data={item} offerId={""} />)
                         ) : (
                             <View style={{ flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginTop: 50 }}>
                                 <MaterialIcons name="delivery-dining" size={40} color="#8c8c8c" />

@@ -18,6 +18,16 @@ export function useAssignmentRealtime(enabled: boolean) {
       queryClient.invalidateQueries({ queryKey: ['shipper-availability'] });
     };
 
+    const clearActiveOffer = () => {
+      queryClient.setQueryData(['active-offer'], {
+        hasActiveOffer: false,
+        assignmentId: null,
+        offerId: null,
+        orderId: null,
+        expiresAt: null,
+      });
+    };
+
     const handleAssignmentOffered = async (payload: AssignmentOfferedPayload) => {
       const assignmentId = String(payload.assignmentId);
       const offerId = String(payload.offerId ?? payload.assignmentId);
@@ -34,11 +44,15 @@ export function useAssignmentRealtime(enabled: boolean) {
       // Invalidate related queries
       invalidateAssignmentState();
 
-      // Prefetch assignment details
-      queryClient.prefetchQuery({
-        queryKey: ['offer-assignment', assignmentId],
-        queryFn: () => deliveryService.getAssignmentById(assignmentId),
-      });
+      try {
+        await queryClient.fetchQuery({
+          queryKey: ['offer-assignment', assignmentId],
+          queryFn: () => deliveryService.getAssignmentById(assignmentId),
+          staleTime: 0,
+        });
+      } catch (error) {
+        console.error('[SignalR] Failed to load offered assignment:', error);
+      }
 
       Alert.alert(
         'Có đơn hàng mới!',
@@ -48,19 +62,23 @@ export function useAssignmentRealtime(enabled: boolean) {
     };
 
     const handleAssignmentExpired = () => {
+      clearActiveOffer();
       invalidateAssignmentState();
       Alert.alert('Thông báo', 'Đơn hàng đã hết hạn');
     };
 
     const handleAssignmentAccepted = () => {
+      clearActiveOffer();
       invalidateAssignmentState();
     };
 
     const handleAssignmentTaken = () => {
+      clearActiveOffer();
       invalidateAssignmentState();
     };
 
     const handleAssignmentRejected = () => {
+      clearActiveOffer();
       invalidateAssignmentState();
     };
 
