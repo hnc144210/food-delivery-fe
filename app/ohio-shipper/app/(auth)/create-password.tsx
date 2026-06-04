@@ -11,15 +11,17 @@ import {
   Platform,
   ScrollView,
   Image,
+  Alert,
 } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { AxiosError } from 'axios';
 import api from '@/services/api';
+import { authService } from '@/services/authService';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -27,6 +29,8 @@ const createPasswordSchema = z
   .object({
     password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
     confirmPassword: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+    email: z.string().email('Email không hợp lệ'),
+    resetToken: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Mật khẩu không khớp',
@@ -35,26 +39,13 @@ const createPasswordSchema = z
 
 type CreatePasswordFormData = z.infer<typeof createPasswordSchema>;
 
-// ─── API ──────────────────────────────────────────────────────────────────────
-
-interface CreatePasswordResponse {
-  success: true;
-  message: string;
-}
-
-async function createPasswordRequest(
-  payload: CreatePasswordFormData
-): Promise<CreatePasswordResponse> {
-  const { data } = await api.post<CreatePasswordResponse>('/auth/create-password', payload);
-  return data;
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function CreatePasswordScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [serverError, setServerError] = useState('');
+  const { email, resetToken } = useLocalSearchParams();
 
   const {
     control,
@@ -62,12 +53,13 @@ export default function CreatePasswordScreen() {
     formState: { errors },
   } = useForm<CreatePasswordFormData>({
     resolver: zodResolver(createPasswordSchema),
-    defaultValues: { password: '', confirmPassword: '' },
+    defaultValues: { password: '', confirmPassword: '', email: email as string, resetToken: resetToken as string },
   });
 
   const createPasswordMutation = useMutation({
-    mutationFn: createPasswordRequest,
+    mutationFn: (data: CreatePasswordFormData) => authService.resetPassword(data.email, data.password, data.confirmPassword, data.resetToken),
     onSuccess: () => {
+      Alert.alert('Success', 'Đã đặt lại mật khẩu thành công.');
       router.replace({ pathname: '/(auth)/login' });
     },
     onError: (error: AxiosError<{ message: string }>) => {

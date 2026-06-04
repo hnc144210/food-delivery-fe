@@ -9,6 +9,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { deliveryService } from "@/services/deliveryService";
 import { userService } from "@/services/userService";
 import { fileService } from "@/services/fileService";
+import { MaterialIcons } from "@expo/vector-icons";
 
 export default function ShipperHomePage() {
     const [status, setStatus] = useState(true);
@@ -76,17 +77,20 @@ export default function ShipperHomePage() {
                 </TouchableOpacity>
             </View>
             <ScrollView style={{ width: '100%', flex: 1 }} contentContainerStyle={{ gap: 20, padding: 20 }} refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={assignedDeliveriesRefetch} colors={["#EE4D2D"]} />}>
-                {myOffer && <View style={{ flexDirection: 'column', gap: 10, }}>
+                {myOffer?.status === 'Pending' && <View style={{ flexDirection: 'column', gap: 10, }}>
                     <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Bạn có đơn hàng đang chờ duyệt!</Text>
-                    <OrderCard_ForDriver {...myOffer} offerId={myOffer.id} />
+                    <OrderCard_ForDriver data={myOffer} offerId={myOffer.id} />
                 </View>}
                 <View style={{ flexDirection: 'column', gap: 10 }}>
                     <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Đơn hàng đang hoạt động</Text>
                     <View style={{ flexDirection: 'column', gap: 20 }}>
-                        {myAssignments?.length || 0 > 0 ? (
-                            myAssignments?.filter(item => item.status !== 'Completed' && item.status !== 'Failed').map((item, index) => <OrderCard_ForDriver key={index} {...item} offerId={""} />)
+                        {myAssignments?.filter(item => item.status !== 'Completed' && item.status !== 'Failed' && item.status !== 'Pending').length || 0 > 0 ? (
+                            myAssignments?.filter(item => item.status !== 'Completed' && item.status !== 'Failed' && item.status !== 'Pending').map((item, index) => <OrderCard_ForDriver key={index} data={item} offerId={""} />)
                         ) : (
-                            <Text style={{ fontSize: 16, textAlign: 'center', marginTop: 20 }}>Không có đơn hàng</Text>
+                            <View style={{ flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginTop: 50 }}>
+                                <MaterialIcons name="delivery-dining" size={40} color="#8c8c8c" />
+                                <Text style={{ fontSize: 16, textAlign: 'center', color: '#8c8c8c' }}>Không có đơn hàng</Text>
+                            </View>
                         )}
                     </View>
                 </View>

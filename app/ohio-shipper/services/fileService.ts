@@ -81,5 +81,41 @@ export const fileService = {
             console.error('[fileService.uploadFile] Upload Error:', error);
             throw error;
         }
+    },
+    getUploadUrlForCompletion: async (orderId: string, shipperId: string, stage: string, fileName: string, contentType: string): Promise<PresignUrlResponse['data']> => {
+        try {
+            const response = await api.get<PresignUrlResponse>(`/api/deliveries/files/upload-url`, {
+                params: {
+                    orderId,
+                    shipperId,
+                    stage,
+                    fileName,
+                    contentType
+                }
+            });
+            const resData = response.data;
+            if (!resData.success) {
+                throw new Error(resData.errors[0]);
+            }
+            return resData.data;
+        } catch (error) {
+            throw handleApiError(error, 'getUploadUrl');
+        }
+    },
+    getReadUrlForCompletion: async (fileKey: string): Promise<PresignReadUrlResponse['data']> => {
+        try {
+            const response = await api.get<PresignReadUrlResponse>(`/api/deliveries/files/read-url`, {
+                params: {
+                    fileKey
+                }
+            });
+            const resData = response.data;
+            if (!resData.success) {
+                throw new Error(resData.errors[0]);
+            }
+            return resData.data;
+        } catch (error) {
+            throw handleApiError(error, 'getReadUrl');
+        }
     }
 }
