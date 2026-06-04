@@ -13,7 +13,7 @@ export default function ProfilePage() {
   const user = useAuthStore((s) => s.user);
   const clearUser = useAuthStore((s) => s.clearUser);
   const { data: readUrlResponse } = useQuery({
-    queryKey: ["read-url"],
+    queryKey: ["read-url", user?.avatarFileKey],
     queryFn: () => fileService.getReadUrl(user?.avatarFileKey || ""),
     enabled: !!user?.avatarFileKey,
   });
