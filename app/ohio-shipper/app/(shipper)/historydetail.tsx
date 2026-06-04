@@ -4,11 +4,9 @@ import { ReturnButton } from "../../components/ui/ReturnButton";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Entypo from '@expo/vector-icons/Entypo';
-import { ProductCard_ForDriver } from "../../components/features/ProductCard";
-import { mock_merchant, mock_order_detail, } from "../../mock/shipper";
+import { mock_merchant } from "../../mock/shipper";
 import { useQuery } from "@tanstack/react-query";
 import { userService } from "@/services/userService";
-import { orderService } from "@/services/orderService";
 import { ShipperAssignmentDto } from "@/types/assignment";
 
 export default function HistoryDetail() {
@@ -21,13 +19,7 @@ export default function HistoryDetail() {
         enabled: !!assignment.merchantId,
     })
 
-    const { data: orderData } = useQuery({
-        queryKey: ['order', assignment.orderId],
-        queryFn: () => orderService.getOrderDetail(assignment.orderId),
-        enabled: !!assignment.orderId,
-    })
     const merchant = merchantData || mock_merchant
-    const order = orderData || mock_order_detail
     return (
         <View style={styles.container}>
             <View style={styles.header}>
@@ -79,25 +71,25 @@ export default function HistoryDetail() {
                 <View style={styles.smallcontainer}>
                     <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Tóm tắt đơn hàng</Text>
                     <View style={{ borderRadius: 14, overflow: 'hidden', gap: 15 }}>
-                        {order?.items?.map((item, index) => <ProductCard_ForDriver key={index} {...item} />)}
+                        <Text style={{ color: 'gray' }}>Order item details are not available for shipper.</Text>
                     </View>
                     <View style={{ height: 1, width: '100%', backgroundColor: "lightgray" }} />
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                         <Text>Tạm tính:</Text>
-                        <Text>{order?.subtotal} đ</Text>
+                        <Text>-</Text>
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                         <Text>Phí vận chuyển:</Text>
-                        <Text>{order?.deliveryFee} đ</Text>
+                        <Text>{assignment.deliveryFee} đ</Text>
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                         <Text>Giảm giá:</Text>
-                        <Text>{order?.discountAmount} đ</Text>
+                        <Text>-</Text>
                     </View>
                     <View style={{ height: 1, width: '100%', backgroundColor: "lightgray" }} />
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                         <Text>Tổng số tiền:</Text>
-                        <Text style={{ fontSize: 25, fontWeight: 'bold', color: '#EE4D2D' }}>{order?.totalAmount} đ</Text>
+                        <Text style={{ fontSize: 25, fontWeight: 'bold', color: '#EE4D2D' }}>{assignment.deliveryFee} đ</Text>
                     </View>
                 </View>
 
