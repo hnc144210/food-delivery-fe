@@ -1,7 +1,6 @@
 // app/(auth)/login.tsx
-import { useState } from 'react';
-import { Image } from 'react-native';
-import { mockLoginResponse } from '@/mock/auth';
+import { useEffect, useState } from "react";
+import { Image } from "react-native";
 
 import {
   View,
@@ -13,22 +12,24 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-} from 'react-native';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { router } from 'expo-router';
-import { useMutation } from '@tanstack/react-query';
-import { Ionicons, FontAwesome } from '@expo/vector-icons';
-import { AxiosError } from 'axios';
-import { useAuthStore } from '@/store/authStore';
-import type { User } from '@/types';
+} from "react-native";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { router } from "expo-router";
+import { useMutation } from "@tanstack/react-query";
+import { Ionicons, FontAwesome } from "@expo/vector-icons";
+import { AxiosError } from "axios";
+import { useAuthStore } from "@/store/authStore";
+import api from "@/services/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { userService } from "@/services/userService";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const loginSchema = z.object({
-  identifier: z.string().min(1, 'Email hoặc số điện thoại không được để trống'),
-  password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+  identifier: z.string().min(1, "Email hoặc số điện thoại không được để trống"),
+  password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -36,20 +37,41 @@ type LoginFormData = z.infer<typeof loginSchema>;
 // ─── API ──────────────────────────────────────────────────────────────────────
 
 interface LoginResponse {
-  success: true;
-  data: { accessToken: string; refreshToken: string; user: User };
+  success: boolean;
+  statusCode: string;
+  data: {
+    accessToken: string;
+    refreshToken: string;
+    userId: string;
+    expiresAt: string;
+  };
   message: string;
+  errors: string[];
 }
 
 async function loginRequest(payload: LoginFormData): Promise<LoginResponse> {
-  // TODO: đổi lại khi BE xong
-  return mockLoginResponse;
+  const response = await api.post<LoginResponse>(
+    "/api/Auth/login",
+    { email: payload.identifier, password: payload.password },
+    {
+      headers: {
+        "X-Device-Id": "1234567890", // Có thể thay bằng device id thực tế nếu có
+        "X-Device-Name": Platform.OS === "ios" ? "iOS" : "Android",
+      },
+    },
+  );
+
+  const data = response.data;
+  if (!data.success) {
+    throw new Error(data.message || "Đăng nhập không thành công");
+  }
+  return data;
 }
 
 // ─── Role redirect ────────────────────────────────────────────────────────────
 
 function redirectByRole() {
-  router.replace('/(customer)/home' as any);
+  router.replace("/(customer)/home" as any);
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -57,7 +79,7 @@ function redirectByRole() {
 function OhioLogo() {
   return (
     <Image
-      source={require('@/assets/images/logo.png')}
+      source={require("@/assets/images/logo.png")}
       style={{ width: 160, height: 60, marginBottom: 28 }}
       resizeMode="contain"
     />
@@ -68,7 +90,7 @@ function OhioLogo() {
 
 export default function LoginScreen() {
   const setUser = useAuthStore((s) => s.setUser);
-  const [serverError, setServerError] = useState('');
+  const [serverError, setServerError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
@@ -76,34 +98,80 @@ export default function LoginScreen() {
     control,
     handleSubmit,
     formState: { errors },
+    setValue,
+    getValues,
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { identifier: '', password: '' },
+    defaultValues: { identifier: "", password: "" },
   });
 
+  useEffect(() => {
+    AsyncStorage.getItem("remembered_email").then((email) => {
+      if (email) {
+        setValue("identifier", email);
+        setRememberMe(true);
+      }
+    });
+  }, []);
+
   const loginMutation = useMutation({
-  mutationFn: loginRequest,
-  onSuccess: async ({ data }) => {
-  console.log('onSuccess:', data);
-  setUser(data.user);
-  redirectByRole();
-},
-  onError: (error) => {
-    console.log('onError:', error);
-    const message = (error as AxiosError<{ message: string }>).response?.data?.message ?? 'Đăng nhập thất bại. Vui lòng thử lại.';
-    setServerError(message);
-  },
-});
+    mutationFn: loginRequest,
+    onSuccess: async ({ data }) => {
+      try {
+        if (rememberMe) {
+          await AsyncStorage.setItem(
+            "remembered_email",
+            getValues("identifier"),
+          );
+        } else {
+          await AsyncStorage.removeItem("remembered_email");
+        }
+
+        await AsyncStorage.setItem("access_token", data.accessToken);
+        await AsyncStorage.setItem("refresh_token", data.refreshToken);
+        await AsyncStorage.setItem("device_id", "1234567890");
+        console.log("Login Success:", data);
+        // Gọi API lấy thông tin Profile sau khi đăng nhập thành công
+        const profile = await userService.getProfile(data.userId);
+
+        // Cập nhật State quản lý User
+        setUser({
+          avatarFileKey: profile.avatarFileKey,
+          fullName: profile.fullName,
+          phoneNumber: profile.phoneNumber,
+          id: data.userId,
+          status: profile.status,
+          roles: profile.roles
+        });
+
+        redirectByRole();
+      } catch (error: any) {
+        console.error("Fetch profile error:", error);
+        setServerError("Không thể tải thông tin cá nhân. Vui lòng thử lại.");
+      }
+    },
+    onError: (error: any) => {
+      console.log("Status:", error.response?.status);
+      console.log("Data:", JSON.stringify(error.response?.data, null, 2));
+      console.log("Message:", error.response?.data?.message);
+      console.log("Errors:", error.response?.data?.errors);
+      const message =
+        error.response?.data?.message ??
+        error.message ??
+        "Đăng nhập thất bại. Vui lòng thử lại.";
+      setServerError(message);
+    },
+  });
 
   function handlePressLogin(formData: LoginFormData) {
-    setServerError('');
+    setServerError("");
     loginMutation.mutate(formData);
   }
 
   return (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
         contentContainerStyle={styles.container}
@@ -145,7 +213,13 @@ export default function LoginScreen() {
             control={control}
             name="password"
             render={({ field: { onChange, onBlur, value } }) => (
-              <View style={[styles.input, styles.passwordRow, errors.password && styles.inputError]}>
+              <View
+                style={[
+                  styles.input,
+                  styles.passwordRow,
+                  errors.password && styles.inputError,
+                ]}
+              >
                 <TextInput
                   style={styles.passwordInput}
                   placeholder="••••••••"
@@ -154,9 +228,11 @@ export default function LoginScreen() {
                   onChangeText={onChange}
                   value={value}
                 />
-                <TouchableOpacity onPress={() => setShowPassword((prev) => !prev)}>
+                <TouchableOpacity
+                  onPress={() => setShowPassword((prev) => !prev)}
+                >
                   <Ionicons
-                    name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                    name={showPassword ? "eye-outline" : "eye-off-outline"}
                     size={20}
                     color="#9ca3af"
                   />
@@ -176,12 +252,18 @@ export default function LoginScreen() {
             onPress={() => setRememberMe((prev) => !prev)}
             activeOpacity={0.7}
           >
-            <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
-              {rememberMe && <Ionicons name="checkmark" size={12} color="#fff" />}
+            <View
+              style={[styles.checkbox, rememberMe && styles.checkboxChecked]}
+            >
+              {rememberMe && (
+                <Ionicons name="checkmark" size={12} color="#fff" />
+              )}
             </View>
             <Text style={styles.rememberText}>Remember me</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push({ pathname: '/(auth)/forgot-password' })}>
+          <TouchableOpacity
+            onPress={() => router.push({ pathname: "/(auth)/forgot-password" })}
+          >
             <Text style={styles.forgotText}>Forget Password</Text>
           </TouchableOpacity>
         </View>
@@ -193,7 +275,10 @@ export default function LoginScreen() {
 
         {/* Sign in button */}
         <TouchableOpacity
-          style={[styles.button, loginMutation.isPending && styles.buttonDisabled]}
+          style={[
+            styles.button,
+            loginMutation.isPending && styles.buttonDisabled,
+          ]}
           onPress={handleSubmit(handlePressLogin)}
           disabled={loginMutation.isPending}
           activeOpacity={0.85}
@@ -208,7 +293,9 @@ export default function LoginScreen() {
         {/* Register link */}
         <View style={styles.registerRow}>
           <Text style={styles.registerHint}>Don't have an account? </Text>
-          <TouchableOpacity onPress={() => router.push({ pathname: '/(auth)/register' })}>
+          <TouchableOpacity
+            onPress={() => router.push({ pathname: "/(auth)/register" })}
+          >
             <Text style={styles.registerLink}>Sign Up</Text>
           </TouchableOpacity>
         </View>
@@ -229,175 +316,112 @@ export default function LoginScreen() {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-
-const ORANGE = '#EE4D2D';
-
+const ORANGE = "#EE4D2D";
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-    backgroundColor: '#F5F5F5',
-  },
+  flex: { flex: 1, backgroundColor: "#F5F5F5" },
   container: {
     flexGrow: 1,
-    alignItems: 'center',
+    alignItems: "center",
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 40,
   },
-
-  // Title
   title: {
     fontSize: 24,
-    fontWeight: '800',
-    color: '#1a1a1a',
+    fontWeight: "800",
+    color: "#1a1a1a",
     marginBottom: 6,
-    textAlign: 'center',
+    textAlign: "center",
   },
   subtitle: {
     fontSize: 14,
-    color: '#9ca3af',
+    color: "#9ca3af",
     marginBottom: 32,
-    textAlign: 'center',
+    textAlign: "center",
   },
-
-  // Fields
-  fieldWrapper: {
-    width: '100%',
-    marginBottom: 16,
-  },
+  fieldWrapper: { width: "100%", marginBottom: 16 },
   label: {
     fontSize: 11,
-    fontWeight: '600',
-    color: '#6b7280',
+    fontWeight: "600",
+    color: "#6b7280",
     letterSpacing: 1,
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 15,
-    color: '#111827',
+    color: "#111827",
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: "#e5e7eb",
   },
-  inputError: {
-    borderColor: '#ef4444',
-  },
+  inputError: { borderColor: "#ef4444" },
   passwordRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 0,
   },
   passwordInput: {
     flex: 1,
     fontSize: 15,
-    color: '#111827',
+    color: "#111827",
     paddingVertical: 14,
   },
-  errorText: {
-    marginTop: 4,
-    fontSize: 12,
-    color: '#ef4444',
-  },
-
-  // Remember me
+  errorText: { marginTop: 4, fontSize: 12, color: "#ef4444" },
   rememberRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
     marginBottom: 24,
   },
-  rememberLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
+  rememberLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
   checkbox: {
     width: 18,
     height: 18,
     borderRadius: 4,
     borderWidth: 1.5,
-    borderColor: '#d1d5db',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: "#d1d5db",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  checkboxChecked: {
-    backgroundColor: ORANGE,
-    borderColor: ORANGE,
-  },
-  rememberText: {
-    fontSize: 13,
-    color: '#6b7280',
-  },
-  forgotText: {
-    fontSize: 13,
-    color: ORANGE,
-    fontWeight: '600',
-  },
-
-  // Server error
+  checkboxChecked: { backgroundColor: ORANGE, borderColor: ORANGE },
+  rememberText: { fontSize: 13, color: "#6b7280" },
+  forgotText: { fontSize: 13, color: ORANGE, fontWeight: "600" },
   serverError: {
     fontSize: 13,
-    color: '#ef4444',
-    textAlign: 'center',
+    color: "#ef4444",
+    textAlign: "center",
     marginBottom: 12,
   },
-
-  // Button
   button: {
     backgroundColor: ORANGE,
     borderRadius: 14,
     paddingVertical: 16,
-    width: '100%',
-    alignItems: 'center',
+    width: "100%",
+    alignItems: "center",
   },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-
-  // Register
+  buttonDisabled: { opacity: 0.6 },
+  buttonText: { color: "#fff", fontSize: 16, fontWeight: "700" },
   registerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginTop: 20,
   },
-  registerHint: {
-    color: '#6b7280',
-    fontSize: 14,
-  },
-  registerLink: {
-    color: ORANGE,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-
-  // Social
-  orText: {
-    color: '#9ca3af',
-    fontSize: 13,
-    marginTop: 24,
-    marginBottom: 16,
-  },
-  socialRow: {
-    flexDirection: 'row',
-    gap: 16,
-  },
+  registerHint: { color: "#6b7280", fontSize: 14 },
+  registerLink: { color: ORANGE, fontSize: 14, fontWeight: "700" },
+  orText: { color: "#9ca3af", fontSize: 13, marginTop: 24, marginBottom: 16 },
+  socialRow: { flexDirection: "row", gap: 16 },
   socialButton: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: '#e5e7eb',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: "#e5e7eb",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

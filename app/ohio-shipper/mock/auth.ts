@@ -2,11 +2,11 @@ import type { User } from '@/types';
 
 const mockShipperUser: User = {
   id: 'shipper-01',
-  name: 'Tran Van B',
-  email: 'shipper@ohio.com',
-  phone: '0901234568',
-  role: 'SHIPPER',
-  avatar_url: '',
+  fullName: 'Tran Van B',
+  avatarFileKey: '',
+  phoneNumber: '0901234568',
+  status: 'Active',
+  roles: ['Shipper'],
 };
 
 export const mockLoginResponse = {

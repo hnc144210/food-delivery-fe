@@ -1,16 +1,17 @@
 import { Image, StyleSheet, Text, TouchableOpacity, View, FlatList } from "react-native";
 import { Category } from '@/types';
+import { CategoryResponseDto } from "@/types/category";
 
-export function CategoryButton({ id, name, icon_url }: Category) {
+export function CategoryButton({ id, name, iconUrl, onCategorySelected }: CategoryResponseDto & { onCategorySelected?: (categoryId: string) => void }) {
     return (
-        <TouchableOpacity style={styles.categorybutton}>
-            <Image source={{ uri: icon_url }} style={styles.image} />
-            <Text style={{ fontSize: 15, paddingTop: 5 }}>{name}</Text>
+        <TouchableOpacity style={styles.categorybutton} onPress={() => onCategorySelected?.(id)}>
+            <Image source={{ uri: iconUrl || '' }} style={styles.image} />
+            <Text style={{ fontSize: 15, paddingTop: 5, textAlign: 'center' }}>{name}</Text>
         </TouchableOpacity>
     );
 }
 
-export function CategoriesList({ categories }: { categories: Category[] }) {
+export function CategoriesList({ categories, onCategorySelected }: { categories: CategoryResponseDto[], onCategorySelected: (categoryId: string) => void }) {
     return (
         <View style={styles.container}>
             <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Danh mục</Text>
@@ -19,7 +20,7 @@ export function CategoriesList({ categories }: { categories: Category[] }) {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{ gap: 10 }}
-                renderItem={({ item }) => <CategoryButton {...item} />}
+                renderItem={({ item }) => <CategoryButton {...item} onCategorySelected={onCategorySelected} />}
                 keyExtractor={(item, index) => index.toString()}
             />
         </View>
@@ -30,7 +31,6 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: 'column',
         width: '100%',
-        height: 'auto',
         backgroundColor: 'white',
         marginVertical: 20,
         borderRadius: 12,
@@ -42,10 +42,9 @@ const styles = StyleSheet.create({
     },
     categorybutton: {
         flexDirection: 'column',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         alignItems: 'center',
-        width: 70,
-        height: 100,
+        width: 80,
         margin: 10,
     },
     category_container: {

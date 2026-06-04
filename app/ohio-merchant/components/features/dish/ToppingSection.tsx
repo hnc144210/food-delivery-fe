@@ -1,15 +1,23 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+//components/features/dish/ToppingSection.tsx
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
-const ORANGE = '#E8441A';
+const ORANGE = "#E8441A";
 
 type Topping = { name: string; price: string };
 type Props = { toppings: Topping[]; onChange: (v: Topping[]) => void };
 
 export default function ToppingSection({ toppings, onChange }: Props) {
-  const add = () => onChange([...toppings, { name: '', price: '' }]);
+  const add = () => onChange([...toppings, { name: "", price: "" }]);
 
-  const remove = (i: number) => onChange(toppings.filter((_, idx) => idx !== i));
+  const remove = (i: number) =>
+    onChange(toppings.filter((_, idx) => idx !== i));
 
   const update = (i: number, field: keyof Topping, value: string) => {
     const next = [...toppings];
@@ -28,7 +36,9 @@ export default function ToppingSection({ toppings, onChange }: Props) {
       </View>
 
       {toppings.length === 0 && (
-        <Text style={styles.empty}>Chưa có topping — nhấn "Thêm" để bắt đầu</Text>
+        <Text style={styles.empty}>
+          Chưa có topping — nhấn "Thêm" để bắt đầu
+        </Text>
       )}
 
       {toppings.map((t, i) => (
@@ -36,13 +46,13 @@ export default function ToppingSection({ toppings, onChange }: Props) {
           <TextInput
             style={[styles.input, { flex: 2 }]}
             value={t.name}
-            onChangeText={v => update(i, 'name', v)}
+            onChangeText={(v) => update(i, "name", v)}
             placeholder="Tên topping"
           />
           <TextInput
             style={[styles.input, { flex: 1 }]}
             value={t.price}
-            onChangeText={v => update(i, 'price', v)}
+            onChangeText={(v) => update(i, "price", v)}
             placeholder="+Giá"
             keyboardType="numeric"
           />
@@ -57,12 +67,31 @@ export default function ToppingSection({ toppings, onChange }: Props) {
 
 const styles = StyleSheet.create({
   container: { marginBottom: 8 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  label: { fontSize: 14, fontWeight: '600', color: '#333' },
-  addRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  addText: { color: ORANGE, fontWeight: '600', fontSize: 14 },
-  empty: { fontSize: 13, color: '#bbb', textAlign: 'center', paddingVertical: 10, fontStyle: 'italic' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  input: { borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 9, fontSize: 14, color: '#1a1a1a' },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  label: { fontSize: 14, fontWeight: "600", color: "#333" },
+  addRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  addText: { color: ORANGE, fontWeight: "600", fontSize: 14 },
+  empty: {
+    fontSize: 13,
+    color: "#bbb",
+    textAlign: "center",
+    paddingVertical: 10,
+    fontStyle: "italic",
+  },
+  row: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
+  input: {
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    fontSize: 14,
+    color: "#1a1a1a",
+  },
   removeBtn: { padding: 4 },
 });

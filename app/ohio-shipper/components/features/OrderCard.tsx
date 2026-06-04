@@ -3,141 +3,262 @@ import Octicons from "@expo/vector-icons/Octicons";
 import Entypo from '@expo/vector-icons/Entypo';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from "expo-router";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { OrderCardType } from "../../mock/shipper";
+import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { mock_merchant, OrderCardType } from "../../mock/shipper";
 import { mock_nearbyrestaurant } from "@/mock/home";
 import { useMemo } from "react";
 import { number } from "zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { UpdateDeliveryStatusRequestDto, ShipperAssignmentDto } from "@/types/assignment";
+import { deliveryService } from "@/services/deliveryService";
+import { userService } from "@/services/userService";
 
-export function OrderCard_ForDriver({ id, status, merchantId, totalamount, pickuplocation, deliverylocation }: OrderCardType) {
+export function OrderCard_ForDriver({ data, offerId }: { data: ShipperAssignmentDto, offerId: string }) {
     const router = useRouter();
-    const restaurant = useMemo(() => mock_nearbyrestaurant.find(f => f.id === merchantId), [merchantId]);
+    const queryClient = useQueryClient();
+    const isOffer = data.status === 'Offering' || data.status === 'Pending';
+    const isPickupReady = data.status === 'Accepted' || data.status === 'Assigned' || data.status === 'PickingUp';
 
-    const statuscolor = () => {
-        if (status === 'PENDING') return '#808080ff';
-        if (status === 'READY') return '#2cbe00ff';
-        if (status === 'DELIVERING') return '#EA580C';
+    const { data: merchantData } = useQuery({
+        queryKey: ['merchant', data.merchantId],
+        queryFn: () => userService.getMerchantProfile(data.merchantId),
+    })
+    const merchant = merchantData || mock_merchant;
+
+
+    const acceptAssignmentMutation = useMutation({
+        mutationFn: () => deliveryService.acceptAssignment(data.id),
+        onSuccess: async () => {
+            queryClient.setQueryData(['active-offer'], {
+                hasActiveOffer: false,
+                assignmentId: null,
+                offerId: null,
+                orderId: null,
+                expiresAt: null,
+            });
+            await Promise.all([
+                queryClient.refetchQueries({ queryKey: ['assigned-deliveries'] }),
+                queryClient.invalidateQueries({ queryKey: ['offer-assignment'] }),
+                queryClient.invalidateQueries({ queryKey: ['shipper-availability'] }),
+            ]);
+            Alert.alert("Thành công", "Cảm ơn bạn đã xác nhận");
+        },
+        onError: (error) => {
+            Alert.alert("Lỗi", error.message);
+        }
+    })
+
+    const rejectAssignmentMutation = useMutation({
+        mutationFn: (reason: string) =>
+            deliveryService.rejectAssignment(data.id, {
+                offerId: offerId,
+                reason: reason
+            }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['assigned-deliveries'] });
+            queryClient.invalidateQueries({ queryKey: ['offer-assignment'] });
+            queryClient.invalidateQueries({ queryKey: ['active-offer'] });
+            queryClient.invalidateQueries({ queryKey: ['shipper-availability'] });
+            Alert.alert("Thành công", "Bạn đã từ chối đơn hàng");
+        },
+        onError: (error) => {
+            Alert.alert("Lỗi", error.message);
+        }
+    })
+    const updateStatusMutation = useMutation({
+        mutationFn: ({ assignmentId, data }: { assignmentId: string, data: UpdateDeliveryStatusRequestDto }) => deliveryService.updateDeliveryStatus(assignmentId, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['assigned-deliveries'] });
+            queryClient.invalidateQueries({ queryKey: ['offer-assignment'] });
+            queryClient.invalidateQueries({ queryKey: ['active-offer'] });
+            queryClient.invalidateQueries({ queryKey: ['shipper-availability'] });
+            Alert.alert("Thành công", "Cập nhật trạng thái đơn hàng thành công");
+        },
+        onError: (error) => {
+            Alert.alert("Lỗi", error.message);
+        }
+    })
+
+    const statusText = () => {
+        if (data.status === 'Offering' || data.status === 'Pending') return 'Chờ xác nhận';
+        if (data.status === 'Accepted') return 'Đã nhận đơn';
+        if (data.status === 'PickingUp') return 'Đang lấy hàng';
+        if (data.status === 'PickedUp') return 'Đã lấy hàng';
+        if (data.status === 'Delivering') return 'Đang giao hàng';
+        if (data.status === 'Delivered') return 'Đã giao hàng';
+        if (data.status === 'Failed') return 'Thất bại';
+        else return data.status
     }
+    const statusColor = () => {
+        if (data.status === 'Offering' || data.status === 'Pending') return '#b6b6b6ff';
+        if (isPickupReady) return '#EA580C';
+        if (data.status === 'Accepted') return '#EA580C';
+        if (data.status === 'PickingUp') return '#1bcc91ff';
+        if (data.status === 'PickedUp') return '#40d3d8ff';
+        if (data.status === 'Delivering') return '#16c616ff';
+        if (data.status === 'Completed' || data.status === 'Delivered') return '#34C759';
+        return '#EA580C';
+    }
+
     const buttontext = () => {
-        if (status === 'PENDING') return 'Nhận đơn';
-        if (status === 'READY') return 'Lấy hàng';
-        if (status === 'DELIVERING') return 'Hoàn thành';
-    }
-    const StatusText = () => {
-        if (status === 'PENDING') return 'Chờ duyệt';
-        if (status === 'READY') return 'Sẵn sàng';
-        if (status === 'DELIVERING') return 'Đang giao hàng';
+        if (data.status === 'Offering') return 'Nhận đơn';
+        if (data.status === 'Assigned') return 'Lấy hàng';
+        if (data.status === 'Pending') return 'Nhận đơn';
+        if (data.status === 'Accepted') return 'Lấy hàng';
+        if (data.status === 'PickingUp') return 'Lấy hàng';
+        if (data.status === 'PickedUp') return 'Bắt đầu giao hàng';
+        if (data.status === 'Delivering') return 'Hoàn thành';
+        return '';
     }
     const handleAccept = () => {
-        if (status === 'PENDING') {
-            // API update
-        }
+        const isOffer = data.status === 'Offering' || data.status === 'Pending';
+        if (!isOffer) return;
+        acceptAssignmentMutation.mutate();
+    }
+
+    const handleReject = () => {
+        const isOffer = data.status === 'Offering' || data.status === 'Pending';
+        if (!isOffer) return;
+        rejectAssignmentMutation.mutate("Tôi không thể giao hàng vào lúc này");
     }
     const handlePickup = () => {
-        if (status === 'READY') {
-            // API update
+        if (isPickupReady) {
+            router.push({ pathname: `/(shipper)/pickedup`, params: { data: JSON.stringify(data) } })
+            // updateStatusMutation.mutate({ assignmentId: data.id, data: { status: "PickedUp", note: "Đã lấy hàng", proofFileKey: null } })
+        }
+    }
+    const handleDelivering = () => {
+        if (data.status === 'PickedUp') {
+            updateStatusMutation.mutate({ assignmentId: data.id, data: { status: "Delivering", note: "Bắt đầu giao hàng", proofFileKey: null } })
         }
     }
     const handleComplete = () => {
-        if (status === 'DELIVERING') {
-            router.push({ pathname: '/(shipper)/completion', params: { id } })
+        if (data.status === 'Delivering') {
+            router.push({ pathname: `/(shipper)/completion`, params: { data: JSON.stringify(data) } })
+            // updateStatusMutation.mutate({ assignmentId: data.id, data: { status: "Delivered", note: "Hoàn thành đơn hàng", proofFileKey: null } })
         }
     }
+    const handlePrimaryAction = () => {
+        if (isPickupReady) {
+            handlePickup();
+            return;
+        }
+
+        if (data.status === 'PickedUp') {
+            handleDelivering();
+            return;
+        }
+
+        handleComplete();
+    }
+
     return (
         <View style={styles.ordercard_container}>
             <View style={{ padding: 20, gap: 20 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                    <View style={[styles.status, { backgroundColor: statuscolor() }]}>
-                        <Text style={{ fontSize: 14, fontWeight: 'bold', color: 'white' }}>{StatusText()}</Text>
+                    <View style={[styles.status, { backgroundColor: statusColor() }]}>
+                        <Text style={{ fontSize: 14, fontWeight: 'bold', color: 'white' }}>{statusText()}</Text>
                     </View>
-                    <View style={{ flexDirection: 'row', gap: 8 }}>
-                        <TouchableOpacity
-                            style={styles.incidentBadgeButton}
-                            onPress={() => router.push({ pathname: '/(shipper)/incidentreport' as any, params: { id } })}
-                        >
-                            <Ionicons name="warning-outline" size={16} color="#EF4444" />
-                            <Text style={styles.incidentBadgeText}>Sự cố</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.chatBadgeButton}
-                            onPress={() => router.push({ pathname: '/(shipper)/chatroom' as any, params: { id } })}
-                        >
-                            <Ionicons name="chatbubble-ellipses-outline" size={16} color="#EE4D2D" />
-                            <Text style={styles.chatBadgeText}>Trò chuyện</Text>
-                        </TouchableOpacity>
-                    </View>
+                    {(data.status !== 'Pending' && data.status !== 'Offering') &&
+                        <View style={{ flexDirection: 'row', gap: 8 }}>
+
+                            {/*<TouchableOpacity
+                                style={styles.incidentBadgeButton}
+                                onPress={() => router.push({ pathname: '/(shipper)/incidentreport' as any, params: { data: JSON.stringify(data) } })}
+                            >
+                                <Ionicons name="warning-outline" size={16} color="#EF4444" />
+                                <Text style={styles.incidentBadgeText}>Sự cố</Text>
+                            </TouchableOpacity>*/}
+                            <TouchableOpacity
+                                style={styles.chatBadgeButton}
+                                onPress={() => router.push({ pathname: '/(shipper)/chatroom' as any, params: { data: JSON.stringify(data) } })}
+                            >
+                                <Ionicons name="chatbubble-ellipses-outline" size={16} color="#EE4D2D" />
+                                <Text style={styles.chatBadgeText}>Trò chuyện</Text>
+                            </TouchableOpacity>
+                        </View>}
                 </View>
-                <TouchableOpacity style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }} onPress={() => router.push({ pathname: `/(shipper)/orderdetail`, params: { id } })}>
+                <TouchableOpacity style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }} onPress={() => router.push({ pathname: `/(shipper)/orderdetail`, params: { data: JSON.stringify(data) } })}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                        <Image source={{ uri: restaurant?.logo_url }} style={{ width: 50, height: 50, borderRadius: 12 }} />
+                        <Image source={{ uri: merchant.storeLogoUrl }} style={{ width: 50, height: 50, borderRadius: 12 }} />
                         <View>
-                            <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{restaurant?.name}</Text>
+                            <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{merchant.storeName}</Text>
                             <Text style={{ fontSize: 12, color: 'gray' }}>Xem chi tiết đơn hàng</Text>
                         </View>
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#B22203' }}>{totalamount}đ</Text>
+                        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#B22203' }}>{data.deliveryFee}đ</Text>
                         <Text style={{ fontSize: 12, color: 'gray' }}>Phí vận chuyển</Text>
                     </View>
                 </TouchableOpacity>
                 <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%', gap: 20 }}>
-                    <View style={[styles.round, (status === 'DELIVERING' || status === 'DELIVERED') && { backgroundColor: '#ee4d2d3b' }]}>
-                        <Octicons name="dot-fill" size={20} color={status === 'DELIVERING' || status === 'DELIVERED' ? '#EE4D2D' : 'black'} />
+                    <View style={[styles.round, (data.status === 'Delivering' || data.status === 'PickedUp') && { backgroundColor: '#ee4d2d3b' }]}>
+                        <Octicons name="dot-fill" size={20} color={data.status === 'Delivering' || data.status === 'PickedUp' ? '#EE4D2D' : 'black'} />
                     </View>
                     <View>
                         <Text style={{ fontSize: 12, color: 'gray' }}>Điểm lấy hàng</Text>
-                        <Text>{pickuplocation}</Text>
+                        <Text>{data.pickupAddress}</Text>
                     </View>
 
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%', gap: 20 }}>
-                    <View style={[styles.round, (status === 'DELIVERED') && { backgroundColor: '#ee4d2d3b' }]}>
-                        <EvilIcons name="location" size={20} color={status === 'DELIVERED' ? '#EE4D2D' : 'black'} />
+                    <View style={[styles.round, (data.status === 'DELIVERED') && { backgroundColor: '#ee4d2d3b' }]}>
+                        <EvilIcons name="location" size={20} color={data.status === 'DELIVERED' ? '#EE4D2D' : 'black'} />
                     </View>
                     <View>
                         <Text style={{ fontSize: 12, color: 'gray' }}>Điểm giao hàng</Text>
-                        <Text>{deliverylocation}</Text>
+                        <Text>{data.dropoffAddress}</Text>
                     </View>
 
                 </View>
             </View>
-            <TouchableOpacity style={{ justifyContent: 'center', alignItems: 'center', height: 60, width: '100%', backgroundColor: statuscolor() }} onPress={status === 'PENDING' ? handleAccept : status === 'READY' ? handlePickup : handleComplete}>
+            {isOffer && <View style={{ flexDirection: 'row' }}>
+                <TouchableOpacity style={{ justifyContent: 'center', alignItems: 'center', height: 60, flex: 1, backgroundColor: '#b1b1b1ff' }} onPress={handleReject}>
+                    <Text style={{ color: 'white', fontSize: 17, fontWeight: 'bold' }}>Từ chối</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={{ justifyContent: 'center', alignItems: 'center', height: 60, flex: 2, backgroundColor: "#6b6b6bff" }} onPress={handleAccept}>
+                    <Text style={{ color: 'white', fontSize: 17, fontWeight: 'bold' }}>Xác nhận</Text>
+                </TouchableOpacity>
+            </View>
+            }
+            {!isOffer && <TouchableOpacity style={{ justifyContent: 'center', alignItems: 'center', height: 60, width: '100%', backgroundColor: statusColor() }} onPress={handlePrimaryAction}>
                 <Text style={{ color: 'white', fontSize: 17, fontWeight: 'bold' }}>{buttontext()}</Text>
-            </TouchableOpacity>
+            </TouchableOpacity>}
+
         </View>
     );
 }
 
-export function OrderCardHistory_ForDriver({ id, merchantId, deliveredtime, totalamount, status, rating }: OrderCardType) {
+export function OrderCardHistory_ForDriver({ data }: { data: ShipperAssignmentDto }) {
     const statuscolor = () => {
-        if (status === 'CANCELLED') return 'red';
-        if (status === 'DELIVERED') return '#34C759';
+        if (data.status === 'Failed') return 'red';
+        if (data.status === 'Completed') return '#34C759';
     }
     const StatusText = () => {
-        if (status === 'CANCELLED') return 'Đã hủy';
-        if (status === 'DELIVERED') return 'Đã hoàn thành';
+        if (data.status === 'Failed') return 'Thất bại';
+        if (data.status === 'Completed') return 'Thành công';
+        else return data.status
     }
     const router = useRouter();
-    const restaurant = useMemo(() => mock_nearbyrestaurant.find(f => f.id === merchantId), [merchantId]);
+    const { data: merchantData } = useQuery({
+        queryKey: ['merchant', data.merchantId],
+        queryFn: () => userService.getMerchantProfile(data.merchantId),
+    })
+    const merchant = merchantData || mock_merchant;
     return (
-        <TouchableOpacity style={styles.ordercard_container} onPress={() => router.push({ pathname: `/(shipper)/historydetail`, params: { id } })}>
+        <TouchableOpacity style={styles.ordercard_container} onPress={() => router.push({ pathname: `/(shipper)/historydetail`, params: { data: JSON.stringify(data) } })}>
             <View style={{ padding: 20, gap: 10 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                        <Image source={{ uri: restaurant?.logo_url }} style={{ width: 50, height: 50, borderRadius: 12 }} />
+                        <Image source={{ uri: merchant?.storeLogoUrl }} style={{ width: 50, height: 50, borderRadius: 12 }} />
                         <View>
-                            <Text style={{ fontSize: 16 }}>{restaurant?.name}</Text>
-                            <Text style={{ color: 'gray', fontSize: 12 }}>{deliveredtime}</Text>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-                                <Text style={{ fontSize: 11, color: 'gray' }}>Rating:</Text>
-                                <Entypo name="star" size={12} color="#ffd900ff" />
-                                <Text style={{ fontSize: 12 }}>{rating}</Text>
-                            </View>
+                            <Text style={{ fontSize: 16 }}>{merchant?.storeName}</Text>
+                            <Text style={{ color: 'gray', fontSize: 12 }}>{new Date(data.deliveredAt || '').toLocaleString()}</Text>
                         </View>
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
                         <View style={{ alignItems: 'flex-end' }}>
-                            <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#B22203' }}>{totalamount}đ</Text>
+                            <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#B22203' }}>{data.deliveryFee}đ</Text>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                 <Text style={{ color: statuscolor(), fontSize: 12, fontWeight: 'bold' }}>{StatusText()}</Text>
                             </View>
@@ -265,7 +386,7 @@ const styles = StyleSheet.create({
     },
     status: {
         height: 35,
-        width: 100,
+        width: 110,
         backgroundColor: 'lightgray',
         alignItems: 'center',
         justifyContent: 'center',

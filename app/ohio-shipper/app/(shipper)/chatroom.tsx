@@ -17,61 +17,38 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import api from "@/services/api";
 import { mock_chat_messages, ChatMessage } from "../../mock/shipper";
+import { ShipperAssignmentDto } from "@/types/assignment";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { chatService } from "@/services/chatService";
+import { MessageResponseDto } from "@/types/chat";
 
 export default function Chatroom() {
     const router = useRouter();
-    const { id } = useLocalSearchParams();
-    const orderId = id ? id.toString() : "8821";
+    const { data } = useLocalSearchParams();
+    const assignment = JSON.parse(data as string) as ShipperAssignmentDto;
+    const queryClient = useQueryClient();
 
     // States
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [inputText, setInputText] = useState("");
-    const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
 
     const flatListRef = useRef<FlatList>(null);
 
-    // Fetch chat messages with API-to-mock fallback
-    useEffect(() => {
-        const fetchMessages = async () => {
-            try {
-                setLoading(true);
-                // Link actual API
-                const response = await api.get(`/deliveries/assignments/${orderId}/messages`);
-                const resData = response.data;
-                const rawData = resData.success ? resData.data : resData;
+    const { data: conversation, isLoading: isConversationLoading } = useQuery({
+        queryKey: ['conversation', assignment.orderId],
+        queryFn: () => chatService.getConversation(assignment.orderId)
+    })
 
-                if (Array.isArray(rawData)) {
-                    setMessages(
-                        rawData.map((m: any) => ({
-                            id: m.id || m._id || `msg-${Math.random()}`,
-                            senderId: m.senderId || 'other',
-                            senderName: m.senderName || (m.senderRole === 'MERCHANT' ? 'Kinetic Kitchen' : 'Rider 422'),
-                            senderRole: m.senderRole || 'MERCHANT',
-                            messageText: m.messageText || m.content || '',
-                            timestamp: m.timestamp ? new Date(m.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: true }) : '12:00 PM',
-                            isMe: m.isMe || m.senderRole === 'CUSTOMER',
-                            hasLeftBorder: m.senderRole === 'MERCHANT',
-                        }))
-                    );
-                } else {
-                    throw new Error("Invalid message list format from API");
-                }
-            } catch (error) {
-                console.log("Error loading chat messages from API, falling back to mocks:", error);
-                // Fallback to high fidelity mock messages
-                setMessages(mock_chat_messages);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchMessages();
-    }, [orderId]);
+    const { data: messages, isLoading: isMessagesLoading, isFetching: isRefreshingMessages, refetch: refetchMessages } = useQuery({
+        queryKey: ['messages', conversation?.id],
+        queryFn: () => chatService.getMessages(conversation?.id!),
+        enabled: !!conversation?.id,
+        refetchInterval: 5000, // tự động tải lại mỗi 5 giây
+    })
 
     // Scroll to end when messages load or change
     useEffect(() => {
-        if (messages.length > 0) {
+        if (messages?.items) {
             setTimeout(() => {
                 flatListRef.current?.scrollToEnd({ animated: true });
             }, 100);
@@ -81,70 +58,38 @@ export default function Chatroom() {
     // Handle Send Message
     const handleSendMessage = async () => {
         if (!inputText.trim()) return;
-
-        const textToSend = inputText.trim();
-        setInputText("");
-
-        // 1. Generate local UI message for instantaneous updates
-        const timeNow = new Date().toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
-        });
-
-        const localNewMsg: ChatMessage = {
-            id: `msg-local-${Date.now()}`,
-            senderId: 'customer-me',
-            senderName: 'You',
-            senderRole: 'CUSTOMER',
-            messageText: textToSend,
-            timestamp: timeNow,
-            isMe: true,
-            isRead: false
-        };
-
-        // Render immediately
-        setMessages(prev => [...prev, localNewMsg]);
+        setSending(true);
 
         try {
-            setSending(true);
+            await chatService.sendMessage(conversation?.id!, {
+                content: inputText.trim(),
+                messageType: 'TEXT'
+            });
 
-            // 2. Link API send message
-            const payload = {
-                content: textToSend,
-                senderRole: 'CUSTOMER', // "You" role
-                timestamp: new Date().toISOString()
-            };
+            setInputText('');
+            await queryClient.invalidateQueries({
+                queryKey: ['messages', conversation?.id]
+            });
 
-            const response = await api.post(`/deliveries/assignments/${orderId}/messages`, payload);
-
-            // Mark as sent successfully/read
-            setMessages(prev =>
-                prev.map(m => m.id === localNewMsg.id ? { ...m, isRead: true } : m)
-            );
         } catch (error) {
-            console.log("Failed to send message to backend, using local mock fallback:", error);
-            // Simulated delivery status (Double Ticks will render in orange successfully)
-            setMessages(prev =>
-                prev.map(m => m.id === localNewMsg.id ? { ...m, isRead: true } : m)
-            );
+
         } finally {
             setSending(false);
         }
     };
 
     // Render each message row
-    const renderMessageItem = ({ item }: { item: ChatMessage }) => {
-        if (item.isMe) {
+    const renderMessageItem = ({ item }: { item: MessageResponseDto }) => {
+        if (item.senderRole == 'SHIPPER') {
             // Render Right Align Bubble ("You")
             return (
                 <View style={styles.rightMessageContainer}>
                     <Text style={styles.rightSenderName}>You</Text>
                     <View style={styles.rightBubble}>
-                        <Text style={styles.rightBubbleText}>{item.messageText}</Text>
+                        <Text style={styles.rightBubbleText}>{item.content}</Text>
                     </View>
                     <View style={styles.rightTimeContainer}>
-                        <Text style={styles.rightTimeText}>{item.timestamp}</Text>
+                        <Text style={styles.rightTimeText}>{new Date(item.createdAt).toLocaleTimeString()}</Text>
                         <Ionicons name="checkmark-done" size={14} color="#B22203" style={styles.doubleTicks} />
                     </View>
                 </View>
@@ -152,27 +97,27 @@ export default function Chatroom() {
         } else {
             // Render Left Align Bubble (Rider/Merchant)
             const isMerchant = item.senderRole === 'MERCHANT';
-            const iconName = isMerchant ? 'restaurant' : 'motorcycle';
+            const iconName = isMerchant ? 'restaurant' : 'person';
 
             return (
                 <View style={styles.leftMessageContainer}>
                     <View style={styles.leftSenderHeader}>
                         <MaterialIcons name={iconName} size={15} color="#4B5563" />
-                        <Text style={styles.leftSenderName}>{item.senderName}</Text>
+                        <Text style={styles.leftSenderName}>{item.senderRole}</Text>
                     </View>
                     <View style={[
                         styles.leftBubble,
-                        item.hasLeftBorder && styles.leftBubbleBordered
+                        styles.leftBubbleBordered
                     ]}>
-                        <Text style={styles.leftBubbleText}>{item.messageText}</Text>
+                        <Text style={styles.leftBubbleText}>{item.content}</Text>
                     </View>
-                    <Text style={styles.leftTimeText}>{item.timestamp}</Text>
+                    <Text style={styles.leftTimeText}>{new Date(item.createdAt).toLocaleTimeString()}</Text>
                 </View>
             );
         }
     };
 
-    if (loading) {
+    if (isConversationLoading || isMessagesLoading) {
         return (
             <View style={styles.centerContainer}>
                 <ActivityIndicator size="large" color="#EE4D2D" />
@@ -191,7 +136,7 @@ export default function Chatroom() {
                 <ReturnButton onpressfunction={router.back} />
                 <View style={styles.headerTitleContainer}>
                     <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#EE4D2D' }}>Trò chuyện</Text>
-                    <Text style={styles.headerSubtitle}>ID: {orderId}</Text>
+                    <Text style={styles.headerSubtitle}>ID: {assignment.orderId}</Text>
                 </View>
 
             </View>
@@ -199,15 +144,17 @@ export default function Chatroom() {
             {/* Message Thread */}
             <FlatList
                 ref={flatListRef}
-                data={messages}
+                data={messages?.items}
                 keyExtractor={(item) => item.id}
                 renderItem={renderMessageItem}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
+                onRefresh={refetchMessages}
+                refreshing={isRefreshingMessages && !isMessagesLoading}
                 ListHeaderComponent={
                     <View style={styles.dateSeparatorContainer}>
                         <View style={styles.dateSeparatorBadge}>
-                            <Text style={styles.dateSeparatorText}>TODAY</Text>
+
                         </View>
                     </View>
                 }
@@ -215,9 +162,6 @@ export default function Chatroom() {
 
             {/* Bottom Input Panel */}
             <View style={styles.bottomInputPanel}>
-                <TouchableOpacity style={styles.attachButton}>
-                    <Ionicons name="add" size={24} color="#4B5563" />
-                </TouchableOpacity>
 
                 <TextInput
                     style={styles.textInput}
@@ -275,8 +219,8 @@ const styles = StyleSheet.create({
         color: '#1F2937',
     },
     headerSubtitle: {
-        fontSize: 13,
-        fontWeight: 'bold',
+        fontSize: 11,
+        fontWeight: '600',
         color: '#b3b3b3ff',
         marginTop: 2,
     },
@@ -413,7 +357,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#F3F4F6',
         height: 46,
-        borderRadius: 23,
+        borderRadius: 12,
         paddingHorizontal: 20,
         fontSize: 15,
         color: '#1F2937',

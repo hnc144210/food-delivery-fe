@@ -1,13 +1,15 @@
-import { Stack } from 'expo-router';
+// app/ohio-merchant/app/(auth)/_layout.tsx
+import { Stack } from "expo-router";
 
 export default function AuthLayout() {
-    return (
-        <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="login" />
-            <Stack.Screen name="register" />
-            <Stack.Screen name="forgot-password" />
-            <Stack.Screen name="otp" />
-            <Stack.Screen name="create-password" />
-        </Stack>
-    );
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="login" />
+      <Stack.Screen name="register" />
+      <Stack.Screen name="forgot-password" />
+      <Stack.Screen name="otp" />
+      <Stack.Screen name="create-password" />
+      <Stack.Screen name="change-password" />
+    </Stack>
+  );
 }

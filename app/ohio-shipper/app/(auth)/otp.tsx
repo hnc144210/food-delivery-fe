@@ -15,11 +15,11 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import api from '@/services/api';
+import { authService } from '@/services/authService';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const OTP_LENGTH = 4;
+const OTP_LENGTH = 6;
 const RESEND_COUNTDOWN_SECONDS = 50;
 
 // ─── API ──────────────────────────────────────────────────────────────────────
@@ -32,16 +32,6 @@ interface VerifyOtpPayload {
 interface VerifyOtpResponse {
   success: true;
   message: string;
-}
-
-async function verifyOtpRequest(payload: VerifyOtpPayload): Promise<VerifyOtpResponse> {
-  // TODO: đổi lại khi BE xong
-  return mockVerifyOtpResponse;
-}
-
-async function resendOtpRequest(email: string): Promise<VerifyOtpResponse> {
-  // TODO: đổi lại khi BE xong
-  return mockVerifyOtpResponse;
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -99,9 +89,9 @@ function ResendButton({ countdown, isPending, onResend }: ResendButtonProps) {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function OtpScreen() {
-  const { email } = useLocalSearchParams<{ email: string }>();
+  const { email, expiresInSeconds } = useLocalSearchParams<{ email: string, expiresInSeconds: string }>();
   const [digits, setDigits] = useState<string[]>(Array(OTP_LENGTH).fill(''));
-  const [countdown, setCountdown] = useState(RESEND_COUNTDOWN_SECONDS);
+  const [countdown, setCountdown] = useState(Number(expiresInSeconds));
   const [serverError, setServerError] = useState('');
 
   const inputRefs = Array.from({ length: OTP_LENGTH }, () =>
@@ -117,9 +107,9 @@ export default function OtpScreen() {
   }, [countdown]);
 
   const verifyMutation = useMutation({
-    mutationFn: verifyOtpRequest,
-    onSuccess: () => {
-      router.replace({ pathname: '/(auth)/create-password' });
+    mutationFn: (payload: VerifyOtpPayload) => authService.verifyOTP(payload.email, payload.code),
+    onSuccess: (data) => {
+      router.replace({ pathname: '/(auth)/create-password', params: { email: email, resetToken: data.data.resetToken } });
     },
     onError: (error: AxiosError<{ message: string }>) => {
       const message = error.response?.data?.message ?? 'Mã OTP không đúng. Vui lòng thử lại.';
@@ -128,14 +118,15 @@ export default function OtpScreen() {
   });
 
   const resendMutation = useMutation({
-    mutationFn: () => resendOtpRequest(email),
-    onSuccess: () => {
-      setCountdown(RESEND_COUNTDOWN_SECONDS);
+    mutationFn: (email: string) => authService.forgetPassword(email),
+    onSuccess: (data) => {
+      setCountdown(Number(data.data.expiresInSeconds));
       setDigits(Array(OTP_LENGTH).fill(''));
       setServerError('');
     },
     onError: (error: AxiosError<{ message: string }>) => {
       const message = error.response?.data?.message ?? 'Không thể gửi lại mã. Vui lòng thử lại.';
+      console.log(error)
       setServerError(message);
     },
   });
@@ -199,7 +190,7 @@ export default function OtpScreen() {
       <ResendButton
         countdown={countdown}
         isPending={resendMutation.isPending}
-        onResend={() => resendMutation.mutate()}
+        onResend={() => resendMutation.mutate(email as string)}
       />
 
       <TouchableOpacity
@@ -267,13 +258,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   otpBox: {
-    width: 64,
-    height: 64,
+    width: 50,
+    height: 50,
     borderRadius: 12,
     borderWidth: 1.5,
     borderColor: '#e5e7eb',
     backgroundColor: '#fff',
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
     color: '#111827',
   },

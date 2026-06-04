@@ -1,18 +1,31 @@
-import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { VoucherData } from '@/types';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { VoucherResponseDto } from "@/types/voucher";
+import { LinearGradient } from "expo-linear-gradient";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
-export function Voucher({ description, start_date, end_date, image_url }: VoucherData) {
+export function Voucher({ name, description, startDate, endDate }: VoucherResponseDto) {
     return (
         <TouchableOpacity style={styles.voucherbanner}>
-            <Image style={{ position: 'absolute', width: 305, height: 130 }} source={{ uri: image_url }} />
-            <View style={{ position: 'absolute', width: 305, height: 130, backgroundColor: 'black', opacity: 0.5 }} />
-            <Text style={{ fontSize: 25, fontWeight: 'bold', color: 'white' }}>{description}</Text>
-            <Text style={{ fontSize: 13, color: 'white' }}>{start_date} - {end_date}</Text>
+            <LinearGradient
+                colors={['#EE4D2D', '#ffd900ff']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{ position: 'absolute', width: 305, height: 130, borderRadius: 12 }}
+            />
+            <Text style={{ fontSize: 25, fontWeight: 'bold', color: 'white' }}>{name}</Text>
+            <Text style={{ fontSize: 13, color: 'white' }}>{description}</Text>
+            <Text style={{ fontSize: 13, color: 'white' }}>{startDate} - {endDate}</Text>
         </TouchableOpacity>
     );
 }
 
-export function VoucherList({ vouchers }: { vouchers: VoucherData[] }) {
+export function VoucherList({ vouchers }: { vouchers: VoucherResponseDto[] }) {
+    if (vouchers.length === 0) {
+        return <View style={{ height: 130, backgroundColor: '#dfdfdfff', borderRadius: 12, justifyContent: 'center', alignItems: 'center' }}>
+            <MaterialCommunityIcons name="ticket-percent-outline" size={30} color="#929292ff" />
+            <Text style={{ fontSize: 16, color: '#696969ff' }}> Hiện tại không có voucher nào</Text>
+        </View>;
+    }
     return (
         <View style={{ height: 130 }}>
             <FlatList

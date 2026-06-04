@@ -1,17 +1,43 @@
-import { Text, View, StyleSheet, ScrollView } from "react-native";
+import { Text, View, StyleSheet, ScrollView, RefreshControl } from "react-native";
 import { OrderCardHistory_ForDriver } from "../../../components/features/OrderCard";
 import { useRouter } from "expo-router";
-import { mock_odercard } from "../../../mock/shipper";
+import { mock_assignment, mock_odercard } from "../../../mock/shipper";
+import { useAuthStore } from "../../../store/authStore";
+import { useQuery } from "@tanstack/react-query";
+import { deliveryService } from "../../../services/deliveryService";
+import { userService } from "@/services/userService";
+import { MaterialIcons } from "@expo/vector-icons";
 
 export default function HistoryPage() {
     const router = useRouter();
+    const user = useAuthStore((state) => state.user);
+
+    const { data: shipperdata } = useQuery({
+        queryKey: ['shipper'],
+        queryFn: () => userService.getShipperByUserId(user?.id || '')
+    })
+
+    const { data: assignedDeliveries, refetch: assignedDeliveriesRefetch, isFetching: isRefreshing } = useQuery({
+        queryKey: ['assigned-deliveries'],
+        queryFn: () => deliveryService.getAssignedDeliveries(shipperdata?.id || '')
+    })
+
+    const assignedHistory = assignedDeliveries?.items.filter(f => f.status === 'Completed' || f.status === 'Failed') || mock_assignment;
+
     return (
         <View style={styles.container}>
             <View style={styles.header}>
                 <Text style={{ fontSize: 25, fontWeight: 'bold', color: 'white' }}>Lịch sử giao hàng</Text>
             </View>
-            <ScrollView contentContainerStyle={{ gap: 20, paddingHorizontal: 20, paddingTop: 20 }}>
-                {mock_odercard.map((item, index) => (item.status === 'DELIVERED' || item.status === 'CANCELLED') && <OrderCardHistory_ForDriver key={index} {...item} />)}
+            <ScrollView style={{ width: '100%' }} contentContainerStyle={{ gap: 20, paddingHorizontal: 20, paddingTop: 20 }} refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={assignedDeliveriesRefetch} colors={["#EE4D2D"]} />}>
+                {assignedHistory.length === 0 ? (
+                    <View style={{ justifyContent: 'center', alignItems: 'center', marginTop: 50, width: '100%', height: 200, borderRadius: 12 }}>
+                        <MaterialIcons name="delivery-dining" size={44} color="#EE4D2D" />
+                        <Text style={{ fontSize: 18, color: '#EE4D2D' }}>Không có đơn hàng</Text>
+                    </View>
+                ) : (
+                    assignedHistory.map((item, index) => <OrderCardHistory_ForDriver key={index} data={item} />)
+                )}
             </ScrollView>
         </View>
     );

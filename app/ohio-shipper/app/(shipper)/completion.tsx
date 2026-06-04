@@ -17,66 +17,20 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import EvilIcons from '@expo/vector-icons/EvilIcons';
 import api from "@/services/api";
 import { mock_odercard, OrderCardType } from "../../mock/shipper";
+import { ShipperAssignmentDto, UpdateDeliveryStatusRequestDto } from "@/types/assignment";
+import { fileService } from "@/services/fileService";
+import { QueryClient, useMutation, useQueryClient } from "@tanstack/react-query";
+import { deliveryService } from "@/services/deliveryService";
 
 export default function Completion() {
     const router = useRouter();
-    const { id } = useLocalSearchParams();
-
+    const { data } = useLocalSearchParams();
+    const assignment = JSON.parse(data as string) as ShipperAssignmentDto;
+    const queryClient = useQueryClient();
     // States
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const [orderData, setOrderData] = useState<{
-        id: string;
-        orderCode: string;
-        address: string;
-        note: string;
-    } | null>(null);
-    const [proofImage, setProofImage] = useState<string | null>(null);
-
-    // Fetch dynamic order details with mock fallback
-    useEffect(() => {
-        const loadOrderDetails = async () => {
-            try {
-                setLoading(true);
-                const orderId = id ? id.toString() : "";
-
-                // Link actual API
-                const response = await api.get(`/deliveries/assignments/${orderId}`);
-                const resData = response.data;
-                const rawData = resData.success ? resData.data : resData;
-
-                if (rawData) {
-                    setOrderData({
-                        id: rawData.id?.toString() || orderId,
-                        orderCode: rawData.orderCode || `${orderId}`,
-                        address: rawData.deliveryAddress || rawData.address || "",
-                        note: rawData.note || ""
-                    });
-                } else {
-                    throw new Error("No data returned from API");
-                }
-            } catch (error) {
-                console.log("Error loading delivery from backend, using mock:", error);
-
-                // Fallback to high-quality mock data matching the active order id
-                const orderId = id ? id.toString() : "";
-                const matchedMock = mock_odercard.find(
-                    (o: OrderCardType) => o.id?.toString() === orderId
-                );
-
-                setOrderData({
-                    id: orderId,
-                    orderCode: `${orderId}`,
-                    address: matchedMock?.deliverylocation || "",
-                    note: matchedMock?.note || ""
-                });
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadOrderDetails();
-    }, [id]);
+    const [proofImage, setProofImage] = useState('');
 
     // Handle launch camera
     const handleTakePhoto = async () => {
@@ -134,79 +88,43 @@ export default function Completion() {
         }
     };
 
+    const updateStatusMutation = useMutation({
+        mutationFn: ({ assignmentId, data }: { assignmentId: string, data: UpdateDeliveryStatusRequestDto }) => deliveryService.updateDeliveryStatus(assignmentId, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['assigned-deliveries'] });
+            queryClient.invalidateQueries({ queryKey: ['offer-assignment'] });
+            queryClient.invalidateQueries({ queryKey: ['active-offer'] });
+            queryClient.invalidateQueries({ queryKey: ['shipper-availability'] });
+            Alert.alert("Thành công", "Cập nhật trạng thái đơn hàng thành công");
+        },
+        onError: (error) => {
+            Alert.alert("Lỗi", error.message);
+        }
+    })
+
     // Handle submit confirmation
     const handleConfirmDelivered = async () => {
-        if (!proofImage || !orderData) return;
-
+        if (!proofImage || !assignment.orderId) return;
+        setSubmitting(true);
         try {
-            setSubmitting(true);
+            let finalFileKey = '';
+            if (proofImage) {
+                const fileName = proofImage.split('/').pop() || "image.jpg";
+                const fileExtension = fileName.split('.').pop()?.toLowerCase();
+                const contentType = fileExtension === 'png' ? 'image/png' : 'image/jpeg';
 
-            // 1. Simulate or perform proof upload to backend S3/Storage
-            let proofFileKey = `proofs/delivered_${orderData.id}.jpg`;
-            try {
-                const formData = new FormData();
-                // @ts-ignore
-                formData.append('file', {
-                    uri: proofImage,
-                    name: `proof_${orderData.id}.jpg`,
-                    type: 'image/jpeg'
-                });
+                const uploadUrlResponse = await fileService.getUploadUrlForCompletion(assignment.orderId, assignment.shipperId, 'completion', fileName, contentType);
+                const { uploadUrl, fileKey } = uploadUrlResponse;
 
-                const uploadRes = await api.post('/catalog/uploads', formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
-                if (uploadRes.data && uploadRes.data.url) {
-                    proofFileKey = uploadRes.data.url;
-                }
-            } catch (uploadErr) {
-                console.log("Failed upload to storage, fallback to local simulated key", uploadErr);
+                await fileService.uploadFile(uploadUrl, proofImage, contentType);
+
+                finalFileKey = fileKey;
             }
-
-            // 2. Send status update payload to backend
-            const payload = {
-                status: 'Delivered',
-                proofFileKey: proofFileKey,
-                note: 'Giao hàng thành công kèm ảnh chụp gói hàng minh chứng.'
-            };
-
-            try {
-                // Try modern assignment status update API first
-                await api.post(`/deliveries/assignments/${orderData.id}/status`, payload);
-            } catch (apiErr) {
-                console.log("Modern API failed, attempting order status direct update...", apiErr);
-                // Fallback to updating order status directly on gateway
-                await api.put(`/orders/${orderData.id}/status`, { status: 'COMPLETED' });
-            }
-
-            Alert.alert(
-                "Thành công",
-                "Đơn hàng đã được xác nhận hoàn tất thành công!",
-                [
-                    {
-                        text: "Đồng ý",
-                        onPress: () => {
-                            // Go back to Shipper homepage or tabs
-                            router.replace("/(shipper)/(tabs)/home");
-                        }
-                    }
-                ]
-            );
+            updateStatusMutation.mutate({ assignmentId: assignment.id, data: { status: "Delivered", note: "Hoàn thành đơn hàng", proofFileKey: finalFileKey } })
+            router.back();
         } catch (error) {
-            console.log("Failed to submit delivery complete to backend:", error);
-
-            // Fallback success confirmation for smooth testing
-            Alert.alert(
-                "Thành công (Mô phỏng)",
-                "Đơn hàng được xác nhận hoàn tất (Chế độ offline/mock)!",
-                [
-                    {
-                        text: "Đồng ý",
-                        onPress: () => {
-                            router.replace("/(shipper)/(tabs)/home");
-                        }
-                    }
-                ]
-            );
+            console.log("Error confirming delivery:", error);
+            Alert.alert("Lỗi", "Không thể xác nhận đơn hàng!");
         } finally {
             setSubmitting(false);
         }
@@ -233,23 +151,19 @@ export default function Completion() {
                 {/* Order Information Card */}
                 <View style={styles.orderCard}>
                     <View style={styles.orderHeader}>
-                        <View>
+                        <View style={{ width: 250 }}>
                             <Text style={styles.orderLabel}>MÃ ĐƠN HÀNG</Text>
-                            <Text style={styles.orderCode}>{orderData?.orderCode || "#K-8821"}</Text>
+                            <Text style={styles.orderCode}>{assignment.id}</Text>
                         </View>
                         <View style={styles.statusBadge}>
-                            <Text style={styles.statusBadgeText}>ĐANG GIAO</Text>
+                            <Text style={styles.statusBadgeText}>Đang giao</Text>
                         </View>
                     </View>
 
                     <View style={styles.addressBlock}>
                         <EvilIcons name="location" size={24} color="#EE4D2D" style={styles.addressIcon} />
-                        <Text style={styles.addressText}>{orderData?.address}</Text>
+                        <Text style={styles.addressText}>{assignment.dropoffAddress}</Text>
                     </View>
-
-                    {orderData?.note ? (
-                        <Text style={styles.noteText}>{orderData.note}</Text>
-                    ) : null}
                 </View>
 
                 {/* Section Title */}
@@ -260,7 +174,7 @@ export default function Completion() {
                     {proofImage ? (
                         <View style={styles.imagePreviewContainer}>
                             <Image source={{ uri: proofImage }} style={styles.imagePreview} />
-                            <TouchableOpacity style={styles.removeImageButton} onPress={() => setProofImage(null)}>
+                            <TouchableOpacity style={styles.removeImageButton} onPress={() => setProofImage('')}>
                                 <Ionicons name="close-circle" size={28} color="#FF5A5F" />
                             </TouchableOpacity>
                         </View>
@@ -374,7 +288,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.5,
     },
     orderCode: {
-        fontSize: 26,
+        fontSize: 16,
         fontWeight: 'bold',
         color: '#1F2937',
         marginTop: 4,
@@ -524,7 +438,7 @@ const styles = StyleSheet.create({
     confirmButton: {
         height: 55,
         borderRadius: 12,
-        backgroundColor: '#EC9E8A',
+        backgroundColor: '#EE4D2D',
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: '#EC9E8A',

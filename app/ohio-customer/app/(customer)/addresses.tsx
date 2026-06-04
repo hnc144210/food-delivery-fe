@@ -1,50 +1,25 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { ReturnButton } from "../../components/ui/ReturnButton";
 import { useRouter } from "expo-router";
 import { AntDesign } from "@expo/vector-icons";
 import { AddressCard } from "@/components/features/AddressCard";
 import { useQuery } from '@tanstack/react-query';
-import api from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
-import { mock_addresses } from "../../mock/home";
-
-async function fetchAddresses(userId?: string) {
-    if (!userId) return mock_addresses;
-    try {
-        const response = await api.get(`/users/${userId}/addresses`);
-        const resData = response.data;
-        const rawData = resData.success ? resData.data : resData;
-        if (Array.isArray(rawData)) {
-            return rawData.map((addr: any) => ({
-                id: addr.id,
-                addressLabel: addr.label || 'Địa chỉ',
-                receiverName: addr.recipientName || '',
-                receiverPhone: addr.phone || '',
-                addressLine: addr.addressLine || '',
-                street: addr.ward || '',
-                district: addr.district || '',
-                city: addr.city || '',
-                defaultAddress: addr.isDefault || false,
-            }));
-        }
-        return mock_addresses;
-    } catch (error) {
-        console.log('Error fetching addresses on AddressScreen, using mock:', error);
-        return mock_addresses;
-    }
-}
+import { mock_addresses_new } from "../../mock/home";
+import { userService } from "@/services/userService";
 
 export default function AddressesScreen() {
     const router = useRouter();
     const user = useAuthStore((s) => s.user);
     const userId = user?.id;
 
-    const { data: addresses = mock_addresses } = useQuery({
+    const { data: addresses, isLoading } = useQuery({
         queryKey: ['addresses', userId],
-        queryFn: () => fetchAddresses(userId),
-        placeholderData: mock_addresses,
+        queryFn: () => userService.getAddresses(userId!),
         enabled: !!userId,
     });
+
+    const addressList = addresses?.items || mock_addresses_new
 
     return (
         <View style={styles.container}>
@@ -61,9 +36,19 @@ export default function AddressesScreen() {
                 </TouchableOpacity>
             </View>
             <ScrollView style={{ width: '100%', paddingHorizontal: 20 }} >
-                {addresses.map((addr) => (
-                    <AddressCard key={addr.id} {...addr} />
-                ))}
+                {isLoading ? (
+                    <View style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+                        <ActivityIndicator size="large" color="#EE4D2D" />
+                    </View>
+                ) : (!addressList || addressList.length === 0) ? (
+                    <View style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#EE4D2D' }}>Chưa có địa chỉ nào</Text>
+                    </View>
+                ) : (
+                    addressList.map((addr) => (
+                        <AddressCard key={addr.id} {...addr} />
+                    ))
+                )}
             </ScrollView>
         </View>
     );
