@@ -241,6 +241,29 @@ export default function OrderDetailScreen() {
           </View>
         </View>
 
+        {/* Tracking Button */}
+        {[
+          "PENDING",
+          "CONFIRMED",
+          "PREPARING",
+          "READY",
+          "PICKED_UP",
+          "DELIVERING",
+        ].includes(order.status) && (
+          <TouchableOpacity
+            style={[styles.reviewBtn, { backgroundColor: "#1f2937" }]}
+            onPress={() =>
+              router.push({
+                pathname: "/(customer)/ordertracking",
+                params: { id: order.id },
+              })
+            }
+          >
+            <Ionicons name="navigate" size={18} color="white" />
+            <Text style={styles.reviewBtnText}>Theo dõi đơn hàng</Text>
+          </TouchableOpacity>
+        )}
+
         {/* Review Button */}
         {order.status === "DELIVERED" && (
           <TouchableOpacity
