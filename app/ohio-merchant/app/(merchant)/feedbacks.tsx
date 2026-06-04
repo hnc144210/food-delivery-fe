@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import FeedbackCard from "@/components/features/FeedbackCard";
 import { useMerchantReviews, useReplyReview } from "@/hooks/useMenu";
 import type { Review } from "@/types/api";
+import { useMerchantStore } from "@/store/merchantStore";
 
 const ORANGE = "#E8441A";
 const CREAM = "#FEF3E8";
@@ -21,12 +22,15 @@ type Filter = "all" | "unreplied";
 export default function FeedbacksScreen() {
   const router = useRouter();
   const [filter, setFilter] = useState<Filter>("all");
-  const reviewsQuery = useMerchantReviews();
+  const merchantId = useMerchantStore((s) => s.merchant?.id);
+  const reviewsQuery = useMerchantReviews(merchantId);
   const replyReview = useReplyReview();
 
-  const reviews = reviewsQuery.data ?? [];
+  const reviews: Review[] = reviewsQuery.data?.items ?? [];
   const displayed =
-    filter === "unreplied" ? reviews.filter((r) => !r.merchantReply) : reviews;
+    filter === "unreplied"
+      ? reviews.filter((r: Review) => !r.merchantReply)
+      : reviews;
 
   const handleReply = (id: string, content: string) => {
     replyReview.mutate({ id, content });

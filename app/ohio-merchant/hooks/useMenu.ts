@@ -1,9 +1,10 @@
 //hooks/useMenu.ts
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { menuService } from "@/services/menuService";
-import type { CatalogListParams, ProductPayload, Product } from "@/types/api";
+import type { CatalogListParams, ProductPayload, Product, Review, PaginatedResponse } from "@/types/api";
 import { useAuthStore } from "@/store/authStore";
 import { useMerchantStore } from "@/store/merchantStore";
+import { catalogApi, extractData } from "@/lib/api";
 
 const LIST_STALE_TIME = 30 * 1000;
 
@@ -119,12 +120,13 @@ export function useDeleteCategory() {
   });
 }
 
-export function useMerchantReviews() {
-  const merchantId = useMerchantStore((s) => s.merchant?.id);
-
+export function useMerchantReviews(merchantId?: string) {
   return useQuery({
-    queryKey: ['reviews', 'merchant', merchantId],
-    queryFn: () => menuService.getMerchantReviews(merchantId!),
+    queryKey: ['merchant-reviews', merchantId],
+    queryFn: async () => {
+      const res = await catalogApi.get(`/api/catalog/reviews/merchant/${merchantId}`);
+      return extractData<PaginatedResponse<Review>>(res);
+    },
     enabled: Boolean(merchantId),
     staleTime: 60 * 1000,
   });
