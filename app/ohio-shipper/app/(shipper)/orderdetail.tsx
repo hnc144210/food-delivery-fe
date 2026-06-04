@@ -6,39 +6,34 @@ import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import EvilIcons from '@expo/vector-icons/EvilIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { ProductCard_ForDriver } from "../../components/features/ProductCard";
-import { mock_address, mock_merchant, mock_odercard, mock_order_detail, mock_orderitems, mock_user_detail, mock_users, OrderCardType } from "../../mock/shipper";
+import { mock_address, mock_merchant, mock_odercard, mock_order_detail } from "../../mock/shipper";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { deliveryService } from "@/services/deliveryService";
 import { userService } from "@/services/userService";
 import { orderService } from "@/services/orderService";
+import { ShipperAssignmentDto } from "@/types/assignment";
 
 export default function OrderDetail() {
     const router = useRouter();
-    const { merchantId, orderId, customerId, pickupAddress, dropoffAddress } = useLocalSearchParams();
+    const { data } = useLocalSearchParams();
+    const assignment = JSON.parse(data as string) as ShipperAssignmentDto;
 
     const { data: merchantData } = useQuery({
-        queryKey: ['merchant', merchantId],
-        queryFn: () => userService.getMerchantProfile(merchantId as string),
-        enabled: !!merchantId,
-    })
-
-    const { data: customerData } = useQuery({
-        queryKey: ['customer', customerId],
-        queryFn: () => userService.getProfile(customerId as string),
-        enabled: !!customerId,
+        queryKey: ['merchant', assignment.merchantId],
+        queryFn: () => userService.getMerchantProfile(assignment.merchantId),
+        enabled: !!assignment.merchantId,
     })
 
     const { data: orderData } = useQuery({
-        queryKey: ['order', orderId],
-        queryFn: () => orderService.getOrderDetail(orderId as string),
-        enabled: !!orderId,
+        queryKey: ['order', assignment.orderId],
+        queryFn: () => orderService.getOrderDetail(assignment.orderId as string),
+        enabled: !!assignment.orderId,
     })
 
 
 
     const merchant = merchantData || mock_merchant
-    const customer = customerData || mock_user_detail
     const order = orderData || mock_order_detail
 
     return (
@@ -76,7 +71,7 @@ export default function OrderDetail() {
                                 <Text style={{ fontSize: 30, fontWeight: 'bold', marginBottom: 5 }}>{merchant?.storeName}</Text>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', width: 250, gap: 10 }}>
                                     <FontAwesome name="location-arrow" size={20} color="black" />
-                                    <Text>{pickupAddress}</Text>
+                                    <Text>{assignment.pickupAddress}</Text>
                                 </View>
                             </View>
                         </View>
@@ -88,14 +83,14 @@ export default function OrderDetail() {
                         </View>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                             <View style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
-                                <Text style={{ fontSize: 30, fontWeight: 'bold' }}>{customer?.fullName}</Text>
+                                <Text style={{ fontSize: 30, fontWeight: 'bold' }}>{assignment.customerName}</Text>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                                     <FontAwesome6 name="contact-card" size={14} color="black" />
-                                    <Text>{customer?.phoneNumber}</Text>
+                                    <Text>{assignment.customerPhone}</Text>
                                 </View>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', width: 250, gap: 10 }}>
                                     <FontAwesome name="location-arrow" size={20} color="black" />
-                                    <Text>{dropoffAddress}</Text>
+                                    <Text>{assignment.dropoffAddress}</Text>
                                 </View>
                             </View>
                             <TouchableOpacity style={{ width: 50, height: 50, borderRadius: 90, backgroundColor: '#15803c1a', justifyContent: 'center', alignItems: 'center' }}>

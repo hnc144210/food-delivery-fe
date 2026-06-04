@@ -5,35 +5,28 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Entypo from '@expo/vector-icons/Entypo';
 import { ProductCard_ForDriver } from "../../components/features/ProductCard";
-import { mock_merchant, mock_odercard, mock_order_detail, mock_orderitems, mock_user_detail, OrderCardType } from "../../mock/shipper";
-import { mock_nearbyrestaurant } from "@/mock/home";
-import { useMemo } from "react";
+import { mock_merchant, mock_order_detail, } from "../../mock/shipper";
 import { useQuery } from "@tanstack/react-query";
 import { userService } from "@/services/userService";
 import { orderService } from "@/services/orderService";
+import { ShipperAssignmentDto } from "@/types/assignment";
 
 export default function HistoryDetail() {
-    const { merchantId, orderId, customerId, pickupAddress, dropoffAddress, deliveredAt, status } = useLocalSearchParams();
+    const { data } = useLocalSearchParams();
+    const assignment = JSON.parse(data as string) as ShipperAssignmentDto;
     const router = useRouter();
     const { data: merchantData } = useQuery({
-        queryKey: ['merchant', merchantId],
-        queryFn: () => userService.getMerchantProfile(merchantId as string),
-        enabled: !!merchantId,
-    })
-
-    const { data: customerData } = useQuery({
-        queryKey: ['customer', customerId],
-        queryFn: () => userService.getProfile(customerId as string),
-        enabled: !!customerId,
+        queryKey: ['merchant', assignment.merchantId],
+        queryFn: () => userService.getMerchantProfile(assignment.merchantId),
+        enabled: !!assignment.merchantId,
     })
 
     const { data: orderData } = useQuery({
-        queryKey: ['order', orderId],
-        queryFn: () => orderService.getOrderDetail(orderId as string),
-        enabled: !!orderId,
+        queryKey: ['order', assignment.orderId],
+        queryFn: () => orderService.getOrderDetail(assignment.orderId),
+        enabled: !!assignment.orderId,
     })
     const merchant = merchantData || mock_merchant
-    const customer = customerData || mock_user_detail
     const order = orderData || mock_order_detail
     return (
         <View style={styles.container}>
@@ -45,15 +38,15 @@ export default function HistoryDetail() {
                 <View style={styles.smallcontainer}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                         {
-                            status === 'Completed' ? (
+                            assignment.status === 'Completed' ? (
                                 <Ionicons name="checkmark-circle" size={45} color="#20c74bff" />
                             ) : (
                                 <Ionicons name="close-circle" size={45} color="#a83620ff" />
                             )
                         }
                         <View>
-                            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{status === 'Completed' ? 'Đã hoàn thành' : 'Đã hủy'}</Text>
-                            <Text style={{ fontSize: 14 }}>{deliveredAt || 'N/A'}</Text>
+                            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{assignment.status === 'Completed' ? 'Đã hoàn thành' : 'Đã hủy'}</Text>
+                            <Text style={{ fontSize: 12 }}>{new Date(assignment.deliveredAt || '').toLocaleString()}</Text>
                         </View>
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingLeft: 13 }}>
@@ -61,15 +54,15 @@ export default function HistoryDetail() {
                         <View style={{ flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start' }}>
                             <Text style={{ fontSize: 12, color: 'gray' }}>Điểm lấy hàng</Text>
                             <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{merchant.storeName}</Text>
-                            <Text style={{ fontSize: 14 }}>{pickupAddress}</Text>
+                            <Text style={{ fontSize: 14 }}>{assignment.pickupAddress}</Text>
                         </View>
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingLeft: 13 }}>
                         <Entypo name="location" size={18} color="#EE4D2D" />
                         <View style={{ flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start' }}>
                             <Text style={{ fontSize: 12, color: 'gray' }}>Điểm giao hàng</Text>
-                            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{customer?.fullName}</Text>
-                            <Text style={{ fontSize: 14 }}>{dropoffAddress}</Text>
+                            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{assignment.customerName}</Text>
+                            <Text style={{ fontSize: 14 }}>{assignment.dropoffAddress}</Text>
                         </View>
                     </View>
                 </View>

@@ -1,31 +1,34 @@
 import { ApiResponse } from "@/services/deliveryService";
 
 export type ShipperAssignmentDto = {
-    orderId: string;
-    customerId: string;
-    merchantId: string;
-    orderNumber: string;
-    shipperId: string;
-    merchantName: string;
-    pickupAddress: string;
-    pickupLatitude: number;
-    pickupLongitude: number;
-    dropoffAddress: string;
-    dropoffLatitude: number;
-    dropoffLongitude: number;
-    deliveryFee: number;
-    distanceKm: number;
-    status: string;
-    assignedAt: string;
-    offerExpiresAt: string;
-    acceptedAt: string;
-    pickedUpAt: string | null;
-    deliveredAt: string | null;
-    respondedAt: string | null;
-    rejectReason: string | null;
-    cancelledReason: string | null;
-    pickupProofFileKey: string | null;
-    deliveryProofFileKey: string | null;
+
+    orderId: string,
+    customerId: string,
+    merchantId: string,
+    orderNumber: string,
+    shipperId: string,
+    customerName: string,
+    customerPhone: string,
+    merchantName: string,
+    pickupAddress: string,
+    pickupLatitude: number,
+    pickupLongitude: number,
+    dropoffAddress: string,
+    dropoffLatitude: number,
+    dropoffLongitude: number,
+    deliveryFee: number,
+    distanceKm: number,
+    status: string,
+    assignedAt: string,
+    offerExpiresAt: string,
+    acceptedAt: string,
+    pickedUpAt: string,
+    deliveredAt: string,
+    respondedAt: string,
+    rejectReason: string | null,
+    cancelledReason: string | null,
+    pickupProofFileKey: string | null,
+    deliveryProofFileKey: string | null,
     id: string
 }
 

@@ -1,4 +1,4 @@
-import { AuthResponse } from "@/types/auth";
+import { AuthResponse, ForgetPasswordResponse, ResetPasswordResponse, VerifyOTPResponse } from "@/types/auth";
 import api from "./api";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -31,5 +31,49 @@ export const authService = {
             throw new Error(resData.errors[0] || 'Refresh token failed');
         }
         return resData;
-    }
+    },
+    forgetPassword: async (email: string): Promise<ForgetPasswordResponse> => {
+        const response = await api.post<ForgetPasswordResponse>(`/api/Auth/forgot-password`, {
+            "email": email
+        });
+        const resData = response.data;
+        if (!resData.success) {
+            throw new Error(resData.errors[0] || 'Forget password failed');
+        }
+        return resData;
+    },
+    verifyOTP: async (email: string, otp: string): Promise<VerifyOTPResponse> => {
+        const response = await api.post<VerifyOTPResponse>(`/api/Auth/verify-reset-otp`, {
+            "email": email,
+            "otp": otp
+        });
+        const resData = response.data;
+        if (!resData.success) {
+            throw new Error(resData.errors[0] || 'Verify OTP failed');
+        }
+        return resData;
+    },
+    resendOTP: async (email: string): Promise<ForgetPasswordResponse> => {
+        const response = await api.post<ForgetPasswordResponse>(`/api/Auth/resend-otp`, {
+            "email": email
+        });
+        const resData = response.data;
+        if (!resData.success) {
+            throw new Error(resData.errors[0] || 'Resend OTP failed');
+        }
+        return resData;
+    },
+    resetPassword: async (email: string, newPassword: string, confirmPassword: string, resetToken: string): Promise<ResetPasswordResponse> => {
+        const response = await api.post<ResetPasswordResponse>(`/api/Auth/reset-password`, {
+            "email": email,
+            "newPassword": newPassword,
+            "confirmPassword": confirmPassword,
+            "resetToken": resetToken
+        });
+        const resData = response.data;
+        if (!resData.success) {
+            throw new Error(resData.errors[0] || 'Reset password failed');
+        }
+        return resData;
+    },
 }   

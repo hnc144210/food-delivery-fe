@@ -8,17 +8,18 @@ import { mock_merchant, OrderCardType } from "../../mock/shipper";
 import { mock_nearbyrestaurant } from "@/mock/home";
 import { useMemo } from "react";
 import { number } from "zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AssignmentAcceptRequestDto, UpdateDeliveryStatusRequestDto, ShipperAssignmentDto } from "@/types/assignment";
 import { deliveryService } from "@/services/deliveryService";
 import { userService } from "@/services/userService";
 
-export function OrderCard_ForDriver({ id, status, merchantId, deliveryFee, pickupAddress, dropoffAddress, orderId, customerId, offerId }: { id: string, status: string, merchantId: string, deliveryFee: number, pickupAddress: string, dropoffAddress: string, orderId: string, customerId: string, offerId: string }) {
+export function OrderCard_ForDriver({ data, offerId }: { data: ShipperAssignmentDto, offerId: string }) {
     const router = useRouter();
+    const queryClient = useQueryClient();
 
     const { data: merchantData } = useQuery({
-        queryKey: ['merchant', merchantId],
-        queryFn: () => userService.getMerchantProfile(merchantId),
+        queryKey: ['merchant', data.merchantId],
+        queryFn: () => userService.getMerchantProfile(data.merchantId),
     })
     const merchant = merchantData || mock_merchant;
 
@@ -26,16 +27,21 @@ export function OrderCard_ForDriver({ id, status, merchantId, deliveryFee, picku
     const acceptOfferMutation = useMutation({
         mutationFn: (data: AssignmentAcceptRequestDto) => deliveryService.acceptOffer(data),
         onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['assigned-deliveries'] });
+            queryClient.invalidateQueries({ queryKey: ['offer-assignments'] });
+            queryClient.invalidateQueries({ queryKey: ['offers'] });
             Alert.alert("Thành công", "Cảm ơn bạn đã xác nhận");
         },
         onError: (error) => {
             Alert.alert("Lỗi", error.message);
         }
     })
-
     const updateStatusMutation = useMutation({
         mutationFn: ({ assignmentId, data }: { assignmentId: string, data: UpdateDeliveryStatusRequestDto }) => deliveryService.updateDeliveryStatus(assignmentId, data),
         onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['assigned-deliveries'] });
+            queryClient.invalidateQueries({ queryKey: ['offer-assignments'] });
+            queryClient.invalidateQueries({ queryKey: ['offers'] });
             Alert.alert("Thành công", "Cập nhật trạng thái đơn hàng thành công");
         },
         onError: (error) => {
@@ -44,54 +50,56 @@ export function OrderCard_ForDriver({ id, status, merchantId, deliveryFee, picku
     })
 
     const statusText = () => {
-        if (status === 'Pending') return 'Đang xử lý';
-        if (status === 'Assigned') return 'Đã nhận đơn';
-        if (status === 'PickingUp') return 'Đang lấy hàng';
-        if (status === 'PickedUp') return 'Đã lấy hàng';
-        if (status === 'Delivering') return 'Đang giao hàng';
-        if (status === 'Delivered') return 'Đã giao hàng';
-        if (status === 'Failed') return 'Thất bại';
-        else return status
+        if (data.status === 'Pending') return 'Đang xử lý';
+        if (data.status === 'Accepted') return 'Đã nhận đơn';
+        if (data.status === 'PickingUp') return 'Đang lấy hàng';
+        if (data.status === 'PickedUp') return 'Đã lấy hàng';
+        if (data.status === 'Delivering') return 'Đang giao hàng';
+        if (data.status === 'Delivered') return 'Đã giao hàng';
+        if (data.status === 'Failed') return 'Thất bại';
+        else return data.status
     }
     const statusColor = () => {
-        if (status === 'Pending') return '#b6b6b6ff';
-        if (status === 'Assigned') return '#EA580C';
-        if (status === 'PickingUp') return '#1bcc91ff';
-        if (status === 'PickedUp') return '#40d3d8ff';
-        if (status === 'Delivering') return '#16c616ff';
+        if (data.status === 'Pending') return '#b6b6b6ff';
+        if (data.status === 'Accepted') return '#EA580C';
+        if (data.status === 'PickingUp') return '#1bcc91ff';
+        if (data.status === 'PickedUp') return '#40d3d8ff';
+        if (data.status === 'Delivering') return '#16c616ff';
     }
 
     const buttontext = () => {
-        if (status === 'Pending') return 'Nhận đơn';
-        if (status === 'Assigned') return 'Sẵn sàng lấy hàng';
-        if (status === 'PickingUp') return 'Lấy hàng';
-        if (status === 'PickedUp') return 'Bắt đầu giao hàng';
-        if (status === 'Delivering') return 'Hoàn thành';
-
+        if (data.status === 'Pending') return 'Nhận đơn';
+        if (data.status === 'Accepted') return 'Lấy hàng';
+        if (data.status === 'PickingUp') return 'Lấy hàng';
+        if (data.status === 'PickedUp') return 'Bắt đầu giao hàng';
+        if (data.status === 'Delivering') return 'Hoàn thành';
+        return '';
     }
     const handleAccept = () => {
-        if (status === 'Pending') {
-            acceptOfferMutation.mutate({ offerId: offerId, assignmentId: id, isAccepted: true, rejectionReason: null })
+        if (data.status === 'Pending') {
+            acceptOfferMutation.mutate({ offerId: offerId, assignmentId: data.id, isAccepted: true, rejectionReason: null })
         }
     }
     const handleReject = () => {
-        if (status === 'Pending') {
-            acceptOfferMutation.mutate({ offerId: offerId, assignmentId: id, isAccepted: false, rejectionReason: "Tôi không thể giao hàng vào lúc này" })
+        if (data.status === 'Pending') {
+            acceptOfferMutation.mutate({ offerId: offerId, assignmentId: data.id, isAccepted: false, rejectionReason: "Tôi không thể giao hàng vào lúc này" })
         }
     }
     const handlePickup = () => {
-        if (status === 'Accepted') {
-            updateStatusMutation.mutate({ assignmentId: id, data: { status: "PickedUp", note: "Đã lấy hàng", proofFileKey: null } })
+        if (data.status === 'Accepted') {
+            router.push({ pathname: `/(shipper)/pickedup`, params: { data: JSON.stringify(data) } })
+            // updateStatusMutation.mutate({ assignmentId: data.id, data: { status: "PickedUp", note: "Đã lấy hàng", proofFileKey: null } })
         }
     }
     const handleDelivering = () => {
-        if (status === 'PickedUp') {
-            updateStatusMutation.mutate({ assignmentId: id, data: { status: "Delivering", note: "Bắt đầu giao hàng", proofFileKey: null } })
+        if (data.status === 'PickedUp') {
+            updateStatusMutation.mutate({ assignmentId: data.id, data: { status: "Delivering", note: "Bắt đầu giao hàng", proofFileKey: null } })
         }
     }
     const handleComplete = () => {
-        if (status === 'Delivering') {
-            updateStatusMutation.mutate({ assignmentId: id, data: { status: "Completed", note: "Hoàn thành đơn hàng", proofFileKey: null } })
+        if (data.status === 'Delivering') {
+            router.push({ pathname: `/(shipper)/completion`, params: { data: JSON.stringify(data) } })
+            // updateStatusMutation.mutate({ assignmentId: data.id, data: { status: "Delivered", note: "Hoàn thành đơn hàng", proofFileKey: null } })
         }
     }
     return (
@@ -101,26 +109,26 @@ export function OrderCard_ForDriver({ id, status, merchantId, deliveryFee, picku
                     <View style={[styles.status, { backgroundColor: statusColor() }]}>
                         <Text style={{ fontSize: 14, fontWeight: 'bold', color: 'white' }}>{statusText()}</Text>
                     </View>
-                    {(status !== 'Pending' && status !== 'Offering') &&
+                    {(data.status !== 'Pending' && data.status !== 'Offering') &&
                         <View style={{ flexDirection: 'row', gap: 8 }}>
 
-                            <TouchableOpacity
+                            {/*<TouchableOpacity
                                 style={styles.incidentBadgeButton}
-                                onPress={() => router.push({ pathname: '/(shipper)/incidentreport' as any, params: { id } })}
+                                onPress={() => router.push({ pathname: '/(shipper)/incidentreport' as any, params: { data: JSON.stringify(data) } })}
                             >
                                 <Ionicons name="warning-outline" size={16} color="#EF4444" />
                                 <Text style={styles.incidentBadgeText}>Sự cố</Text>
-                            </TouchableOpacity>
+                            </TouchableOpacity>*/}
                             <TouchableOpacity
                                 style={styles.chatBadgeButton}
-                                onPress={() => router.push({ pathname: '/(shipper)/chatroom' as any, params: { id } })}
+                                onPress={() => router.push({ pathname: '/(shipper)/chatroom' as any, params: { data: JSON.stringify(data) } })}
                             >
                                 <Ionicons name="chatbubble-ellipses-outline" size={16} color="#EE4D2D" />
                                 <Text style={styles.chatBadgeText}>Trò chuyện</Text>
                             </TouchableOpacity>
                         </View>}
                 </View>
-                <TouchableOpacity style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }} onPress={() => router.push({ pathname: `/(shipper)/orderdetail`, params: { merchantId, orderId, customerId, pickupAddress, dropoffAddress } })}>
+                <TouchableOpacity style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }} onPress={() => router.push({ pathname: `/(shipper)/orderdetail`, params: { data: JSON.stringify(data) } })}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                         <Image source={{ uri: merchant.storeLogoUrl }} style={{ width: 50, height: 50, borderRadius: 12 }} />
                         <View>
@@ -129,32 +137,32 @@ export function OrderCard_ForDriver({ id, status, merchantId, deliveryFee, picku
                         </View>
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#B22203' }}>{deliveryFee}đ</Text>
+                        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#B22203' }}>{data.deliveryFee}đ</Text>
                         <Text style={{ fontSize: 12, color: 'gray' }}>Phí vận chuyển</Text>
                     </View>
                 </TouchableOpacity>
                 <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%', gap: 20 }}>
-                    <View style={[styles.round, (status === 'Delivering' || status === 'PickedUp') && { backgroundColor: '#ee4d2d3b' }]}>
-                        <Octicons name="dot-fill" size={20} color={status === 'Delivering' || status === 'PickedUp' ? '#EE4D2D' : 'black'} />
+                    <View style={[styles.round, (data.status === 'Delivering' || data.status === 'PickedUp') && { backgroundColor: '#ee4d2d3b' }]}>
+                        <Octicons name="dot-fill" size={20} color={data.status === 'Delivering' || data.status === 'PickedUp' ? '#EE4D2D' : 'black'} />
                     </View>
                     <View>
                         <Text style={{ fontSize: 12, color: 'gray' }}>Điểm lấy hàng</Text>
-                        <Text>{pickupAddress}</Text>
+                        <Text>{data.pickupAddress}</Text>
                     </View>
 
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%', gap: 20 }}>
-                    <View style={[styles.round, (status === 'DELIVERED') && { backgroundColor: '#ee4d2d3b' }]}>
-                        <EvilIcons name="location" size={20} color={status === 'DELIVERED' ? '#EE4D2D' : 'black'} />
+                    <View style={[styles.round, (data.status === 'DELIVERED') && { backgroundColor: '#ee4d2d3b' }]}>
+                        <EvilIcons name="location" size={20} color={data.status === 'DELIVERED' ? '#EE4D2D' : 'black'} />
                     </View>
                     <View>
                         <Text style={{ fontSize: 12, color: 'gray' }}>Điểm giao hàng</Text>
-                        <Text>{dropoffAddress}</Text>
+                        <Text>{data.dropoffAddress}</Text>
                     </View>
 
                 </View>
             </View>
-            {(status === "Offering" || status === "Pending") && <View style={{ flexDirection: 'row' }}>
+            {(data.status === "Offering" || data.status === "Pending") && <View style={{ flexDirection: 'row' }}>
                 <TouchableOpacity style={{ justifyContent: 'center', alignItems: 'center', height: 60, flex: 1, backgroundColor: '#b1b1b1ff' }} onPress={handleReject}>
                     <Text style={{ color: 'white', fontSize: 17, fontWeight: 'bold' }}>Từ chối</Text>
                 </TouchableOpacity>
@@ -163,7 +171,7 @@ export function OrderCard_ForDriver({ id, status, merchantId, deliveryFee, picku
                 </TouchableOpacity>
             </View>
             }
-            {(status !== "Pending" && status !== "Offering") && <TouchableOpacity style={{ justifyContent: 'center', alignItems: 'center', height: 60, width: '100%', backgroundColor: statusColor() }} onPress={status === 'Accepted' ? handlePickup : status === 'PickedUp' ? handleDelivering : handleComplete}>
+            {(data.status !== "Pending" && data.status !== "Offering") && <TouchableOpacity style={{ justifyContent: 'center', alignItems: 'center', height: 60, width: '100%', backgroundColor: statusColor() }} onPress={data.status === 'Accepted' ? handlePickup : data.status === 'PickedUp' ? handleDelivering : handleComplete}>
                 <Text style={{ color: 'white', fontSize: 17, fontWeight: 'bold' }}>{buttontext()}</Text>
             </TouchableOpacity>}
 
@@ -171,35 +179,36 @@ export function OrderCard_ForDriver({ id, status, merchantId, deliveryFee, picku
     );
 }
 
-export function OrderCardHistory_ForDriver({ merchantId, customerId, deliveredAt, deliveryFee, status, orderId, pickupAddress, dropoffAddress }: ShipperAssignmentDto) {
+export function OrderCardHistory_ForDriver({ data }: { data: ShipperAssignmentDto }) {
     const statuscolor = () => {
-        if (status === 'Failed') return 'red';
-        if (status === 'Completed') return '#34C759';
+        if (data.status === 'Failed') return 'red';
+        if (data.status === 'Completed') return '#34C759';
     }
     const StatusText = () => {
-        if (status === 'Failed') return 'Thất bại';
-        if (status === 'Completed') return 'Thành công';
+        if (data.status === 'Failed') return 'Thất bại';
+        if (data.status === 'Completed') return 'Thành công';
+        else return data.status
     }
     const router = useRouter();
     const { data: merchantData } = useQuery({
-        queryKey: ['merchant', merchantId],
-        queryFn: () => userService.getMerchantProfile(merchantId),
+        queryKey: ['merchant', data.merchantId],
+        queryFn: () => userService.getMerchantProfile(data.merchantId),
     })
     const merchant = merchantData || mock_merchant;
     return (
-        <TouchableOpacity style={styles.ordercard_container} onPress={() => router.push({ pathname: `/(shipper)/historydetail`, params: { merchantId, orderId, customerId, pickupAddress, dropoffAddress, deliveredAt, status } })}>
+        <TouchableOpacity style={styles.ordercard_container} onPress={() => router.push({ pathname: `/(shipper)/historydetail`, params: { data: JSON.stringify(data) } })}>
             <View style={{ padding: 20, gap: 10 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                         <Image source={{ uri: merchant?.storeLogoUrl }} style={{ width: 50, height: 50, borderRadius: 12 }} />
                         <View>
                             <Text style={{ fontSize: 16 }}>{merchant?.storeName}</Text>
-                            <Text style={{ color: 'gray', fontSize: 10 }}>{deliveredAt}</Text>
+                            <Text style={{ color: 'gray', fontSize: 12 }}>{new Date(data.deliveredAt || '').toLocaleString()}</Text>
                         </View>
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
                         <View style={{ alignItems: 'flex-end' }}>
-                            <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#B22203' }}>{deliveryFee}đ</Text>
+                            <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#B22203' }}>{data.deliveryFee}đ</Text>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                 <Text style={{ color: statuscolor(), fontSize: 12, fontWeight: 'bold' }}>{StatusText()}</Text>
                             </View>

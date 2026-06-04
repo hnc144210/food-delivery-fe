@@ -3,18 +3,6 @@ import { ShipperAssignmentDto } from "@/types/assignment";
 import { OrderDetailResponseDto } from "@/types/order";
 import { MerchantProfileResponseDto, ShipperProfileResponseDto, UserProfileResponseDto } from "@/types/profile";
 
-export const mock_users: User[] = [
-    { id: "1", fullName: 'Super Peak', phoneNumber: '0123456789', avatarUrl: '', status: 'ACTIVE' },
-    { id: "2", fullName: 'Super Creek', phoneNumber: '0129876723', avatarUrl: '', status: 'ACTIVE' },
-    { id: "3", fullName: 'Halo Wod', phoneNumber: '0129357524', avatarUrl: '', status: 'ACTIVE' },
-    { id: "4", fullName: 'Hoa Ly', phoneNumber: '0133545678', avatarUrl: '', status: 'ACTIVE' },
-    { id: "5", fullName: 'huy', phoneNumber: '0124567891', avatarUrl: '', status: 'ACTIVE' },
-    { id: "6", fullName: 'kim', phoneNumber: '0132564138', avatarUrl: '', status: 'ACTIVE' },
-    { id: "7", fullName: 'trang', phoneNumber: '0142567895', avatarUrl: '', status: 'ACTIVE' },
-    { id: "8", fullName: 'nhan', phoneNumber: '0124567221', avatarUrl: '', status: 'ACTIVE' },
-    { id: "9", fullName: 'my', phoneNumber: '0132564138', avatarUrl: '', status: 'ACTIVE' },
-    { id: "10", fullName: 'dung', phoneNumber: '0142567895', avatarUrl: '', status: 'ACTIVE' },
-]
 export const mock_address: Address[] = [
     { id: "1", userId: "1", label: 'Super Peak', street: 'Le Huong Dinh, Ward 10', lat: 10.8231, lng: 106.6297, receiverName: 'Super Peak', phone: '0123456789' },
     { id: "2", userId: "2", label: 'Super Creek', street: '19/3/4 Lu Wuang, Ward 15, Tan Binh', lat: 10.8231, lng: 106.6297, receiverName: 'Super Creek', phone: '0129876723' },
@@ -118,8 +106,9 @@ export const mock_user_detail: UserProfileResponseDto = {
     id: "a3a48d9e-7d2f-43b0-8415-8f0d69e4g32b",
     fullName: "John Doe",
     phoneNumber: "555-1234",
-    avatarUrl: "",
+    avatarFileKey: "",
     status: "ACTIVE",
+    roles: ['Custaomer']
 }
 
 export const mock_order_detail: OrderDetailResponseDto = {
@@ -198,13 +187,15 @@ export const mock_offer: ShipperAssignmentDto = {
     assignedAt: "2026-06-04T10:00:00.0000000Z",
     offerExpiresAt: "2026-06-04T10:10:00.0000000Z",
     acceptedAt: "2026-06-04T10:01:15.0000000Z",
-    pickedUpAt: null,
-    deliveredAt: null,
+    pickedUpAt: "2026-06-04T10:01:15.0000000Z",
+    deliveredAt: "2026-06-04T10:01:15.0000000Z",
     respondedAt: "2026-06-04T10:01:14.9921883Z",
     rejectReason: null,
     cancelledReason: null,
     pickupProofFileKey: null,
-    deliveryProofFileKey: null
+    deliveryProofFileKey: null,
+    customerName: "John Doe",
+    customerPhone: "555-1234",
 }
 
 export const mock_assignment: ShipperAssignmentDto[] = [
@@ -228,13 +219,15 @@ export const mock_assignment: ShipperAssignmentDto[] = [
         assignedAt: "2026-06-04T10:00:00.0000000Z",
         offerExpiresAt: "2026-06-04T10:10:00.0000000Z",
         acceptedAt: "2026-06-04T10:01:15.0000000Z",
-        pickedUpAt: null,
-        deliveredAt: null,
+        pickedUpAt: "2026-06-04T10:01:15.0000000Z",
+        deliveredAt: "2026-06-04T10:01:15.0000000Z",
         respondedAt: "2026-06-04T10:01:14.9921883Z",
         rejectReason: null,
         cancelledReason: null,
         pickupProofFileKey: null,
-        deliveryProofFileKey: null
+        deliveryProofFileKey: null,
+        customerName: "John Doe",
+        customerPhone: "555-1234",
     },
     {
         id: "d09f0687-8147-477b-8188-2a0da3b0616c",
@@ -256,13 +249,15 @@ export const mock_assignment: ShipperAssignmentDto[] = [
         assignedAt: "2026-06-04T09:28:56.3678332Z",
         offerExpiresAt: "2026-06-04T09:38:56.3678165Z",
         acceptedAt: "2026-06-04T09:29:39.5149163Z",
-        pickedUpAt: null,
-        deliveredAt: null,
+        pickedUpAt: "2026-06-04T10:01:15.0000000Z",
+        deliveredAt: "2026-06-04T10:01:15.0000000Z",
         respondedAt: "2026-06-04T09:29:39.5084927Z",
         rejectReason: null,
         cancelledReason: null,
         pickupProofFileKey: null,
-        deliveryProofFileKey: null
+        deliveryProofFileKey: null,
+        customerName: "John Doe",
+        customerPhone: "555-1234",
     },
     {
         id: "e1f8b7a4-9c6f-4d2e-8c5b-2a0d9e8f3c1a",
@@ -290,7 +285,9 @@ export const mock_assignment: ShipperAssignmentDto[] = [
         rejectReason: null,
         cancelledReason: null,
         pickupProofFileKey: null,
-        deliveryProofFileKey: null
+        deliveryProofFileKey: null,
+        customerName: "John Doe",
+        customerPhone: "555-1234",
     },
     {
         id: "f9b7a6d4-3c5e-41d0-9b6e-1f2c0d7e3a4c",
@@ -312,13 +309,15 @@ export const mock_assignment: ShipperAssignmentDto[] = [
         assignedAt: "2026-06-04T12:00:00.0000000Z",
         offerExpiresAt: "2026-06-04T12:10:00.0000000Z",
         acceptedAt: "2026-06-04T12:01:55.0000000Z",
-        pickedUpAt: null,
-        deliveredAt: null,
+        pickedUpAt: "2026-06-04T10:01:15.0000000Z",
+        deliveredAt: "2026-06-04T10:01:15.0000000Z",
         respondedAt: "2026-06-04T12:01:54.9931399Z",
         rejectReason: null,
         cancelledReason: null,
         pickupProofFileKey: null,
-        deliveryProofFileKey: null
+        deliveryProofFileKey: null,
+        customerName: "John Doe",
+        customerPhone: "555-1234",
     },
     {
         id: "g1e8a7d4-f6c3-42d1-9e7b-2c5a0f9e7b5c",
@@ -346,7 +345,9 @@ export const mock_assignment: ShipperAssignmentDto[] = [
         rejectReason: null,
         cancelledReason: null,
         pickupProofFileKey: null,
-        deliveryProofFileKey: null
+        deliveryProofFileKey: null,
+        customerName: "John Doe",
+        customerPhone: "555-1234",
     },
     {
         id: "h3a8b7d4-e7f2-43d2-9f7e-4c6a2f0e8a7c",
@@ -368,13 +369,15 @@ export const mock_assignment: ShipperAssignmentDto[] = [
         assignedAt: "2026-06-04T14:00:00.0000000Z",
         offerExpiresAt: "2026-06-04T14:10:00.0000000Z",
         acceptedAt: "2026-06-04T14:01:45.0000000Z",
-        pickedUpAt: null,
-        deliveredAt: null,
+        pickedUpAt: "2026-06-04T10:01:15.0000000Z",
+        deliveredAt: "2026-06-04T10:01:15.0000000Z",
         respondedAt: "2026-06-04T14:01:44.9946607Z",
         rejectReason: null,
         cancelledReason: null,
         pickupProofFileKey: null,
-        deliveryProofFileKey: null
+        deliveryProofFileKey: null,
+        customerName: "John Doe",
+        customerPhone: "555-1234",
     },
     {
         id: "h3a8b7d4-e7f2-43d2-9f7e-4c6a2f0e8a7c",
@@ -402,7 +405,9 @@ export const mock_assignment: ShipperAssignmentDto[] = [
         rejectReason: null,
         cancelledReason: null,
         pickupProofFileKey: null,
-        deliveryProofFileKey: null
+        deliveryProofFileKey: null,
+        customerName: "John Doe",
+        customerPhone: "555-1234",
     },
     {
         id: "h3a8b7d4-e7f2-43d2-9f7e-4c6a2f0e8a7c",
@@ -430,7 +435,9 @@ export const mock_assignment: ShipperAssignmentDto[] = [
         rejectReason: null,
         cancelledReason: null,
         pickupProofFileKey: null,
-        deliveryProofFileKey: null
+        deliveryProofFileKey: null,
+        customerName: "John Doe",
+        customerPhone: "555-1234",
     },
     {
         id: "h3a8b7d4-e7f2-43d2-9f7e-4c6a2f0e8a7c",
@@ -453,12 +460,14 @@ export const mock_assignment: ShipperAssignmentDto[] = [
         offerExpiresAt: "2026-06-04T14:10:00.0000000Z",
         acceptedAt: "2026-06-04T14:01:45.0000000Z",
         pickedUpAt: "2026-06-04T14:05:00.0000000Z",
-        deliveredAt: null,
+        deliveredAt: "2026-06-04T14:10:00.0000000Z",
         respondedAt: "2026-06-04T14:01:44.9946607Z",
         rejectReason: null,
         cancelledReason: null,
         pickupProofFileKey: null,
-        deliveryProofFileKey: null
+        deliveryProofFileKey: null,
+        customerName: "John Doe",
+        customerPhone: "555-1234",
     },
 ]
 export const mock_merchant: MerchantProfileResponseDto =
