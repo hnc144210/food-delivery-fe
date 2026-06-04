@@ -21,6 +21,7 @@ export default function ProfileDetail() {
     const user = useAuthStore((s) => s.user);
     const setUser = useAuthStore((s) => s.setUser);
 
+    let change: boolean = false
     const { data: readUrlResponse } = useQuery({
         queryKey: ['read-url'],
         queryFn: () => fileService.getReadUrl(user?.avatarFileKey || ''),
@@ -96,6 +97,7 @@ export default function ProfileDetail() {
             if (!result.canceled && result.assets && result.assets.length > 0) {
                 const selectedUri = result.assets[0].uri;
                 setAvatar(selectedUri);
+                change = true
             }
         } catch (error) {
             console.log('Error picking image:', error);
@@ -114,7 +116,7 @@ export default function ProfileDetail() {
         try {
             let finalAvatarFileKey = user?.avatarFileKey || '';
 
-            if (avatar !== readUrlResponse?.readUrl) {
+            if (change) {
                 const fileName = avatar.split('/').pop() || "image.jpg";
                 const fileExtension = fileName.split('.').pop()?.toLowerCase();
                 const contentType = fileExtension === 'png' ? 'image/png' : 'image/jpeg';

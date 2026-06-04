@@ -1,5 +1,14 @@
 import { ApiResponse } from "@/services/deliveryService";
 
+export type ShipperWorkStatus =
+    | 'Offline'
+    | 'ActiveIdle'
+    | 'Offering'
+    | 'Busy'
+    | 'PendingAssignment'
+    | 'Delivering'
+    | string;
+
 export type ShipperAssignmentDto = {
 
     orderId: string,
@@ -18,7 +27,7 @@ export type ShipperAssignmentDto = {
     dropoffLongitude: number,
     deliveryFee: number,
     distanceKm: number,
-    status: string,
+    status: 'Pending' | 'Offering' | 'Assigned' | 'PickingUp' | 'PickedUp' | 'Delivering' | 'Delivered' | 'Failed' | 'Completed' | string,
     assignedAt: string,
     offerExpiresAt: string,
     acceptedAt: string,
@@ -64,6 +73,19 @@ export type ShipperOfferDto = {
     expiresAt: string | null;
 }
 
+export type ShipperAvailabilityDto = {
+    id: string;
+    shipperId: string;
+    status: ShipperWorkStatus;
+    currentOrderId: string | null;
+    currentAssignmentId: string | null;
+    currentOfferedAssignmentId: string | null;
+    offeringExpiresAt: string | null;
+    currentLat: number;
+    currentLng: number;
+    lastSeenAt: string | null;
+}
+
 export type UpdateDeliveryStatusRequestDto = {
     note: string | null;
     proofFileKey: string | null;
@@ -72,10 +94,17 @@ export type UpdateDeliveryStatusRequestDto = {
 
 export type ToggleOnlineRequestDto = {
     isGoOnline: boolean;
-    lat: number;
-    lng: number;
+    lat?: number | null;
+    lng?: number | null;
+}
+
+export type UpdateShipperLocationRequestDto = {
+    orderId?: string | null;
+    latitude: number;
+    longitude: number;
 }
 
 export type ShipperOfferResponse = ApiResponse<ShipperOfferDto>
 export type ShipperAssignmentResponse = ApiResponse<ShipperAssignmentDto>
 export type ShipperListAssignmentResponse = ApiResponse<ShipperListAssignmentDto>   
+export type ShipperAvailabilityResponse = ApiResponse<ShipperAvailabilityDto>

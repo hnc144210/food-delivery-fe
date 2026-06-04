@@ -153,7 +153,9 @@ export default function HomeScreen() {
       : [];
 
   // Filter products recursively based on the category subtree
-  const allProducts = products?.items || [];
+  const allProducts = (products?.items || []).filter(
+    (p) => p.isAvailable !== false,
+  );
   const filteredProducts =
     categoriesFilter !== ""
       ? allProducts.filter(

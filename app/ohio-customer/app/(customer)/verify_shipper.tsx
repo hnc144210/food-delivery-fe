@@ -41,20 +41,25 @@ export default function VerifyShipper() {
 
             if (!result.canceled && result.assets && result.assets.length > 0) {
                 const imageUri = result.assets[0].uri;
+                setSubmitting(true);
+                const uploadedUrl = await getReadUrl(imageUri);
                 if (type === "front") {
-                    setFrontImage(imageUri);
+                    setFrontImage(uploadedUrl);
                 } else if (type === "back") {
-                    setBackImage(imageUri);
+                    setBackImage(uploadedUrl);
                 } else if (type === "selfie") {
-                    setSelfie(imageUri);
+                    setSelfie(uploadedUrl);
                 } else if (type === "frontLicense") {
-                    setFrontLicenseImage(imageUri);
+                    setFrontLicenseImage(uploadedUrl);
                 } else if (type === "backLicense") {
-                    setBackLicenseImage(imageUri);
+                    setBackLicenseImage(uploadedUrl);
                 }
             }
         } catch (error) {
             console.error('Error taking photo:', error);
+        }
+        finally {
+            setSubmitting(false);
         }
     };
 
@@ -77,21 +82,26 @@ export default function VerifyShipper() {
 
             if (!result.canceled && result.assets && result.assets.length > 0) {
                 const imageUri = result.assets[0].uri;
+                setSubmitting(true);
+                const uploadedUrl = await getReadUrl(imageUri);
                 if (type === "front") {
-                    setFrontImage(imageUri);
+                    setFrontImage(uploadedUrl);
                 } else if (type === "back") {
-                    setBackImage(imageUri);
+                    setBackImage(uploadedUrl);
                 } else if (type === "selfie") {
-                    setSelfie(imageUri);
+                    setSelfie(uploadedUrl);
                 } else if (type === "frontLicense") {
-                    setFrontLicenseImage(imageUri);
+                    setFrontLicenseImage(uploadedUrl);
                 } else if (type === "backLicense") {
-                    setBackLicenseImage(imageUri);
+                    setBackLicenseImage(uploadedUrl);
                 }
             }
         } catch (error) {
             console.error('Error choosing from library:', error);
             Alert.alert('Lỗi', 'Không thể chọn ảnh từ thư viện');
+        }
+        finally {
+            setSubmitting(false);
         }
     };
 
@@ -151,28 +161,17 @@ export default function VerifyShipper() {
             const month = parts[1].padStart(2, '0');
             const year = parts[2];
             const formattedDob = `${year}-${month}-${day}T00:00:00.000Z`;
-            console.log("frontImage: ", frontImage);
-            console.log("backImage: ", backImage);
-            console.log("frontLicenseImage: ", frontLicenseImage);
-            console.log("backLicenseImage: ", backLicenseImage);
-            console.log("selfie: ", selfie);
-
-            const readUrl1 = await getReadUrl(frontImage!);
-            const readUrl2 = await getReadUrl(backImage!);
-            const readUrl3 = await getReadUrl(frontLicenseImage!);
-            const readUrl4 = await getReadUrl(backLicenseImage!);
-            const readUrl5 = await getReadUrl(selfie!);
 
             await registerForShipping.mutateAsync({
                 dateOfBirth: formattedDob,
                 fullName: fullName,
-                idCardBackUrl: readUrl2,
-                idCardFrontUrl: readUrl1,
+                idCardBackUrl: backImage || '',
+                idCardFrontUrl: frontImage || '',
                 idNumber: citizenId,
-                licenseBackUrl: readUrl4,
-                licenseFrontUrl: readUrl3,
+                licenseBackUrl: backLicenseImage || '',
+                licenseFrontUrl: frontLicenseImage || '',
                 licenseNumber: licenseNumber,
-                selfieUrl: readUrl5,
+                selfieUrl: selfie || '',
             });
 
         } catch (error) {

@@ -16,7 +16,7 @@ import { mock_nearbyrestaurant } from "@/mock/home";
 import { useMemo } from "react";
 import { number } from "zod";
 import { CartItemResponseDto, CartResponseDto } from "@/types/cart";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { userService } from "@/services/userService";
 import { mock_merchant_new } from "@/mock/customer_cart";
 import { OrderHistoryItemDto } from "@/types/order";
@@ -312,87 +312,72 @@ export function OrderCardHistory_ForDriver({
   );
 }
 
-export function OrderCard_ForCustomer({
-  id,
-  status,
-  createdAt,
-  merchantId,
-  merchantAvatar,
-  merchantName,
-  totalAmount,
-  previewItems,
-}: OrderHistoryItemDto) {
+export function OrderCard_ForCustomer({ id, status, createdAt, merchantId, merchantAvatar, merchantName, totalAmount, previewItems }: OrderHistoryItemDto) {
   const statuscolor = () => {
-    if (status === "PENDING") return "#ddddddff";
-    if (status === "CONFIRMED") return "#90d9e2ff";
-    if (status === "PREPARING") return "#ffaf54ff";
-    if (status === "DELIVERING") return "#ee99e3ff";
-    if (status === "DELIVERED") return "#a6ff83ff";
-    if (status === "CANCELLED") return "#ffa6a6ff";
-    return "#FEF3C7";
-  };
+    if (status === 'PENDING') return '#ddddddff';
+    if (status === 'CONFIRMED') return '#90d9e2ff';
+    if (status === 'PREPARING') return '#ffaf54ff';
+    if (status === 'DELIVERING') return '#ee99e3ff';
+    if (status === 'DELIVERED') return '#a6ff83ff';
+    if (status === 'CANCELLED') return '#ffa6a6ff';
+    return '#FEF3C7';
+  }
   const textcolor = () => {
-    if (status === "PENDING") return "#000000ff";
-    if (status === "CONFIRMED") return "#005661ff";
-    if (status === "PREPARING") return "#6b4000ff";
-    if (status === "DELIVERING") return "#682b60ff";
-    if (status === "DELIVERED") return "#207000ff";
-    if (status === "CANCELLED") return "#960000ff";
-    return "#92400eff";
-  };
+    if (status === 'PENDING') return '#000000ff';
+    if (status === 'CONFIRMED') return '#005661ff';
+    if (status === 'PREPARING') return '#6b4000ff';
+    if (status === 'DELIVERING') return '#682b60ff';
+    if (status === 'DELIVERED') return '#207000ff';
+    if (status === 'CANCELLED') return '#960000ff';
+    return '#92400eff';
+  }
   const statusDisplay = () => {
-    if (status === "PENDING") return "Chờ duyệt";
-    if (status === "CONFIRMED") return "Đã xác nhận";
-    if (status === "PREPARING") return "Đang chuẩn bị";
-    if (status === "DELIVERING") return "Đang giao hàng";
-    if (status === "DELIVERED") return "Đã giao hàng";
-    if (status === "CANCELLED") return "Đã hủy";
-    if (status === "READY") return "Sẵn sàng";
-    return "";
-  };
+    if (status === 'PENDING') return 'Chờ duyệt';
+    if (status === 'CONFIRMED') return 'Đã xác nhận';
+    if (status === 'PREPARING') return 'Đang chuẩn bị';
+    if (status === 'DELIVERING') return 'Đang giao hàng';
+    if (status === 'DELIVERED') return 'Đã giao hàng';
+    if (status === 'CANCELLED') return 'Đã hủy';
+    if (status === 'READY') return 'Sẵn sàng';
+    return '';
+  }
+  const queryClient = useQueryClient();
   const router = useRouter();
   const handleReview = () => {
     router.push({ pathname: `/(customer)/review`, params: { id } });
-  };
+  }
+
+  const cancleOrderMutation = useMutation({
+    mutationFn: () => orderService.cancleOrder(id),
+    onSuccess: () => {
+      Alert.alert("Thành công", "Hủy đơn hàng thành công!");
+      queryClient.invalidateQueries({ queryKey: ["order-history"] });
+    },
+    onError: (error: any) => {
+      Alert.alert("Lỗi", error.message || "Không thể hủy đơn hàng lúc này.");
+    }
+  });
   return (
-    <View
-      style={[
-        styles.ordercard_container,
-        { borderColor: statuscolor(), borderWidth: 1 },
-      ]}
-    >
-      <View style={{ padding: 20, width: "100%", gap: 12 }}>
-        <View
-          style={{
-            backgroundColor: statuscolor(),
-            paddingVertical: 5,
-            borderRadius: 10,
-            justifyContent: "center",
-            alignItems: "center",
-            width: 100,
-          }}
-        >
-          <Text style={{ color: textcolor(), fontSize: 12 }}>
-            {statusDisplay()}
-          </Text>
+    <View style={[styles.ordercard_container, { borderColor: statuscolor(), borderWidth: 1 }]}>
+      <View style={{ padding: 20, width: '100%', gap: 12 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+          <View style={{ backgroundColor: statuscolor(), paddingVertical: 5, borderRadius: 10, justifyContent: 'center', alignItems: 'center', width: 100 }}>
+            <Text style={{ color: textcolor(), fontSize: 12 }}>{statusDisplay()}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.chatBadgeButton}
+            onPress={() => router.push({ pathname: `/(customer)/chatroom`, params: { id: id } })}
+          >
+            <Ionicons name="chatbubble-ellipses-outline" size={16} color="#EE4D2D" />
+            <Text style={styles.chatBadgeText}>Trò chuyện</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}
-          onPress={() => {}}
-        >
-          <Image
-            source={{ uri: merchantAvatar || "" }}
-            style={{ width: 50, height: 50, borderRadius: 12 }}
-          />
+
+        <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }} onPress={() => { }}>
+          <Image source={{ uri: merchantAvatar || '' }} style={{ width: 50, height: 50, borderRadius: 12 }} />
           <View style={{ width: 240 }}>
-            <Text style={{ fontSize: 16, fontWeight: "bold" }}>
-              {merchantName}
-            </Text>
-            <Text style={{ color: "gray", fontSize: 12 }}>
-              {previewItems
-                ?.map((item) => `${item.quantity}x ${item.productName}`)
-                .join(", ")}
-            </Text>
+            <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{merchantName}</Text>
+            <Text style={{ color: 'gray', fontSize: 12 }}>{previewItems?.map((item) => `${item.quantity}x ${item.productName}`).join(', ')}</Text>
           </View>
         </TouchableOpacity>
 
@@ -427,14 +412,25 @@ export function OrderCard_ForCustomer({
                   alignItems: "center",
                   height: 40,
                   width: "100%",
-                  backgroundColor: "#EE4D2D",
+                  backgroundColor: cancleOrderMutation.isPending ? "#9ca3af" : "#EE4D2D",
                   borderRadius: 12,
+                }}
+                disabled={cancleOrderMutation.isPending}
+                onPress={() => {
+                  Alert.alert(
+                    "Xác nhận",
+                    "Bạn có chắc chắn muốn hủy đơn hàng này không?",
+                    [
+                      { text: "Không", style: "cancel" },
+                      { text: "Có, hủy đơn", onPress: () => cancleOrderMutation.mutate() }
+                    ]
+                  );
                 }}
               >
                 <Text
                   style={{ color: "white", fontSize: 17, fontWeight: "bold" }}
                 >
-                  Hủy đơn hàng
+                  {cancleOrderMutation.isPending ? "Đang hủy..." : "Hủy đơn hàng"}
                 </Text>
               </TouchableOpacity>
             )}
@@ -535,7 +531,7 @@ export function CartCard({
         </View>
         <TouchableOpacity
           style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}
-          onPress={() => {}}
+          onPress={() => { }}
         >
           <Image
             source={{ uri: merchant?.storeLogoUrl }}

@@ -92,8 +92,9 @@ export default function Completion() {
         mutationFn: ({ assignmentId, data }: { assignmentId: string, data: UpdateDeliveryStatusRequestDto }) => deliveryService.updateDeliveryStatus(assignmentId, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['assigned-deliveries'] });
-            queryClient.invalidateQueries({ queryKey: ['offer-assignments'] });
-            queryClient.invalidateQueries({ queryKey: ['offers'] });
+            queryClient.invalidateQueries({ queryKey: ['offer-assignment'] });
+            queryClient.invalidateQueries({ queryKey: ['active-offer'] });
+            queryClient.invalidateQueries({ queryKey: ['shipper-availability'] });
             Alert.alert("Thành công", "Cập nhật trạng thái đơn hàng thành công");
         },
         onError: (error) => {

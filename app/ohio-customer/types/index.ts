@@ -50,9 +50,10 @@ export type UserRole = 'CUSTOMER' | 'MERCHANT' | 'SHIPPER' | 'ADMIN';
 export interface User {
   id: string;
   fullName: string;
-  avatarUrl: string;
+  avatarFileKey: string;
   phoneNumber: string;
   status: string;
+  roles: string[];
 }
 
 export interface Address {

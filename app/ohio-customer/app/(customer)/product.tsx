@@ -236,6 +236,27 @@ export default function ProductScreen() {
             >
               {productdata.name}
             </Text>
+            {!productdata.isAvailable && (
+              <View
+                style={{
+                  backgroundColor: "#fee2e2",
+                  borderRadius: 8,
+                  padding: 8,
+                  marginTop: 6,
+                }}
+              >
+                <Text
+                  style={{
+                    color: "#dc2626",
+                    fontWeight: "600",
+                    fontSize: 13,
+                    textAlign: "center",
+                  }}
+                >
+                  Món này hiện không khả dụng
+                </Text>
+              </View>
+            )}
             <View
               style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
             >
@@ -374,7 +395,14 @@ export default function ProductScreen() {
             <AntDesign name="plus" size={16} color="#EE4D2D" />
           </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.addToCartBtn} onPress={handleAddCart}>
+        <TouchableOpacity
+          style={[
+            styles.addToCartBtn,
+            !productdata.isAvailable && { backgroundColor: "#ccc" },
+          ]}
+          onPress={handleAddCart}
+          disabled={!productdata.isAvailable}
+        >
           <Text style={styles.addToCartText}>Thêm vào giỏ</Text>
           <Text style={styles.addToCartPrice}>{formatPrice(totalPrice)}</Text>
         </TouchableOpacity>
