@@ -7,10 +7,12 @@ import {
   TouchableOpacity,
   Switch,
   StyleSheet,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useMerchantStore } from "@/store/merchantStore";
 import MerchantOrderCard from "@/components/features/MerchantOrderCard";
+
 import {
   useMerchantOrders,
   useUpdateMerchantOrderStatus,
@@ -18,6 +20,7 @@ import {
 import type { Order, OrderStatus } from "@/types/api";
 import type { MerchantOrder, MerchantOrderStatus } from "@/mock/merchant";
 import { useToggleStoreOpen } from "@/hooks/useMerchantProfile";
+import { useMerchantReviews } from "@/hooks/useMerchantReviews";
 import { useEffect } from "react";
 const ORANGE = "#E8441A";
 const CREAM = "#FEF3E8";
@@ -28,21 +31,26 @@ const TABS: {
   apiStatus: OrderStatus;
 }[] = [
   { key: "new", label: "New", apiStatus: "PENDING" },
+  { key: "confirmed", label: "Confirmed", apiStatus: "CONFIRMED" },
   { key: "preparing", label: "Preparing", apiStatus: "PREPARING" },
   { key: "delivering", label: "Delivering", apiStatus: "DELIVERING" },
+  { key: "cancelled", label: "Cancelled", apiStatus: "CANCELLED" },
 ];
 
 function mapOrderStatus(status: OrderStatus): MerchantOrderStatus {
   if (status === "PENDING") return "new";
-  if (status === "PREPARING" || status === "CONFIRMED") return "preparing";
+  if (status === "CONFIRMED") return "confirmed";
+  if (status === "PREPARING") return "preparing";
+  if (status === "DELIVERING") return "delivering";
+  if (status === "CANCELLED") return "cancelled";
   return "delivering";
 }
 
-function mapOrder(order: Order): MerchantOrder {
+function mapOrder(order: any): MerchantOrder {
   return {
     id: order.id,
     orderNumber: order.orderNumber ?? `#${order.id.slice(0, 8)}`,
-    customerName: order.customerName ?? "Customer",
+    customerName: order.customerName ?? order.merchantName ?? "Customer",
     status: mapOrderStatus(order.status),
     createdAt: order.createdAt ?? new Date().toISOString(),
     total: order.totalAmount ?? 0,
@@ -51,15 +59,12 @@ function mapOrder(order: Order): MerchantOrder {
     tag: order.status === "PENDING" ? "NEW" : undefined,
     deliverySubStatus:
       order.status === "DELIVERING" ? "waiting_pickup" : undefined,
-    items:
-      order.items?.map((item) => ({
-        id: item.id,
-        name: item.productName,
-        quantity: item.quantity,
-        optionSummary: item.selectedOptions
-          ?.map((opt) => `${opt.optionName}: ${opt.valueName}`)
-          .join(", "),
-      })) ?? [],
+    items: (order.previewItems ?? order.items ?? []).map((item: any) => ({
+      id: item.id,
+      name: item.productName,
+      quantity: item.quantity,
+      optionSummary: undefined,
+    })),
   };
 }
 
@@ -76,20 +81,31 @@ export default function MerchantOrdersScreen() {
     () => ({ status: activeApiStatus }),
     [activeApiStatus],
   );
-  const ordersQuery = useMerchantOrders(queryParams);
+  const ordersQuery = useMerchantOrders();
   const updateStatus = useUpdateMerchantOrderStatus();
+  const reviewsQuery = useMerchantReviews(merchant?.id);
+  const feedbackCount = reviewsQuery.data?.items?.length ?? 0;
+  const orders = useMemo(() => {
+    return (ordersQuery.data ?? [])
+      .map(mapOrder)
+      .filter((o) => o.status === activeTab);
+  }, [ordersQuery.data, activeTab]);
 
-  const orders = ordersQuery.data?.map(mapOrder) ?? [];
+  const activeCount = useMemo(() => {
+    return (ordersQuery.data ?? []).filter((o) =>
+      ["PENDING", "CONFIRMED", "PREPARING", "DELIVERING"].includes(o.status),
+    ).length;
+  }, [ordersQuery.data]);
+
+  const todayCount = useMemo(() => {
+    const today = new Date().toDateString();
+    return (ordersQuery.data ?? []).filter(
+      (o) => o.createdAt && new Date(o.createdAt).toDateString() === today,
+    ).length;
+  }, [ordersQuery.data]);
 
   function countByTab(key: MerchantOrderStatus) {
     return key === activeTab ? orders.length : 0;
-  }
-
-  function handleAccept(id: string) {
-    updateStatus.mutate({
-      id,
-      body: { status: "PREPARING", note: "Kitchen started" },
-    });
   }
 
   function handleReject(id: string) {
@@ -98,12 +114,19 @@ export default function MerchantOrdersScreen() {
       body: { status: "CANCELLED", cancelReason: "Merchant rejected order" },
     });
   }
+  // Accept → CONFIRMED (báo khách)
+  function handleAccept(id: string) {
+    updateStatus.mutate({ id, body: { status: "CONFIRMED" } });
+  }
 
+  // Nút mới ở tab Confirmed → PREPARING (báo shipper)
+  function handleStartPreparing(id: string) {
+    updateStatus.mutate({ id, body: { status: "PREPARING" } });
+  }
+
+  // Nút ở tab Preparing → READY
   function handleReady(id: string) {
-    updateStatus.mutate({
-      id,
-      body: { status: "READY", note: "Ready for pickup" },
-    });
+    updateStatus.mutate({ id, body: { status: "READY" } });
   }
 
   return (
@@ -131,44 +154,64 @@ export default function MerchantOrdersScreen() {
       </View>
 
       <View style={styles.statsRow}>
-        <StatBlock label="Active" value={orders.length} />
+        <StatBlock label="Active" value={activeCount} />
         <View style={styles.statDivider} />
-        <StatBlock label="Today" value={orders.length} />
+        <StatBlock label="Today" value={todayCount} />
         <View style={styles.statDivider} />
-        <StatBlock label="Feedbacks" value={0} />
+        <StatBlock label="Feedbacks" value={feedbackCount} />
       </View>
-
-      <View style={styles.tabBar}>
-        {TABS.map((tab) => {
-          const count = countByTab(tab.key);
-          const isActive = activeTab === tab.key;
-
-          return (
-            <TouchableOpacity
-              key={tab.key}
-              style={[styles.tab, isActive && styles.tabActive]}
-              onPress={() => setActiveTab(tab.key)}
-            >
-              <Text
-                style={[styles.tabLabel, isActive && styles.tabLabelActive]}
+      <View
+        style={{
+          height: 52,
+          backgroundColor: "#fff",
+          borderBottomWidth: 1,
+          borderBottomColor: "#EEE",
+        }}
+      >
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{
+            backgroundColor: "#fff",
+            borderBottomWidth: 1,
+            borderBottomColor: "#EEE",
+          }}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingVertical: 10,
+            alignItems: "center",
+          }}
+        >
+          {TABS.map((tab) => {
+            const count = countByTab(tab.key);
+            const isActive = activeTab === tab.key;
+            return (
+              <TouchableOpacity
+                key={tab.key}
+                style={[styles.tab, isActive && styles.tabActive]}
+                onPress={() => setActiveTab(tab.key)}
               >
-                {tab.label}
-              </Text>
-              {count > 0 && (
-                <View style={[styles.badge, isActive && styles.badgeActive]}>
-                  <Text
-                    style={[
-                      styles.badgeText,
-                      isActive && styles.badgeTextActive,
-                    ]}
-                  >
-                    {count}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          );
-        })}
+                <Text
+                  style={[styles.tabLabel, isActive && styles.tabLabelActive]}
+                >
+                  {tab.label}
+                </Text>
+                {count > 0 && (
+                  <View style={[styles.badge, isActive && styles.badgeActive]}>
+                    <Text
+                      style={[
+                        styles.badgeText,
+                        isActive && styles.badgeTextActive,
+                      ]}
+                    >
+                      {count}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
 
       <FlatList
@@ -180,6 +223,7 @@ export default function MerchantOrdersScreen() {
             onAccept={handleAccept}
             onReject={handleReject}
             onReady={handleReady}
+            onStartPreparing={handleStartPreparing}
           />
         )}
         contentContainerStyle={styles.listContent}
@@ -245,17 +289,17 @@ const styles = StyleSheet.create({
     borderBottomColor: "#EEE",
   },
   tab: {
-    flex: 1,
     flexDirection: "row",
-    justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: "#F2F2F2",
+    marginRight: 8,
     gap: 6,
-    borderBottomWidth: 2,
-    borderBottomColor: "transparent",
   },
-  tabActive: { borderBottomColor: ORANGE },
-  tabLabel: { fontSize: 14, fontWeight: "600", color: "#BBB" },
+  tabActive: { backgroundColor: CREAM },
+  tabLabel: { fontSize: 13, fontWeight: "600", color: "#AAA" },
   tabLabelActive: { color: ORANGE },
   badge: {
     backgroundColor: "#EEEEEE",

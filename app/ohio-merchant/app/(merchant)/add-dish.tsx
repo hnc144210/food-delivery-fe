@@ -1,10 +1,9 @@
-// app/ohio-merchant/app/(merchant)/add-dish.tsx
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import * as ImagePicker from "expo-image-picker";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ScrollView,
   View,
@@ -20,7 +19,12 @@ import SizeSection from "@/components/features/dish/SizeSection";
 import ToppingSection from "@/components/features/dish/ToppingSection";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { KeyboardAvoidingView, Platform } from "react-native";
-import { useCategories, useCreateProduct } from "@/hooks/useMenu";
+import {
+  useCategories,
+  useCreateProduct,
+  useUpdateProduct,
+  useProduct,
+} from "@/hooks/useMenu";
 
 const ORANGE = "#E8441A";
 const CREAM = "#FEF3E8";
@@ -52,15 +56,10 @@ export default function AddDishScreen() {
     status: "ACTIVE",
   });
   const dishCategories = categoriesQuery.data ?? [];
-  console.log(
-    "categories:",
-    JSON.stringify(dishCategories),
-    "loading:",
-    categoriesQuery.isLoading,
-    "error:",
-    categoriesQuery.error,
-  );
+
+  const productQuery = useProduct(dishId ?? "");
   const createProduct = useCreateProduct();
+  const updateProduct = useUpdateProduct();
 
   const {
     control,
@@ -74,6 +73,29 @@ export default function AddDishScreen() {
   });
   const selectedCatId = watch("categoryId");
 
+  // Load dữ liệu cũ vào form khi edit
+  useEffect(() => {
+    if (isEdit && productQuery.data) {
+      const p = productQuery.data;
+      setValue("name", p.name);
+      setValue("description", p.description ?? "");
+      setValue("price", String(p.basePrice));
+      setValue("categoryId", p.categoryId ?? "");
+      setImage(p.imageUrl || null);
+
+      const sizeOpt = p.options?.find((o: any) => o.name === "Size");
+      const toppingOpt = p.options?.find((o: any) => o.name === "Topping");
+      if (sizeOpt) setSizes(sizeOpt.values.map((v: any) => v.name));
+      if (toppingOpt)
+        setToppings(
+          toppingOpt.values.map((v: any) => ({
+            name: v.name,
+            price: String(v.additionalPrice),
+          })),
+        );
+    }
+  }, [productQuery.data]);
+
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: "images",
@@ -85,55 +107,76 @@ export default function AddDishScreen() {
   };
 
   const onSubmit = async (data: FormData) => {
-    console.log("onSubmit called", JSON.stringify(data));
+    const body = {
+      categoryId: data.categoryId,
+      name: data.name,
+      description: data.description ?? "",
+      imageUrl: image ?? "",
+      basePrice: Number(data.price),
+      discountPrice: Number(data.price),
+      isAvailable: true,
+      isFeatured: false,
+      prepTime: 0,
+      options: [
+        ...(sizes.length > 0
+          ? [
+              {
+                name: "Size",
+                isRequired: true,
+                maxSelections: 1,
+                values: sizes.map((s) => ({
+                  name: s,
+                  additionalPrice: 0,
+                  isAvailable: true,
+                })),
+              },
+            ]
+          : []),
+        ...(toppings.length > 0
+          ? [
+              {
+                name: "Topping",
+                isRequired: false,
+                maxSelections: toppings.length,
+                values: toppings.map((t) => ({
+                  name: t.name,
+                  additionalPrice: Number(t.price),
+                  isAvailable: true,
+                })),
+              },
+            ]
+          : []),
+      ],
+    };
+
     try {
-      await createProduct.mutateAsync({
-        categoryId: data.categoryId,
-        name: data.name,
-        description: data.description ?? "",
-        imageUrl: image ?? "",
-        basePrice: Number(data.price),
-        discountPrice: Number(data.price),
-        isAvailable: true,
-        isFeatured: false,
-        prepTime: 0,
-        options: [
-          ...(sizes.length > 0
-            ? [
-                {
-                  name: "Size",
-                  isRequired: true,
-                  maxSelections: 1,
-                  values: sizes.map((s) => ({
-                    name: s,
-                    additionalPrice: 0,
-                    isAvailable: true,
-                  })),
-                },
-              ]
-            : []),
-          ...(toppings.length > 0
-            ? [
-                {
-                  name: "Topping",
-                  isRequired: false,
-                  maxSelections: toppings.length,
-                  values: toppings.map((t) => ({
-                    name: t.name,
-                    additionalPrice: Number(t.price),
-                    isAvailable: true,
-                  })),
-                },
-              ]
-            : []),
-        ],
-      });
+      if (isEdit) {
+        await updateProduct.mutateAsync({ id: dishId!, body });
+      } else {
+        await createProduct.mutateAsync(body);
+      }
       router.back();
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : JSON.stringify(e);
-      console.log("create error:", msg);
+      console.log("error:", e instanceof Error ? e.message : e);
     }
   };
+
+  const isPending = createProduct.isPending || updateProduct.isPending;
+
+  if (isEdit && productQuery.isLoading) {
+    return (
+      <SafeAreaView
+        style={{
+          flex: 1,
+          backgroundColor: "#fff",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <ActivityIndicator color={ORANGE} size="large" />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
@@ -310,17 +353,16 @@ export default function AddDishScreen() {
           </View>
 
           <TouchableOpacity
-            style={[
-              styles.saveBtn,
-              createProduct.isPending && { opacity: 0.7 },
-            ]}
+            style={[styles.saveBtn, isPending && { opacity: 0.7 }]}
             onPress={handleSubmit(onSubmit)}
-            disabled={createProduct.isPending}
+            disabled={isPending}
           >
-            {createProduct.isPending ? (
+            {isPending ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.saveBtnText}>Lưu món ăn</Text>
+              <Text style={styles.saveBtnText}>
+                {isEdit ? "Cập nhật món" : "Lưu món ăn"}
+              </Text>
             )}
           </TouchableOpacity>
         </ScrollView>

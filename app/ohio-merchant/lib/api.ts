@@ -10,6 +10,7 @@ const BASE_URLS = {
   delivery: 'http://192.168.48.47:8084',
   catalog: 'http://192.168.48.47:8085',
   orders: 'http://192.168.48.47:8086',
+  files: 'http://192.168.48.47:8087',
   reports: 'http://192.168.48.47:8088',
   wallets: 'http://192.168.48.47:8089',
 };
@@ -121,5 +122,6 @@ export const userApi = createApi(BASE_URLS.user);
 export const deliveryApi = createApi(BASE_URLS.delivery);
 export const catalogApi = createApi(BASE_URLS.catalog);
 export const ordersApi = createApi(BASE_URLS.orders);
+export const filesApi = createApi(BASE_URLS.files);
 export const reportsApi = createApi(BASE_URLS.reports);
 export const walletsApi = createApi(BASE_URLS.wallets);

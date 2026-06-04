@@ -1,4 +1,4 @@
-//components/features/DishCard.tsx
+// components/features/DishCard.tsx
 import React from "react";
 import {
   View,
@@ -8,32 +8,31 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { Dish } from "../../mock/menu";
 
 const ORANGE = "#E8441A";
-const CREAM = "#FEF3E8";
 
 interface DishCardProps {
   dish: Dish;
   onToggleAvailable: (id: string, value: boolean) => void;
-  onEdit: (id: string) => void;
-  onManageOptions: (id: string) => void;
+  onPress: (id: string) => void;
 }
 
 export default function DishCard({
   dish,
   onToggleAvailable,
-  onEdit,
-  onManageOptions,
+  onPress,
 }: DishCardProps) {
-  const hasOptions = dish.sizes.length > 0 || dish.toppings.length > 0;
-
   return (
-    <View style={styles.card}>
-      {/* Image + Info row */}
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => onPress(dish.id)}
+      activeOpacity={0.85}
+    >
       <View style={styles.topRow}>
-        <Image source={{ uri: dish.imageUrl }} style={styles.image} />
+        {dish.imageUrl ? (
+          <Image source={{ uri: dish.imageUrl }} style={styles.image} />
+        ) : null}
         <View style={styles.info}>
           <View style={styles.nameRow}>
             <Text style={styles.name} numberOfLines={2}>
@@ -62,54 +61,7 @@ export default function DishCard({
           </Text>
         </View>
       </View>
-
-      {/* Manage options section */}
-      {hasOptions && (
-        <>
-          <View style={styles.divider} />
-          <View style={styles.optionsSection}>
-            <View style={styles.optionsHeader}>
-              <TouchableOpacity
-                style={styles.manageBtn}
-                onPress={() => onManageOptions(dish.id)}
-              >
-                <Ionicons name="settings-outline" size={12} color={ORANGE} />
-                <Text style={styles.manageBtnText}>MANAGE OPTIONS</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => onEdit(dish.id)}>
-                <Text style={styles.editAllText}>Edit All</Text>
-              </TouchableOpacity>
-            </View>
-
-            {dish.sizes.length > 0 && (
-              <View style={styles.chipsRow}>
-                {dish.sizes.map((size) => (
-                  <View key={size.id} style={styles.chip}>
-                    <Text style={styles.chipText}>{size.name} ×</Text>
-                  </View>
-                ))}
-                <TouchableOpacity style={styles.addChip}>
-                  <Text style={styles.addChipText}>+ Thêm</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {dish.toppings.length > 0 && (
-              <View style={styles.toppingsList}>
-                {dish.toppings.map((topping) => (
-                  <View key={topping.id} style={styles.toppingRow}>
-                    <Text style={styles.toppingName}>{topping.name}</Text>
-                    <Text style={styles.toppingPrice}>
-                      +{topping.price.toLocaleString("vi-VN")}đ
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            )}
-          </View>
-        </>
-      )}
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -144,35 +96,4 @@ const styles = StyleSheet.create({
   price: { fontSize: 16, fontWeight: "800", color: ORANGE, marginTop: 2 },
   description: { fontSize: 12, color: "#AAA", marginTop: 3, lineHeight: 17 },
   availableLabel: { fontSize: 11, fontWeight: "700", marginTop: 6 },
-  divider: { height: 1, backgroundColor: "#F2F2F2" },
-  optionsSection: { padding: 12, gap: 10 },
-  optionsHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  manageBtn: { flexDirection: "row", alignItems: "center", gap: 5 },
-  manageBtnText: { fontSize: 11, fontWeight: "700", color: ORANGE },
-  editAllText: { fontSize: 12, color: "#888", fontWeight: "600" },
-  chipsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  chip: {
-    backgroundColor: "#FEF3E8",
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  chipText: { fontSize: 12, color: ORANGE, fontWeight: "600" },
-  addChip: {
-    borderWidth: 1,
-    borderColor: "#DDD",
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderStyle: "dashed",
-  },
-  addChipText: { fontSize: 12, color: "#AAA" },
-  toppingsList: { gap: 4 },
-  toppingRow: { flexDirection: "row", justifyContent: "space-between" },
-  toppingName: { fontSize: 12, color: "#555" },
-  toppingPrice: { fontSize: 12, color: "#888" },
 });

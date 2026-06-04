@@ -5,7 +5,7 @@ export interface MerchantOrderItem {
   optionSummary?: string // "Little Dairy, No Onions"
 }
 
-export type MerchantOrderStatus = 'new' | 'preparing' | 'delivering'
+export type MerchantOrderStatus = "new" | "confirmed" | "preparing" | "delivering" | "cancelled";
 export type DeliverySubStatus = 'waiting_pickup' | 'on_the_way'
 
 export interface MerchantOrder {
