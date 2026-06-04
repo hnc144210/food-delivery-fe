@@ -10,12 +10,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
-import {
-  merchantService,
-  type MerchantAddress,
-} from "@/services/merchantService";
+import { merchantService } from "@/services/merchantService";
 import { useMerchantStore } from "@/store/merchantStore";
-
+import type {
+  MerchantAddress,
+  CreateMerchantAddressRequest,
+} from "@/types/api";
 const ORANGE = "#E8441A";
 const CREAM = "#FEF3E8";
 

@@ -9,9 +9,14 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useMyWallet, useMyTransactions } from "@/hooks/useWallet";
 import type { WalletTransaction } from "@/services/walletService";
-
+import { useState } from "react";
+import { Linking, Modal, TextInput } from "react-native";
+import {
+  useMyWallet,
+  useMyTransactions,
+  useCreateTopup,
+} from "@/hooks/useWallet";
 const ORANGE = "#E8441A";
 const CREAM = "#FEF3E8";
 
@@ -68,6 +73,24 @@ export default function WalletScreen() {
     isError: walletError,
   } = useMyWallet();
   const { data: txData, isLoading: txLoading } = useMyTransactions();
+  const [topupModal, setTopupModal] = useState(false);
+  const [amount, setAmount] = useState("");
+  const createTopup = useCreateTopup();
+
+  function handleTopup() {
+    const parsed = parseInt(amount.replace(/\D/g, ""), 10);
+    if (!parsed || parsed < 10000) return;
+    createTopup.mutate(
+      { amount: parsed },
+      {
+        onSuccess: (data) => {
+          setTopupModal(false);
+          setAmount("");
+          Linking.openURL(data.paymentUrl);
+        },
+      },
+    );
+  }
 
   return (
     <SafeAreaView
@@ -99,6 +122,13 @@ export default function WalletScreen() {
                   {formatVND(wallet?.balance ?? 0)}
                 </Text>
               )}
+              <TouchableOpacity
+                style={styles.topupBtn}
+                onPress={() => setTopupModal(true)}
+              >
+                <Ionicons name="add-circle-outline" size={18} color="#fff" />
+                <Text style={styles.topupBtnText}>Nạp tiền</Text>
+              </TouchableOpacity>
             </View>
 
             <Text style={styles.sectionLabel}>Lịch sử giao dịch</Text>
@@ -115,6 +145,58 @@ export default function WalletScreen() {
         contentContainerStyle={styles.listContent}
         style={{ flex: 1 }}
       />
+      <Modal
+        visible={topupModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setTopupModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setTopupModal(false)}
+        />
+        <View style={styles.modalSheet}>
+          <View style={styles.modalHandle} />
+          <Text style={styles.modalTitle}>Nạp tiền vào ví</Text>
+          <Text style={styles.modalLabel}>Số tiền (tối thiểu 10,000đ)</Text>
+          <TextInput
+            style={styles.modalInput}
+            value={amount}
+            onChangeText={setAmount}
+            placeholder="VD: 100000"
+            keyboardType="numeric"
+            autoFocus
+          />
+          <View style={styles.quickAmounts}>
+            {[50000, 100000, 200000, 500000].map((v) => (
+              <TouchableOpacity
+                key={v}
+                style={styles.quickBtn}
+                onPress={() => setAmount(v.toString())}
+              >
+                <Text style={styles.quickBtnText}>
+                  {(v / 1000).toFixed(0)}K
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <TouchableOpacity
+            style={[
+              styles.confirmBtn,
+              createTopup.isPending && { opacity: 0.7 },
+            ]}
+            onPress={handleTopup}
+            disabled={createTopup.isPending}
+          >
+            {createTopup.isPending ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.confirmBtnText}>Tiếp tục thanh toán</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -184,4 +266,71 @@ const styles = StyleSheet.create({
     marginTop: 40,
     fontSize: 14,
   },
+  topupBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 16,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  topupBtnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
+  modalOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  modalSheet: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingBottom: 36,
+    gap: 12,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#e0e0e0",
+    alignSelf: "center",
+    marginBottom: 4,
+  },
+  modalTitle: { fontSize: 18, fontWeight: "700", color: "#1a1a1a" },
+  modalLabel: { fontSize: 13, color: "#666" },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1a1a1a",
+  },
+  quickAmounts: { flexDirection: "row", gap: 8 },
+  quickBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: "#f5f5f5",
+    alignItems: "center",
+  },
+  quickBtnText: { fontSize: 13, fontWeight: "600", color: "#444" },
+  confirmBtn: {
+    backgroundColor: ORANGE,
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  confirmBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
 });

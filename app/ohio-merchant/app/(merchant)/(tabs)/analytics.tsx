@@ -1,5 +1,5 @@
 // app/ohio-merchant/app/(merchant)/(tabs)/analytics.tsx
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   ScrollView,
   View,
@@ -23,6 +23,7 @@ import {
   useMerchantTopProducts,
 } from "@/hooks/useMerchantReports";
 import { useToggleStoreOpen } from "@/hooks/useMerchantProfile";
+import MerchantHeader from "@/components/common/MerchantHeader";
 
 type Period = "today" | "week" | "month";
 
@@ -30,9 +31,9 @@ const ORANGE = "#E8441A";
 const CREAM = "#FEF3E8";
 
 const PERIODS: { key: Period; label: string }[] = [
-  { key: "today", label: "Today" },
-  { key: "week", label: "This Week" },
-  { key: "month", label: "This Month" },
+  { key: "today", label: "Hôm nay" },
+  { key: "week", label: "Tuần này" },
+  { key: "month", label: "Tháng này" },
 ];
 
 const fmtRevenue = (n: number) =>
@@ -61,12 +62,10 @@ function toNumber(value: unknown): number {
 function toChartData(daily: Record<string, unknown>[] = []): RevenueData[] {
   return daily.map((item, index) => ({
     label:
-      typeof item.date === "string"
-        ? item.date.slice(5, 10)
-        : typeof item.label === "string"
-          ? item.label
-          : `#${index + 1}`,
-    value: toNumber(item.revenue ?? item.totalRevenue ?? item.value),
+      typeof item.metricDate === "string"
+        ? item.metricDate.slice(5, 10)
+        : `#${index + 1}`,
+    value: toNumber(item.netRevenue),
   }));
 }
 
@@ -75,58 +74,41 @@ export default function AnalyticsScreen() {
   const { isOpen, toggle } = useToggleStoreOpen();
   const [period, setPeriod] = useState<Period>("month");
 
-  const range = getDateRange(period);
+  const range = useMemo(() => getDateRange(period), [period]);
   const overviewQuery = useMerchantOverview(range);
   const topProductsQuery = useMerchantTopProducts(range);
 
   const summary = overviewQuery.data?.summary ?? {};
   const chartData = toChartData(overviewQuery.data?.daily);
-  const topItems: TopItem[] =
-    topProductsQuery.data?.items.map((item) => ({
+  const topItems: TopItem[] = (topProductsQuery.data?.items ?? []).map(
+    (item: any) => ({
       id: item.productId,
       name: item.productName,
-      category: "Product",
+      category: "Sản phẩm",
       orders: item.orderCount,
       imageUrl: item.productImage,
-    })) ?? [];
+    }),
+  );
 
-  const totalRevenue = toNumber(summary.totalRevenue ?? summary.revenue);
-  const totalOrders = toNumber(summary.totalOrders ?? summary.orders);
-  const revenueChange = toNumber(summary.revenueChange);
-  const ordersChange = toNumber(summary.ordersChange);
-  const customerRetention = toNumber(summary.customerRetention);
+  const totalRevenue = toNumber(summary.netRevenue);
+  const grossRevenue = toNumber(summary.grossRevenue);
+  const totalOrders = toNumber(summary.orderCount);
+  const paidOrders = toNumber(summary.paidOrderCount);
+  const cancelledOrders = toNumber(summary.cancelledOrderCount);
+  const commission = toNumber(summary.merchantCommissionTotal);
+  const avgOrderValue = toNumber(summary.avgOrderValue);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.shopName}>
-            {merchant?.storeName ?? "Kinetic Kitchen"}
-          </Text>
-          <Text style={styles.shopSub}>Analytics</Text>
-        </View>
-        <View style={styles.toggleWrapper}>
-          <Text
-            style={[styles.toggleLabel, { color: isOpen ? ORANGE : "#AAA" }]}
-          >
-            {isOpen ? "OPEN" : "CLOSED"}
-          </Text>
-          <Switch
-            value={isOpen}
-            onValueChange={toggle}
-            trackColor={{ false: "#DDD", true: ORANGE }}
-            thumbColor="#fff"
-          />
-        </View>
-      </View>
+      <MerchantHeader />
 
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
       >
-        <Text style={styles.title}>Performance Hub</Text>
+        <Text style={styles.title}>Hiệu suất kinh doanh</Text>
         <Text style={styles.subtitle}>
-          Real-time revenue & efficiency tracking
+          Doanh thu & đơn hàng theo thời gian thực
         </Text>
 
         <View style={styles.tabBar}>
@@ -148,44 +130,66 @@ export default function AnalyticsScreen() {
           ))}
         </View>
 
+        {/* Revenue cards */}
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <Ionicons name="trending-up" size={18} color={ORANGE} />
-            <Text style={styles.change}>+{revenueChange}%</Text>
-            <Text style={styles.statLabel}>TOTAL REVENUE</Text>
+            <Text style={styles.statLabel}>DOANH THU THỰC</Text>
             <Text style={styles.statValue}>{fmtRevenue(totalRevenue)}đ</Text>
           </View>
+          <View style={styles.statCard}>
+            <Ionicons name="cash-outline" size={18} color={ORANGE} />
+            <Text style={styles.statLabel}>DOANH THU GỘP</Text>
+            <Text style={styles.statValue}>{fmtRevenue(grossRevenue)}đ</Text>
+          </View>
+        </View>
 
+        {/* Order cards */}
+        <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <Ionicons name="receipt-outline" size={18} color={ORANGE} />
-            <Text
-              style={[styles.change, ordersChange < 0 && { color: "#e53e3e" }]}
-            >
-              {ordersChange > 0 ? "+" : ""}
-              {ordersChange}%
-            </Text>
-            <Text style={styles.statLabel}>TOTAL ORDERS</Text>
-            <Text style={styles.statValue}>{totalOrders.toLocaleString()}</Text>
+            <Text style={styles.statLabel}>TỔNG ĐƠN</Text>
+            <Text style={styles.statValue}>{totalOrders}</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Ionicons
+              name="checkmark-circle-outline"
+              size={18}
+              color="#22c55e"
+            />
+            <Text style={styles.statLabel}>ĐÃ THANH TOÁN</Text>
+            <Text style={styles.statValue}>{paidOrders}</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Ionicons name="close-circle-outline" size={18} color="#e53e3e" />
+            <Text style={styles.statLabel}>ĐÃ HỦY</Text>
+            <Text style={styles.statValue}>{cancelledOrders}</Text>
           </View>
         </View>
 
-        <View style={styles.retentionCard}>
-          <View>
-            <Text style={styles.retentionLabel}>CUSTOMER RETENTION</Text>
-            <Text style={styles.retentionValue}>{customerRetention}%</Text>
+        {/* Commission + avg order */}
+        <View style={styles.statsRow}>
+          <View style={styles.statCard}>
+            <Ionicons name="cut-outline" size={18} color={ORANGE} />
+            <Text style={styles.statLabel}>HOA HỒNG</Text>
+            <Text style={styles.statValue}>{fmtRevenue(commission)}đ</Text>
           </View>
-          <Ionicons name="people" size={36} color="rgba(255,255,255,0.4)" />
+          <View style={styles.statCard}>
+            <Ionicons name="stats-chart-outline" size={18} color={ORANGE} />
+            <Text style={styles.statLabel}>GIÁ TRỊ ĐƠN TB</Text>
+            <Text style={styles.statValue}>{fmtRevenue(avgOrderValue)}đ</Text>
+          </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Revenue Trend</Text>
+        <Text style={styles.sectionTitle}>Xu hướng doanh thu</Text>
         <RevenueChart
           data={chartData.length ? chartData : [{ label: "-", value: 0 }]}
         />
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Top Selling Items</Text>
+          <Text style={styles.sectionTitle}>Món bán chạy</Text>
           <TouchableOpacity>
-            <Text style={styles.viewAll}>View All</Text>
+            <Text style={styles.viewAll}>Xem tất cả</Text>
           </TouchableOpacity>
         </View>
 
