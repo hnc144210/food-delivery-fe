@@ -2,12 +2,14 @@
   "expo": {
     "name": "OHIO Food",
     "slug": "ohio-food",
+    "scheme": "ohiofood",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/3.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.ohiofood.app",
       "infoPlist": {
         "NSCameraUsageDescription": "Ứng dụng cần quyền truy cập camera để chụp ảnh.",
         "NSPhotoLibraryUsageDescription": "Ứng dụng cần quyền truy cập thư viện ảnh để chọn ảnh.",
@@ -15,6 +17,7 @@
       }
     },
     "android": {
+      "package": "com.ohiofood.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/3.png",
         "backgroundColor": "#E6F4FE"
@@ -25,6 +28,18 @@
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.READ_MEDIA_IMAGES"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "ohiofood"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
       ]
     },
     "web": {
