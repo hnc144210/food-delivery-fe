@@ -5,10 +5,12 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
   Image,
 } from "react-native";
 import { ReturnButton } from "@/components/ui/ReturnButton";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { useState, useEffect } from "react";
 import { AntDesign, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { orderService } from "@/services/orderService";
@@ -50,13 +52,48 @@ const STATUS_COLOR: Record<string, string> = {
 
 export default function OrderDetailScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, waitingPayment } = useLocalSearchParams<{
+    id: string;
+    waitingPayment?: string;
+  }>();
+  const [paymentChecked, setPaymentChecked] = useState(false);
 
   const { data: order, isLoading } = useQuery({
     queryKey: ["order", id],
     queryFn: () => orderService.getOrderDetail(id!),
     enabled: !!id,
+    refetchInterval:
+      waitingPayment === "true" && !paymentChecked ? 3000 : false,
   });
+
+  useEffect(() => {
+    if (waitingPayment !== "true" || paymentChecked || !order) return;
+    if (order.paymentStatus === "PAID") {
+      setPaymentChecked(true);
+      Alert.alert("Thanh toán thành công", "Đơn hàng đã được xác nhận!");
+    } else if (order.paymentStatus === "FAILED") {
+      setPaymentChecked(true);
+      Alert.alert("Thanh toán thất bại", "Giao dịch không thành công.");
+    }
+  }, [order?.paymentStatus]);
+
+  useEffect(() => {
+    if (waitingPayment !== "true") return;
+    const timeout = setTimeout(
+      () => {
+        if (!paymentChecked) {
+          setPaymentChecked(true);
+          Alert.alert(
+            "Chưa thanh toán",
+            "Bạn chưa hoàn tất thanh toán. Đơn hàng sẽ bị hủy nếu không thanh toán.",
+            [{ text: "OK" }],
+          );
+        }
+      },
+      10 * 60 * 1000,
+    );
+    return () => clearTimeout(timeout);
+  }, []);
 
   if (isLoading) {
     return (
@@ -107,11 +144,11 @@ export default function OrderDetailScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
       >
-        {/* Delivery Address */}
+        {/* Địa chỉ giao hàng */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Ionicons name="location" size={18} color="#EE4D2D" />
-            <Text style={styles.cardTitle}>Delivery Address</Text>
+            <Text style={styles.cardTitle}>Địa chỉ giao hàng</Text>
           </View>
           <Text style={styles.addressName}>
             {order.recipientName} | {order.recipientPhone}
@@ -123,7 +160,7 @@ export default function OrderDetailScreen() {
           </Text>
         </View>
 
-        {/* Merchant + Items */}
+        {/* Cửa hàng + Sản phẩm */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <MaterialIcons name="storefront" size={18} color="#EE4D2D" />
@@ -152,11 +189,11 @@ export default function OrderDetailScreen() {
           ))}
         </View>
 
-        {/* Delivery Time */}
+        {/* Thời gian giao hàng */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <AntDesign name="clock-circle" size={16} color="#EE4D2D" />
-            <Text style={styles.cardTitle}>Delivery Time</Text>
+            <Text style={styles.cardTitle}>Thời gian giao hàng</Text>
           </View>
           <View style={styles.timeRow}>
             <View>
@@ -174,31 +211,37 @@ export default function OrderDetailScreen() {
           </View>
         </View>
 
-        {/* Order Summary */}
+        {/* Tóm tắt đơn hàng */}
         <View style={styles.card}>
-          <Text style={styles.summaryTitle}>Order Summary</Text>
+          <Text style={styles.summaryTitle}>Tóm tắt đơn hàng</Text>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>
-              Subtotal ({order.items.length} items)
+              Tạm tính ({order.items.length} sản phẩm)
             </Text>
             <Text style={styles.summaryValue}>
               {formatPrice(order.subtotal)}
             </Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Delivery Fee</Text>
+            <Text style={styles.summaryLabel}>Phí giao hàng</Text>
             <Text style={styles.summaryValue}>
               {formatPrice(order.deliveryFee)}
             </Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Phương thức thanh toán</Text>
-            <Text style={styles.summaryValue}>{order.paymentMethod}</Text>
+            <Text style={styles.summaryValue}>
+              {order.paymentMethod === "COD"
+                ? "Tiền mặt"
+                : order.paymentMethod === "VNPAY"
+                  ? "VNPay"
+                  : "Ví FoodPay"}
+            </Text>
           </View>
           {order.discountAmount > 0 && (
             <View style={styles.summaryRow}>
               <Text style={[styles.summaryLabel, { color: "#EE4D2D" }]}>
-                Voucher Discount
+                Giảm giá
               </Text>
               <Text style={[styles.summaryValue, { color: "#EE4D2D" }]}>
                 -{formatPrice(order.discountAmount)}
@@ -216,14 +259,14 @@ export default function OrderDetailScreen() {
               },
             ]}
           >
-            <Text style={styles.totalLabel}>Total Payment</Text>
+            <Text style={styles.totalLabel}>Tổng thanh toán</Text>
             <Text style={styles.totalValue}>
               {formatPrice(order.totalAmount)}
             </Text>
           </View>
         </View>
 
-        {/* Status */}
+        {/* Trạng thái */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <MaterialIcons name="info-outline" size={18} color="#EE4D2D" />
@@ -241,7 +284,7 @@ export default function OrderDetailScreen() {
           </View>
         </View>
 
-        {/* Tracking Button */}
+        {/* Nút theo dõi */}
         {[
           "PENDING",
           "CONFIRMED",
@@ -264,7 +307,7 @@ export default function OrderDetailScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Review Button */}
+        {/* Nút đánh giá */}
         {order.status === "DELIVERED" && (
           <TouchableOpacity
             style={styles.reviewBtn}

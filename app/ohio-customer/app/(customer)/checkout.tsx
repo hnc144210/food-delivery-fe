@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Linking,
 } from "react-native";
 import { ReturnButton } from "@/components/ui/ReturnButton";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -14,7 +15,6 @@ import { useState, useEffect } from "react";
 import { AntDesign, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { orderService } from "@/services/orderService";
-import { walletService } from "@/services/walletService";
 import { userService } from "@/services/userService";
 import { useAuthStore } from "@/store/authStore";
 import { AddressListResponseDto } from "@/types/address";
@@ -61,19 +61,13 @@ export default function CheckoutScreen() {
       voucherCode,
       selectedPayment,
     ],
-    queryFn: () => {
-      console.log("=== CHECKOUT PREVIEW ===", {
-        merchantId,
-        selectedAddressId,
-        selectedPayment,
-      });
-      return orderService.checkoutPreview({
+    queryFn: () =>
+      orderService.checkoutPreview({
         merchantId: merchantId!,
         addressId: selectedAddressId!,
         voucherCode: voucherCode,
         paymentMethod: selectedPayment,
-      });
-    },
+      }),
     enabled: !!merchantId && !!selectedAddressId,
   });
 
@@ -86,15 +80,30 @@ export default function CheckoutScreen() {
         paymentMethod: selectedPayment,
         note: null,
       }),
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ["cart"] });
       queryClient.invalidateQueries({ queryKey: ["order-history"] });
+
+      if (selectedPayment === "VNPAY") {
+        try {
+          const paymentUrlData = await orderService.createVnpayUrl(data.id, {});
+          await Linking.openURL(paymentUrlData.paymentUrl);
+          router.replace({
+            pathname: "/(customer)/orderdetail",
+            params: { id: data.id, waitingPayment: "true" },
+          });
+        } catch {
+          Alert.alert("Lỗi", "Không thể mở trang thanh toán VNPay");
+        }
+        return;
+      }
+
       router.replace({
         pathname: "/(customer)/orderdetail",
         params: { id: data.id },
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       Alert.alert("Đặt hàng thất bại", error.message || "Vui lòng thử lại");
     },
   });
@@ -113,7 +122,7 @@ export default function CheckoutScreen() {
     {
       key: "WALLET",
       label: "Ví FoodPay",
-      sublabel: "Đang tải...",
+      sublabel: "Thanh toán bằng ví điện tử",
       icon: (
         <MaterialIcons
           name="account-balance-wallet"
@@ -124,14 +133,14 @@ export default function CheckoutScreen() {
     },
     {
       key: "VNPAY",
-      label: "Credit / Debit Card",
+      label: "Thẻ tín dụng / Ghi nợ",
       sublabel: "Thanh toán qua VNPay",
       icon: <MaterialIcons name="credit-card" size={22} color="#374151" />,
     },
     {
       key: "COD",
-      label: "Cash on Delivery",
-      sublabel: "Thanh toán khi nhận hàng",
+      label: "Thanh toán khi nhận hàng",
+      sublabel: "Trả tiền mặt khi nhận hàng",
       icon: <MaterialIcons name="payments" size={22} color="#374151" />,
     },
   ];
@@ -140,7 +149,7 @@ export default function CheckoutScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <ReturnButton onpressfunction={router.back} />
-        <Text style={styles.headerTitle}>Checkout</Text>
+        <Text style={styles.headerTitle}>Thanh toán</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -149,15 +158,15 @@ export default function CheckoutScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
       >
-        {/* Delivery Address */}
+        {/* Địa chỉ giao hàng */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Ionicons name="location" size={18} color="#EE4D2D" />
-            <Text style={styles.cardTitle}>Delivery Address</Text>
+            <Text style={styles.cardTitle}>Địa chỉ giao hàng</Text>
             <TouchableOpacity
               onPress={() => router.push("/(customer)/addresses")}
             >
-              <Text style={styles.changeText}>Change</Text>
+              <Text style={styles.changeText}>Thay đổi</Text>
             </TouchableOpacity>
           </View>
           {selectedAddress ? (
@@ -182,7 +191,7 @@ export default function CheckoutScreen() {
           )}
         </View>
 
-        {/* Order Items */}
+        {/* Sản phẩm */}
         {isPreviewLoading ? (
           <View
             style={[styles.card, { alignItems: "center", paddingVertical: 30 }]}
@@ -225,18 +234,18 @@ export default function CheckoutScreen() {
           </View>
         ) : null}
 
-        {/* Delivery Time */}
+        {/* Thời gian giao hàng */}
         {preview && (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <AntDesign name="clock-circle" size={16} color="#EE4D2D" />
-              <Text style={styles.cardTitle}>Delivery Time</Text>
+              <Text style={styles.cardTitle}>Thời gian giao hàng</Text>
               <View style={styles.standardBadge}>
-                <Text style={styles.standardBadgeText}>Standard</Text>
+                <Text style={styles.standardBadgeText}>Tiêu chuẩn</Text>
               </View>
             </View>
             <Text style={styles.deliveryTimeText}>
-              ASAP - {preview.estimatedTimeMinutes ?? "..."} mins
+              Sớm nhất - {preview.estimatedTimeMinutes ?? "..."} phút
             </Text>
             <Text style={styles.deliverySubText}>
               Khoảng cách: {preview.distanceKm?.toFixed(1)} km
@@ -244,11 +253,11 @@ export default function CheckoutScreen() {
           </View>
         )}
 
-        {/* Payment Method */}
+        {/* Phương thức thanh toán */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <MaterialIcons name="payment" size={18} color="#EE4D2D" />
-            <Text style={styles.cardTitle}>Payment Method</Text>
+            <Text style={styles.cardTitle}>Phương thức thanh toán</Text>
           </View>
           {paymentOptions.map((opt) => (
             <TouchableOpacity
@@ -288,43 +297,49 @@ export default function CheckoutScreen() {
           ))}
         </View>
 
-        {/* Vouchers */}
+        {/* Mã giảm giá */}
         <TouchableOpacity style={styles.card}>
           <View style={styles.cardHeader}>
             <MaterialIcons name="local-offer" size={18} color="#EE4D2D" />
-            <Text style={styles.cardTitle}>Vouchers</Text>
+            <Text style={styles.cardTitle}>Mã giảm giá</Text>
             <Text style={styles.changeText}>
-              {voucherCode ? voucherCode : "Select a voucher >"}
+              {voucherCode ? voucherCode : "Chọn mã giảm giá >"}
             </Text>
           </View>
         </TouchableOpacity>
 
-        {/* Order Summary */}
+        {/* Tóm tắt đơn hàng */}
         {preview && (
           <View style={styles.card}>
-            <Text style={styles.summaryTitle}>Order Summary</Text>
+            <Text style={styles.summaryTitle}>Tóm tắt đơn hàng</Text>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>
-                Subtotal ({preview.itemCount} items)
+                Tạm tính ({preview.itemCount} sản phẩm)
               </Text>
               <Text style={styles.summaryValue}>
                 {formatPrice(preview.subtotal)}
               </Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Delivery Fee</Text>
+              <Text style={styles.summaryLabel}>Phí giao hàng</Text>
               <Text style={styles.summaryValue}>
                 {formatPrice(preview.deliveryFee)}
               </Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Phương thức thanh toán</Text>
-              <Text style={styles.summaryValue}>{selectedPayment}</Text>
+              <Text style={styles.summaryValue}>
+                {selectedPayment === "COD"
+                  ? "Tiền mặt"
+                  : selectedPayment === "VNPAY"
+                    ? "VNPay"
+                    : "Ví FoodPay"}
+              </Text>
             </View>
             {preview.voucherDiscount > 0 && (
               <View style={styles.summaryRow}>
                 <Text style={[styles.summaryLabel, { color: "#EE4D2D" }]}>
-                  Voucher Discount
+                  Giảm giá
                 </Text>
                 <Text style={[styles.summaryValue, { color: "#EE4D2D" }]}>
                   -{formatPrice(preview.voucherDiscount)}
@@ -342,7 +357,7 @@ export default function CheckoutScreen() {
                 },
               ]}
             >
-              <Text style={styles.totalLabel}>Total Payment</Text>
+              <Text style={styles.totalLabel}>Tổng thanh toán</Text>
               <Text style={styles.totalValue}>
                 {formatPrice(preview.total)}
               </Text>
@@ -351,7 +366,7 @@ export default function CheckoutScreen() {
         )}
       </ScrollView>
 
-      {/* Place Order Button */}
+      {/* Nút đặt hàng */}
       <View style={styles.footer}>
         <TouchableOpacity
           style={[
@@ -364,7 +379,9 @@ export default function CheckoutScreen() {
           {createOrderMutation.isPending ? (
             <ActivityIndicator color="white" />
           ) : (
-            <Text style={styles.placeOrderText}>Place Order</Text>
+            <Text style={styles.placeOrderText}>
+              {selectedPayment === "VNPAY" ? "Tiếp tục thanh toán" : "Đặt hàng"}
+            </Text>
           )}
         </TouchableOpacity>
       </View>

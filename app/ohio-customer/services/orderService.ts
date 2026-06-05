@@ -217,5 +217,19 @@ export const orderService = {
         } catch (error) {
             throw handleApiError(error, 'createOrder');
         }
+    },
+
+    createVnpayUrl: async (orderId: string, payload: { bankCode?: string }): Promise<{ paymentUrl: string }> => {
+    try {
+        const response = await api.post<ApiResponse<{ paymentUrl: string }>>(
+            `/api/orders/payments/${orderId}/vnpay/url`,
+            payload
+        );
+        const resData = response.data;
+        if (!resData.ok) throw new Error(resData.message);
+        return resData.data;
+    } catch (error) {
+        throw handleApiError(error, 'createVnpayUrl');
     }
+},
 };
