@@ -1,327 +1,397 @@
-import { useRouter } from "expo-router";
-import { View, StyleSheet, Text, ScrollView, TouchableOpacity } from "react-native";
-import { ReturnButton } from "../../components/ui/ReturnButton";
-import Ionicons from '@expo/vector-icons/Ionicons';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+// app/(shipper)/wallethistory.tsx
 import { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Modal,
+  TextInput,
+  Linking,
+} from "react-native";
+import { useRouter } from "expo-router";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { ReturnButton } from "../../components/ui/ReturnButton";
+import {
+  useMyWallet,
+  useMyTransactions,
+  useCreateTopup,
+} from "@/hooks/useWallet";
+import type { WalletTransaction } from "@/services/walletService";
 
-export type Transaction = {
-    id: string;
-    title: string;
-    type: 'TOPUP' | 'WITHDRAW' | 'EARNING' | 'FAILED_WITHDRAW';
-    amount: number;
-    time: string;
-    status: 'SUCCESS' | 'FAILED' | 'PENDING';
-    method: string;
-    balanceBefore: number;
-    balanceAfter: number;
-    content: string;
-};
+const RED = "#EE4D2D";
 
-export const mock_transactions: Transaction[] = [
-    {
-        id: "TX102",
-        title: "Rút tiền bị từ chối",
-        type: 'FAILED_WITHDRAW',
-        amount: 200000,
-        time: "11:20 - 23/10/2023",
-        status: 'FAILED',
-        method: "Techcombank",
-        balanceBefore: 450000,
-        balanceAfter: 450000,
-        content: "Yêu cầu rút tiền bị từ chối"
-    },
-    {
-        id: "TX101",
-        title: "Rút tiền về Techcombank",
-        type: 'WITHDRAW',
-        amount: 150000,
-        time: "14:30 - 24/10/2023",
-        status: 'SUCCESS',
-        method: "Techcombank",
-        balanceBefore: 600000,
-        balanceAfter: 450000,
-        content: "Rút tiền về tài khoản Techcombank"
-    },
-    {
-        id: "TX100",
-        title: "Nạp tiền qua VNPay",
-        type: 'TOPUP',
-        amount: 100000,
-        time: "09:15 - 24/10/2023",
-        status: 'SUCCESS',
-        method: "VNPay",
-        balanceBefore: 500000,
-        balanceAfter: 600000,
-        content: "Nạp tiền qua VNPay"
-    }
-];
+function formatVND(amount: number) {
+  return amount.toLocaleString("vi-VN") + "đ";
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+function TransactionItem({ item }: { item: WalletTransaction }) {
+  const router = useRouter();
+  const isCredit = item.amount > 0;
+  const getIcon = (): keyof typeof Ionicons.glyphMap => {
+    if (item.referenceType === "DELIVERY") return "bicycle";
+    if (isCredit) return "arrow-down-circle";
+    return "arrow-up-circle";
+  };
+  return (
+    <TouchableOpacity
+      style={styles.txItem}
+      onPress={() =>
+        router.push({
+          pathname: "/(shipper)/transactiondetail",
+          params: {
+            id: item.id,
+            amount: item.amount,
+            balanceBefore: item.balanceBefore,
+            balanceAfter: item.balanceAfter,
+            referenceType: item.referenceType ?? "",
+            description: item.description ?? "",
+            createdAt: item.createdAt,
+          },
+        })
+      }
+    >
+      <View
+        style={[
+          styles.txIcon,
+          { backgroundColor: isCredit ? "#f0fdf4" : "#fff5f5" },
+        ]}
+      >
+        <Ionicons
+          name={getIcon()}
+          size={24}
+          color={isCredit ? "#20c74b" : RED}
+        />
+      </View>
+      <View style={styles.txInfo}>
+        <Text style={styles.txTitle} numberOfLines={1}>
+          {item.description ?? item.referenceType ?? "Giao dịch"}
+        </Text>
+        <Text style={styles.txTime}>{formatDate(item.createdAt)}</Text>
+      </View>
+      <View style={{ alignItems: "flex-end" }}>
+        <Text
+          style={[styles.txAmount, { color: isCredit ? "#20c74b" : "#333" }]}
+        >
+          {isCredit ? "+" : ""}
+          {formatVND(item.amount)}
+        </Text>
+        <Text style={styles.txBalance}>
+          Số dư: {formatVND(item.balanceAfter)}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+}
 
 export default function WalletHistory() {
-    const router = useRouter();
-    const [activeTab, setActiveTab] = useState<'ALL' | 'TOPUP' | 'WITHDRAW'>('ALL');
+  const router = useRouter();
+  const { data: wallet, isLoading: walletLoading } = useMyWallet();
+  const { data: txData, isLoading: txLoading } = useMyTransactions();
+  const createTopup = useCreateTopup();
+  const [topupModal, setTopupModal] = useState(false);
+  const [amount, setAmount] = useState("");
 
-    const filteredTransactions = mock_transactions.filter(t => {
-        if (activeTab === 'ALL') return true;
-        if (activeTab === 'TOPUP') return t.type === 'TOPUP' || t.type === 'EARNING';
-        if (activeTab === 'WITHDRAW') return t.type === 'WITHDRAW' || t.type === 'FAILED_WITHDRAW';
-        return true;
-    });
+  const transactions = txData?.items ?? [];
+  const [activeTab, setActiveTab] = useState<"ALL" | "TOPUP" | "EARNING">(
+    "ALL",
+  );
 
-    const formatCurrency = (value: number) => {
-        return value.toLocaleString('vi-VN') + 'đ';
-    };
+  const filtered = transactions.filter((t: WalletTransaction) => {
+    if (activeTab === "ALL") return true;
+    if (activeTab === "TOPUP")
+      return (
+        t.referenceType === "TOPUP" ||
+        (t.amount > 0 && t.referenceType !== "DELIVERY")
+      );
+    if (activeTab === "EARNING") return t.referenceType === "DELIVERY";
+    return true;
+  });
 
-    const getTransactionIcon = (type: string) => {
-        switch (type) {
-            case 'EARNING':
-                return <Ionicons name="bicycle" size={24} color="#20c74b" />;
-            case 'TOPUP':
-                return <Ionicons name="arrow-down-circle" size={24} color="#007aff" />;
-            case 'WITHDRAW':
-                return <Ionicons name="arrow-up-circle" size={24} color="#EE4D2D" />;
-            case 'FAILED_WITHDRAW':
-                return <Ionicons name="close-circle" size={24} color="gray" />;
-            default:
-                return <Ionicons name="wallet" size={24} color="#EE4D2D" />;
-        }
-    };
-
-    return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <ReturnButton onpressfunction={router.back} />
-                <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#EE4D2D' }}>Lịch sử ví</Text>
-            </View>
-
-            <ScrollView style={{ width: '100%', height: '100%', padding: 20 }} contentContainerStyle={{ rowGap: 20 }}>
-
-                {/* Filter Tabs */}
-                <View style={styles.filterTabs}>
-                    <TouchableOpacity
-                        style={[styles.tabButton, activeTab === 'ALL' && styles.activeTabButton]}
-                        onPress={() => setActiveTab('ALL')}
-                    >
-                        <Text style={[styles.tabText, activeTab === 'ALL' && styles.activeTabText]}>Tất cả</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.tabButton, activeTab === 'TOPUP' && styles.activeTabButton]}
-                        onPress={() => setActiveTab('TOPUP')}
-                    >
-                        <Text style={[styles.tabText, activeTab === 'TOPUP' && styles.activeTabText]}>Nạp tiền</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.tabButton, activeTab === 'WITHDRAW' && styles.activeTabButton]}
-                        onPress={() => setActiveTab('WITHDRAW')}
-                    >
-                        <Text style={[styles.tabText, activeTab === 'WITHDRAW' && styles.activeTabText]}>Rút tiền</Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* Transaction List */}
-                <View style={styles.smallcontainer}>
-                    <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>Danh sách giao dịch</Text>
-                    {filteredTransactions.map((tx) => (
-                        <TouchableOpacity
-                            key={tx.id}
-                            style={styles.transactionItem}
-                            onPress={() => router.push({
-                                pathname: '/(shipper)/transactiondetail',
-                                params: { id: tx.id }
-                            })}
-                        >
-                            <View style={styles.iconContainer}>
-                                {getTransactionIcon(tx.type)}
-                            </View>
-                            <View style={styles.transactionInfo}>
-                                <Text style={styles.transactionTitle} numberOfLines={1}>{tx.title}</Text>
-                                <Text style={styles.transactionTime}>{tx.time}</Text>
-                            </View>
-                            <View style={styles.transactionAmountContainer}>
-                                <Text style={[
-                                    styles.transactionAmount,
-                                    (tx.type === 'EARNING' || tx.type === 'TOPUP') ? styles.plusAmount : styles.minusAmount,
-                                    tx.type === 'FAILED_WITHDRAW' && styles.failedAmount
-                                ]}>
-                                    {(tx.type === 'EARNING' || tx.type === 'TOPUP') ? '+' : '-'}{formatCurrency(tx.amount)}
-                                </Text>
-                                <Text style={[
-                                    styles.statusBadgeText,
-                                    tx.status === 'SUCCESS' ? styles.successStatus :
-                                        tx.status === 'FAILED' ? styles.failedStatus : styles.pendingStatus
-                                ]}>
-                                    {tx.status === 'SUCCESS' ? 'Thành công' :
-                                        tx.status === 'FAILED' ? 'Bị từ chối' : 'Đang xử lý'}
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-                    ))}
-                    {filteredTransactions.length === 0 && (
-                        <View style={{ paddingVertical: 30, alignItems: 'center' }}>
-                            <Text style={{ color: 'gray' }}>Không có giao dịch nào</Text>
-                        </View>
-                    )}
-                </View>
-
-                <View style={{ height: 80 }} />
-            </ScrollView>
-        </View>
+  function handleTopup() {
+    const parsed = parseInt(amount.replace(/\D/g, ""), 10);
+    if (!parsed || parsed < 10000) return;
+    createTopup.mutate(
+      { amount: parsed },
+      {
+        onSuccess: (data: { paymentUrl: string }) => {
+          setTopupModal(false);
+          setAmount("");
+          Linking.openURL(data.paymentUrl);
+        },
+      },
     );
+  }
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <ReturnButton onpressfunction={router.back} />
+        <Text style={styles.headerTitle}>Ví tài xế</Text>
+      </View>
+
+      <ScrollView
+        contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 40 }}
+      >
+        {/* Balance Card */}
+        <View style={styles.balanceCard}>
+          <Text style={styles.balanceLabel}>Số dư khả dụng</Text>
+          {walletLoading ? (
+            <ActivityIndicator color="#fff" style={{ marginTop: 8 }} />
+          ) : (
+            <Text style={styles.balanceAmount}>
+              {formatVND(wallet?.balance ?? 0)}
+            </Text>
+          )}
+          <TouchableOpacity
+            style={styles.topupBtn}
+            onPress={() => setTopupModal(true)}
+          >
+            <Ionicons name="add-circle-outline" size={18} color="#fff" />
+            <Text style={styles.topupBtnText}>Nạp tiền</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Filter Tabs */}
+        <View style={styles.filterTabs}>
+          {(["ALL", "EARNING", "TOPUP"] as const).map((tab) => (
+            <TouchableOpacity
+              key={tab}
+              style={[styles.tabBtn, activeTab === tab && styles.tabBtnActive]}
+              onPress={() => setActiveTab(tab)}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === tab && styles.tabTextActive,
+                ]}
+              >
+                {tab === "ALL"
+                  ? "Tất cả"
+                  : tab === "EARNING"
+                    ? "Thu nhập"
+                    : "Nạp tiền"}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Transaction List */}
+        <View style={styles.listCard}>
+          <Text style={styles.sectionTitle}>Danh sách giao dịch</Text>
+          {txLoading && (
+            <ActivityIndicator color={RED} style={{ marginTop: 20 }} />
+          )}
+          {!txLoading && filtered.length === 0 && (
+            <Text style={styles.emptyText}>Không có giao dịch nào</Text>
+          )}
+          {filtered.map((tx: WalletTransaction) => (
+            <TransactionItem key={tx.id} item={tx} />
+          ))}
+        </View>
+      </ScrollView>
+
+      {/* Topup Modal */}
+      <Modal
+        visible={topupModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setTopupModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setTopupModal(false)}
+        />
+        <View style={styles.modalSheet}>
+          <View style={styles.modalHandle} />
+          <Text style={styles.modalTitle}>Nạp tiền vào ví</Text>
+          <Text style={styles.modalLabel}>Số tiền (tối thiểu 10,000đ)</Text>
+          <TextInput
+            style={styles.modalInput}
+            value={amount}
+            onChangeText={setAmount}
+            placeholder="VD: 100000"
+            keyboardType="numeric"
+            autoFocus
+          />
+          <View style={styles.quickAmounts}>
+            {[50000, 100000, 200000, 500000].map((v) => (
+              <TouchableOpacity
+                key={v}
+                style={styles.quickBtn}
+                onPress={() => setAmount(v.toString())}
+              >
+                <Text style={styles.quickBtnText}>
+                  {(v / 1000).toFixed(0)}K
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <TouchableOpacity
+            style={[
+              styles.confirmBtn,
+              createTopup.isPending && { opacity: 0.7 },
+            ]}
+            onPress={handleTopup}
+            disabled={createTopup.isPending}
+          >
+            {createTopup.isPending ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.confirmBtnText}>Tiếp tục thanh toán</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </Modal>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flexDirection: 'column',
-        justifyContent: 'flex-start',
-        alignItems: 'flex-start',
-        width: '100%',
-        height: '100%',
-        backgroundColor: '#F6F6F6',
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: 'white',
-        width: '100%',
-        height: 'auto',
-        paddingTop: 60,
-        paddingBottom: 10,
-        paddingHorizontal: 20,
-        gap: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
-    },
-    smallcontainer: {
-        backgroundColor: 'white',
-        width: '100%',
-        borderRadius: 14,
-        padding: 20,
-        gap: 10,
-    },
-    balanceCard: {
-        backgroundColor: '#EE4D2D',
-    },
-    balanceLabel: {
-        fontSize: 12,
-        color: '#ffc1b5',
-        fontWeight: 'bold',
-        letterSpacing: 1,
-    },
-    balanceValue: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        color: 'white',
-        marginVertical: 5,
-    },
-    balanceActions: {
-        flexDirection: 'row',
-        gap: 12,
-        marginTop: 10,
-    },
-    actionButton: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 12,
-        borderRadius: 10,
-        gap: 6,
-    },
-    topupBtn: {
-        backgroundColor: '#007aff',
-    },
-    withdrawBtn: {
-        backgroundColor: '#20c74b',
-    },
-    actionButtonText: {
-        color: 'white',
-        fontWeight: 'bold',
-        fontSize: 15,
-    },
-    filterTabs: {
-        flexDirection: 'row',
-        width: '100%',
-        backgroundColor: 'white',
-        borderRadius: 10,
-        padding: 4,
-    },
-    tabButton: {
-        flex: 1,
-        paddingVertical: 10,
-        alignItems: 'center',
-        borderRadius: 8,
-    },
-    activeTabButton: {
-        backgroundColor: '#fef0ed',
-    },
-    tabText: {
-        fontSize: 14,
-        color: '#666',
-        fontWeight: '500',
-    },
-    activeTabText: {
-        color: '#EE4D2D',
-        fontWeight: 'bold',
-    },
-    transactionItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f5f5f5',
-        gap: 12,
-    },
-    iconContainer: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: '#f5f5f5',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    transactionInfo: {
-        flex: 1,
-        justifyContent: 'center',
-    },
-    transactionTitle: {
-        fontSize: 15,
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    transactionTime: {
-        fontSize: 12,
-        color: 'gray',
-        marginTop: 2,
-    },
-    transactionAmountContainer: {
-        alignItems: 'flex-end',
-    },
-    transactionAmount: {
-        fontSize: 15,
-        fontWeight: 'bold',
-    },
-    plusAmount: {
-        color: '#20c74b',
-    },
-    minusAmount: {
-        color: '#333',
-    },
-    failedAmount: {
-        color: 'gray',
-        textDecorationLine: 'line-through',
-    },
-    statusBadgeText: {
-        fontSize: 11,
-        marginTop: 2,
-        fontWeight: '500',
-    },
-    successStatus: {
-        color: '#20c74b',
-    },
-    failedStatus: {
-        color: '#EE4D2D',
-    },
-    pendingStatus: {
-        color: '#ff9500',
-    },
+  container: { flex: 1, backgroundColor: "#F6F6F6" },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "white",
+    paddingTop: 60,
+    paddingBottom: 10,
+    paddingHorizontal: 20,
+    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  headerTitle: { fontSize: 22, fontWeight: "bold", color: RED },
+  balanceCard: {
+    backgroundColor: RED,
+    borderRadius: 20,
+    padding: 24,
+    alignItems: "center",
+  },
+  balanceLabel: {
+    fontSize: 14,
+    color: "rgba(255,255,255,0.8)",
+    fontWeight: "500",
+  },
+  balanceAmount: {
+    fontSize: 36,
+    fontWeight: "800",
+    color: "#fff",
+    marginTop: 6,
+  },
+  topupBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 16,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  topupBtnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
+  filterTabs: {
+    flexDirection: "row",
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 4,
+  },
+  tabBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: "center",
+    borderRadius: 8,
+  },
+  tabBtnActive: { backgroundColor: "#fef0ed" },
+  tabText: { fontSize: 14, color: "#666", fontWeight: "500" },
+  tabTextActive: { color: RED, fontWeight: "bold" },
+  listCard: { backgroundColor: "white", borderRadius: 14, padding: 16, gap: 4 },
+  sectionTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
+  txItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f5f5f5",
+    gap: 12,
+  },
+  txIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  txInfo: { flex: 1 },
+  txTitle: { fontSize: 15, fontWeight: "bold", color: "#333" },
+  txTime: { fontSize: 12, color: "gray", marginTop: 2 },
+  txAmount: { fontSize: 15, fontWeight: "bold" },
+  txBalance: { fontSize: 11, color: "gray", marginTop: 2 },
+  emptyText: { textAlign: "center", color: "gray", paddingVertical: 30 },
+  modalOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  modalSheet: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingBottom: 36,
+    gap: 12,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#e0e0e0",
+    alignSelf: "center",
+    marginBottom: 4,
+  },
+  modalTitle: { fontSize: 18, fontWeight: "700", color: "#1a1a1a" },
+  modalLabel: { fontSize: 13, color: "#666" },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1a1a1a",
+  },
+  quickAmounts: { flexDirection: "row", gap: 8 },
+  quickBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: "#f5f5f5",
+    alignItems: "center",
+  },
+  quickBtnText: { fontSize: 13, fontWeight: "600", color: "#444" },
+  confirmBtn: {
+    backgroundColor: RED,
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  confirmBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
 });

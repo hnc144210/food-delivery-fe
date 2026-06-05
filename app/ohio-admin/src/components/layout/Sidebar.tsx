@@ -3,7 +3,6 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
-  ShoppingBag,
   Store,
   DollarSign,
   Tag,
@@ -15,12 +14,11 @@ import {
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
 import { Bike } from "lucide-react";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/logo1.png";
 
 const NAV = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/users", icon: Users, label: "Người dùng" },
-  { to: "/orders", icon: ShoppingBag, label: "Đơn hàng" },
   { to: "/merchants", icon: Store, label: "Nhà hàng" },
   { to: "/shippers", icon: Bike, label: "Tài xế" },
   { to: "/finance", icon: DollarSign, label: "Tài chính" },
@@ -49,12 +47,20 @@ export default function Sidebar({ collapsed, onToggle }: Props) {
         collapsed ? "w-16" : "w-60",
       )}
     >
-      <div className="flex items-center h-16 px-4 border-b border-white/10">
+      <div className="flex items-center justify-center h-30 px-4 border-b border-white/10">
         {!collapsed && (
-          <img src={logo} alt="OHIO Admin" className="h-8 object-contain" />
+          <img
+            src={logo}
+            alt="OHIO Admin"
+            className="h-20 w-full object-contain"
+          />
         )}
         {collapsed && (
-          <img src={logo} alt="O" className="h-8 w-8 object-contain mx-auto" />
+          <img
+            src={logo}
+            alt="O"
+            className="h-10 w-10 object-contain mx-auto"
+          />
         )}
       </div>
 

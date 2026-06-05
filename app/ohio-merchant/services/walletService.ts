@@ -24,6 +24,16 @@ export interface WalletTransaction {
   createdAt: string;
 }
 
+export interface TopupRequest {
+  amount: number;
+  bankCode?: string;
+}
+
+export interface TopupUrlResponse {
+  paymentUrl: string;
+}
+
+
 export const walletService = {
   async getMyWallet(): Promise<Wallet> {
     const res = await walletsApi.get('/api/wallets/me');
@@ -34,4 +44,10 @@ export const walletService = {
     const res = await walletsApi.get('/api/wallets/me/transactions', { params });
     return extractData<PaginatedResponse<WalletTransaction>>(res);
   },
+
+  async createTopupUrl(body: TopupRequest): Promise<TopupUrlResponse> {
+  const res = await walletsApi.post('/api/wallets/me/topup/vnpay/url', body);
+  return extractData<TopupUrlResponse>(res);
+},
 };
+

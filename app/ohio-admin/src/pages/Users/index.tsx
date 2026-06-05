@@ -10,9 +10,9 @@ import type { ApiUser } from "@/types/api";
 
 const TABS: { role: UserRole | "ALL"; label: string }[] = [
   { role: "ALL", label: "Tất cả" },
-  { role: "CUSTOMER", label: "Khách hàng" },
-  { role: "MERCHANT", label: "Nhà hàng" },
-  { role: "SHIPPER", label: "Tài xế" },
+  { role: "Customer", label: "Khách hàng" },
+  { role: "Merchant", label: "Nhà hàng" },
+  { role: "Shipper", label: "Tài xế" },
 ];
 
 export default function UsersPage() {

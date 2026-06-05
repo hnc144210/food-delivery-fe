@@ -58,9 +58,12 @@ export type UserStatus = string;
 export interface UserProfile {
   id: string;
   fullName: string;
-  avatarUrl: string;
+  avatarUrl: string;    
+  avatarFileKey?: string; 
   phoneNumber: string;
   status: UserStatus;
+  email?: string;     
+  roles?: string[];    
 }
 
 export interface UpdateUserProfileRequest {
@@ -317,4 +320,26 @@ export interface ReviewListParams {
   page?: number;
   limit?: number;
   rating?: number;
+}
+
+export interface MerchantAddress {
+  id: string;
+  merchantId: string;
+  addressLine: string;
+  ward: string | null;
+  district: string | null;
+  city: string | null;
+  lat: string;
+  lng: string;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+export interface CreateMerchantAddressRequest {
+  addressLine: string;
+  ward: string | null;
+  district: string | null;
+  city: string | null;
+  lat: string;
+  lng: string;
 }

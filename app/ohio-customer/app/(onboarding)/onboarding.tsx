@@ -1,5 +1,5 @@
 // app/onboarding.tsx
-import { useRef, useState } from 'react';
+import { useRef, useState } from "react";
 import {
   View,
   Text,
@@ -10,11 +10,11 @@ import {
   StyleSheet,
   ListRenderItemInfo,
   ViewToken,
-} from 'react-native';
-import { router } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
+} from "react-native";
+import { router } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -27,25 +27,25 @@ interface OnboardingSlide {
 
 const SLIDES: OnboardingSlide[] = [
   {
-    id: '1',
-    image: require('@/assets/images/onboarding/onboarding1.png'),
-    title: 'Thưởng thức tại gia',
+    id: "1",
+    image: require("@/assets/images/onboarding/onboarding1.png"),
+    title: "Thưởng thức tại gia",
     description:
-      'Hệ thống OHIO kết nối bạn với hàng ngàn quán ăn ngon nhất khu vực. Dễ dàng, tiện lợi và không cần phải nấu nướng',
+      "Hệ thống OHIO kết nối bạn với hàng ngàn quán ăn ngon nhất khu vực. Dễ dàng, tiện lợi và không cần phải nấu nướng",
   },
   {
-    id: '2',
-    image: require('@/assets/images/onboarding/onboarding2.png'),
-    title: 'Công nghệ giao hàng thông minh',
+    id: "2",
+    image: require("@/assets/images/onboarding/onboarding4.png"),
+    title: "Công nghệ giao hàng thông minh",
     description:
-      'Nhận đơn hàng trong vòng 30 phút, theo dõi trực tuyến mọi lúc mọi nơi. Nhận điểm thưởng OHIO cho mỗi đơn hàng',
+      "Nhận đơn hàng trong vòng 30 phút, theo dõi trực tuyến mọi lúc mọi nơi. Nhận điểm thưởng OHIO cho mỗi đơn hàng",
   },
   {
-    id: '3',
-    image: require('@/assets/images/onboarding/onboarding3.png'),
-    title: 'Hàng ngàn món ngon',
+    id: "3",
+    image: require("@/assets/images/onboarding/onboarding3.png"),
+    title: "Hàng ngàn món ngon",
     description:
-      'Hệ thống OHIO kết nối bạn với hàng ngàn quán ăn ngon nhất khu vực. Dễ dàng, tiện lợi và không cần phải nấu nướng',
+      "Hệ thống OHIO kết nối bạn với hàng ngàn quán ăn ngon nhất khu vực. Dễ dàng, tiện lợi và không cần phải nấu nướng",
   },
 ];
 
@@ -53,8 +53,8 @@ const SLIDES: OnboardingSlide[] = [
 function OhioLogo() {
   return (
     <Image
-      source={require('@/assets/images/logo.png')}
-      style={{ width: 160, height: 60, marginBottom: 32 }}
+      source={require("@/assets/images/logo.png")}
+      style={{ width: 180, height: 100, marginBottom: 18, marginTop: 18 }}
       resizeMode="contain"
     />
   );
@@ -77,7 +77,11 @@ function SlideItem({ item }: { item: OnboardingSlide }) {
   return (
     <View style={styles.slide}>
       <OhioLogo />
-      <Image source={item.image} style={styles.illustration} resizeMode="contain" />
+      <Image
+        source={item.image}
+        style={styles.illustration}
+        resizeMode="contain"
+      />
     </View>
   );
 }
@@ -95,19 +99,22 @@ export default function OnboardingScreen() {
       if (viewableItems.length > 0 && viewableItems[0].index !== null) {
         setCurrentIndex(viewableItems[0].index);
       }
-    }
+    },
   ).current;
 
   function handlePressNext() {
     if (isLast) {
-      router.replace('/(auth)/login');
+      router.replace("/(auth)/login");
       return;
     }
-    flatListRef.current?.scrollToIndex({ index: currentIndex + 1, animated: true });
+    flatListRef.current?.scrollToIndex({
+      index: currentIndex + 1,
+      animated: true,
+    });
   }
 
   function handlePressSkip() {
-    router.replace('/(auth)/login');
+    router.replace("/(auth)/login");
   }
 
   return (
@@ -134,7 +141,9 @@ export default function OnboardingScreen() {
       {/* Bottom card */}
       <View style={styles.bottomCard}>
         <Text style={styles.slideTitle}>{SLIDES[currentIndex].title}</Text>
-        <Text style={styles.slideDescription}>{SLIDES[currentIndex].description}</Text>
+        <Text style={styles.slideDescription}>
+          {SLIDES[currentIndex].description}
+        </Text>
 
         <PaginationDots currentIndex={currentIndex} />
 
@@ -154,7 +163,7 @@ export default function OnboardingScreen() {
             activeOpacity={0.85}
           >
             <Text style={styles.nextButtonText}>
-              {isLast ? 'Get Started' : 'Next'}
+              {isLast ? "Get Started" : "Next"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -165,8 +174,8 @@ export default function OnboardingScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const ORANGE = '#E8441A';
-const CREAM = '#FEF3E8';
+const ORANGE = "#E8441A";
+const CREAM = "#f6e6cf";
 
 const styles = StyleSheet.create({
   container: {
@@ -181,7 +190,7 @@ const styles = StyleSheet.create({
   slide: {
     width: SCREEN_WIDTH,
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
     paddingTop: 56,
     paddingHorizontal: 24,
     backgroundColor: CREAM,
@@ -189,19 +198,19 @@ const styles = StyleSheet.create({
 
   // Illustration
   illustration: {
-    width: SCREEN_WIDTH * 0.82,
-    height: SCREEN_WIDTH * 0.82,
+    width: SCREEN_WIDTH * 1.22,
+    height: SCREEN_WIDTH * 1.03,
   },
 
   // Bottom card
   bottomCard: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 28,
     paddingTop: 28,
     paddingBottom: 36,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.06,
     shadowRadius: 12,
@@ -209,23 +218,23 @@ const styles = StyleSheet.create({
   },
   slideTitle: {
     fontSize: 22,
-    fontWeight: '800',
-    color: '#1a1a1a',
-    textAlign: 'center',
+    fontWeight: "800",
+    color: "#1a1a1a",
+    textAlign: "center",
     marginBottom: 10,
   },
   slideDescription: {
     fontSize: 14,
     lineHeight: 22,
-    color: '#6b7280',
-    textAlign: 'center',
+    color: "#6b7280",
+    textAlign: "center",
     marginBottom: 20,
   },
 
   // Dots
   dotsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     gap: 6,
     marginBottom: 24,
   },
@@ -233,7 +242,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: "#e5e7eb",
   },
   dotActive: {
     width: 24,
@@ -242,7 +251,7 @@ const styles = StyleSheet.create({
 
   // Buttons
   buttonRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   skipButton: {
@@ -251,28 +260,28 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: ORANGE,
     paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   skipButtonText: {
     color: ORANGE,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   nextButton: {
     flex: 1,
     borderRadius: 12,
     backgroundColor: ORANGE,
     paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   nextButtonFull: {
     flex: 1,
   },
   nextButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 });

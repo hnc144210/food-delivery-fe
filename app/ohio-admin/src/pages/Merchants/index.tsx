@@ -35,6 +35,9 @@ export default function MerchantsPage() {
 
   const merchants = merchantsData?.items ?? [];
   const requests = requestsData?.items ?? [];
+  const pendingRequests = requests.filter(
+    (r) => r.verificationStatus === "Pending",
+  );
   const isLoading = tab === "merchants" ? loadingMerchants : loadingRequests;
 
   const handleApprove = (id: string) =>
@@ -58,9 +61,9 @@ export default function MerchantsPage() {
             )}
           >
             {t.label}
-            {t.v === "requests" && requests.length > 0 && (
+            {t.v === "requests" && pendingRequests.length > 0 && (
               <span className="ml-1.5 px-1.5 py-0.5 bg-[#E8441A] text-white text-xs rounded-full">
-                {requests.length}
+                {pendingRequests.length}
               </span>
             )}
           </button>
@@ -130,9 +133,10 @@ export default function MerchantsPage() {
                         </td>
                       </tr>
                     ))
-                  : requests.map((r) => (
+                  : pendingRequests.map((r) => (
                       <tr key={r.id} className="hover:bg-gray-50">
                         <td className="py-3 pr-4">
+                          ss
                           <div className="flex items-center gap-2">
                             <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-xs font-bold text-[#E8441A]">
                               {r.storeName?.[0]}

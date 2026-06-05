@@ -17,6 +17,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useToggleStoreOpen } from "@/hooks/useMerchantProfile";
 import { useLogout } from "@/hooks/useAuth";
 import { useFileUrl } from "@/hooks/useFileUrl";
+import { useQuery } from "@tanstack/react-query";
+import { reportsApi, extractData, catalogApi } from "@/lib/api";
 
 const ORANGE = "#E8441A";
 const CREAM = "#FEF3E8";
@@ -57,6 +59,25 @@ export default function ProfileScreen() {
   const openingTime = merchant?.openingTime?.slice(0, 5) ?? "07:00";
   const closingTime = merchant?.closingTime?.slice(0, 5) ?? "22:00";
 
+  const { data: overview } = useQuery({
+    queryKey: ["merchant-overview"],
+    queryFn: () =>
+      reportsApi
+        .get("/api/reports/merchant/me/overview")
+        .then(extractData) as Promise<{ summary: { orderCount: number } }>,
+  });
+  const orderCount = (overview?.summary?.orderCount ?? 0) as number;
+
+  const { data: reviewsData } = useQuery({
+    queryKey: ["merchant-reviews-count", merchant?.id],
+    queryFn: () =>
+      catalogApi
+        .get(`/api/catalog/reviews/merchant/${merchant?.id}`)
+        .then(extractData) as Promise<{ totalCount: string }>,
+    enabled: Boolean(merchant?.id),
+  });
+  const reviewCount = reviewsData?.totalCount ?? "0";
+
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: "#f5f5f5" }}
@@ -82,8 +103,13 @@ export default function ProfileScreen() {
               {merchant?.storeDescription ?? ""}
             </Text>
             <View style={styles.ratingRow}>
-              <Ionicons name="star" size={14} color="#f59e0b" />
-              <Text style={styles.ratingText}>4.8 · 1,248 đơn</Text>
+              <Ionicons name="receipt-outline" size={14} color="#888" />
+              <Text style={styles.ratingText}>
+                {orderCount.toLocaleString()} đơn
+              </Text>
+              <Text style={styles.ratingText}> · </Text>
+              <Ionicons name="chatbubble-outline" size={14} color="#888" />
+              <Text style={styles.ratingText}>{reviewCount} phản hồi</Text>
             </View>
           </View>
         </View>
@@ -119,24 +145,13 @@ export default function ProfileScreen() {
             onPress={() => router.push("/(merchant)/store-info")}
           />
           <MenuItem
-            icon="location-outline"
-            label="Địa chỉ cửa hàng"
-            onPress={() => router.push("/(merchant)/store-addresses")}
-          />
-          <MenuItem
-            icon="time-outline"
-            label="Giờ mở cửa"
-            value={`${openingTime} – ${closingTime}`}
-            onPress={() => router.push("/(merchant)/opening-hours")}
-          />
-          <MenuItem
             icon="chatbubble-ellipses-outline"
             label="Phản hồi khách hàng"
             onPress={() => router.push("/(merchant)/feedbacks")}
           />
           <MenuItem
             icon="grid-outline"
-            label="Sắp xếp danh mục"
+            label="Danh mục"
             onPress={() => router.push("/(merchant)/category-layout")}
           />
         </View>

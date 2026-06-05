@@ -11,7 +11,11 @@ const LIST_STALE_TIME = 30 * 1000;
 export function useMerchantOrders(params?: MerchantOrderListParams) {
   return useQuery({
     queryKey: ["merchant-orders", params],
-    queryFn: () => orderService.getMerchantOrders(params),
+    queryFn: async () => {
+      const data = await orderService.getMerchantOrders(params);
+      console.log("ORDER SAMPLE:", JSON.stringify(data?.[0], null, 2));
+      return data;
+    },
     staleTime: LIST_STALE_TIME,
     refetchInterval: 10 * 1000,
   });

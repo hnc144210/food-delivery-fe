@@ -1,4 +1,13 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
+import { useState } from "react";
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  TextInput,
+  ActivityIndicator,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { Review } from "@/types/api";
 
@@ -19,14 +28,20 @@ function Stars({ rating }: { rating: number }) {
   );
 }
 
-type Props = { review: Review; onReply: (id: string) => void };
+type Props = {
+  review: Review;
+  onReply: (id: string, content: string) => void;
+  replying?: boolean;
+};
 
-export default function FeedbackCard({ review, onReply }: Props) {
+export default function FeedbackCard({ review, onReply, replying }: Props) {
   const replied = Boolean(review.merchantReply);
   const initial = review.userId?.[0]?.toUpperCase() ?? "U";
   const date = review.repliedAt
     ? new Date(review.repliedAt).toLocaleDateString("vi-VN")
     : "";
+  const [showInput, setShowInput] = useState(false);
+  const [text, setText] = useState("");
 
   return (
     <View style={styles.card}>
@@ -58,10 +73,51 @@ export default function FeedbackCard({ review, onReply }: Props) {
         </View>
       )}
 
+      {showInput && !replied && (
+        <View style={styles.inputBox}>
+          <TextInput
+            style={styles.input}
+            value={text}
+            onChangeText={setText}
+            placeholder="Nhập phản hồi của bạn..."
+            multiline
+            autoFocus
+          />
+          <View style={styles.inputActions}>
+            <TouchableOpacity
+              onPress={() => {
+                setShowInput(false);
+                setText("");
+              }}
+            >
+              <Text style={styles.cancelText}>Hủy</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.sendBtn,
+                (!text.trim() || replying) && { opacity: 0.5 },
+              ]}
+              disabled={!text.trim() || replying}
+              onPress={() => {
+                onReply(review.id, text.trim());
+                setShowInput(false);
+                setText("");
+              }}
+            >
+              {replying ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.sendText}>Gửi</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       <View style={styles.footer}>
         <TouchableOpacity
           style={[styles.replyBtn, replied && styles.replyBtnDone]}
-          onPress={() => !replied && onReply(review.id)}
+          onPress={() => !replied && setShowInput(true)}
         >
           <Ionicons
             name="return-down-forward-outline"
@@ -111,6 +167,32 @@ const styles = StyleSheet.create({
   },
   replyLabel: { fontSize: 12, fontWeight: "700", color: "#888" },
   replyContent: { fontSize: 13, color: "#444", lineHeight: 18 },
+  inputBox: {
+    backgroundColor: "#f9f9f9",
+    borderRadius: 10,
+    padding: 10,
+    gap: 8,
+  },
+  input: {
+    fontSize: 14,
+    color: "#1a1a1a",
+    minHeight: 60,
+    textAlignVertical: "top",
+  },
+  inputActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    gap: 10,
+  },
+  cancelText: { fontSize: 14, color: "#888" },
+  sendBtn: {
+    backgroundColor: ORANGE,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  sendText: { color: "#fff", fontWeight: "700", fontSize: 13 },
   footer: {
     flexDirection: "row",
     justifyContent: "space-between",

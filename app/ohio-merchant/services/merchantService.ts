@@ -4,6 +4,8 @@ import type {
   MessageResponse,
   PaginatedResponse,
   PageParams,
+  MerchantAddress,
+  CreateMerchantAddressRequest,
 } from '@/types/api';
 
 export interface Merchant {
@@ -21,6 +23,8 @@ export interface Merchant {
   status: string;
   storeLogoFileKey: string | null;
   storeBannerFileKey: string | null;
+  taxId: string | null;
+  businessLicense: string | null;
 }
 
 export interface UpdateMerchantRequest {
@@ -33,19 +37,6 @@ export interface UpdateMerchantRequest {
   closingTime?: string | null;
   minOrderAmount?: string;
   avgPrepTime?: string;
-}
-
-export interface MerchantAddress {
-  id: string;
-  merchantId: string;
-  addressLine: string;
-  ward: string | null;
-  district: string | null;
-  city: string | null;
-  lat: string;
-  lng: string;
-  createdAt: string;
-  updatedAt: string | null;
 }
 
 export const merchantService = {

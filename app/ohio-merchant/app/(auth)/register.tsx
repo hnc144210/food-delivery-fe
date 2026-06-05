@@ -89,12 +89,12 @@ export default function RegisterScreen() {
       >
         <OhioLogo />
 
-        <Text style={styles.title}>Getting Started</Text>
-        <Text style={styles.subtitle}>Create an account to continue!</Text>
+        <Text style={styles.title}>Bắt đầu ngay</Text>
+        <Text style={styles.subtitle}>Tạo tài khoản để tiếp tục!</Text>
 
-        {/* Full Name */}
+        {/* HỌ VÀ TÊN */}
         <View style={styles.fieldWrapper}>
-          <Text style={styles.label}>FULL NAME</Text>
+          <Text style={styles.label}>HỌ VÀ TÊN</Text>
           <Controller
             control={control}
             name="fullName"
@@ -137,7 +137,7 @@ export default function RegisterScreen() {
         </View>
         {/* Phone */}
         <View style={styles.fieldWrapper}>
-          <Text style={styles.label}>PHONE NUMBER</Text>
+          <Text style={styles.label}>SỐ ĐIỆN THOẠI</Text>
           <Controller
             control={control}
             name="phoneNumber"

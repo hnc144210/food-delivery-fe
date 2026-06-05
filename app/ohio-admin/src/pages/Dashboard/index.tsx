@@ -1,9 +1,9 @@
-//src/pages/Dashboard/index.tsx
+// src/pages/Dashboard/index.tsx
 import { ShoppingBag, DollarSign, Users, Truck } from "lucide-react";
 import StatsCard from "./StatsCard";
 import RevenueChart from "./RevenueChart";
-import RecentOrders from "./RecentOrders";
 import TopMerchants from "./TopMerchants";
+import TopProducts from "./TopProducts";
 import { useAdminOverview } from "@/hooks/useReports";
 import { formatCurrency } from "@/lib/utils";
 
@@ -50,11 +50,9 @@ export default function DashboardPage() {
 
       <RevenueChart daily={overview?.daily ?? []} isLoading={isLoading} />
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <div className="xl:col-span-2">
-          <RecentOrders />
-        </div>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <TopMerchants />
+        <TopProducts />
       </div>
     </div>
   );

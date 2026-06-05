@@ -13,11 +13,11 @@ function unwrap<T>(raw: ApiResponse<T> | T): T {
 export const reportService = {
   async getMerchantOverview(params?: DateRangeParams): Promise<ReportOverview> {
     const res = await reportsApi.get('/api/reports/merchant/me/overview', { params });
-    return unwrap<ReportOverview>(res.data);
+    return extractData<ReportOverview>(res);
   },
 
   async getMerchantTopProducts(params?: DateRangeParams): Promise<ReportTopProducts> {
     const res = await reportsApi.get('/api/reports/merchant/me/top-products', { params });
-    return unwrap<ReportTopProducts>(res.data);
+    return extractData<ReportTopProducts>(res);
   },
 };

@@ -126,12 +126,12 @@ export default function RegisterScreen() {
       >
         <OhioLogo />
 
-        <Text style={styles.title}>Getting Started</Text>
-        <Text style={styles.subtitle}>Create an account to continue!</Text>
+        <Text style={styles.title}>Bắt đầu ngay</Text>
+        <Text style={styles.subtitle}>Tạo tài khoản để tiếp tục!</Text>
 
-        {/* Full Name */}
+        {/* HỌ VÀ TÊN */}
         <View style={styles.fieldWrapper}>
-          <Text style={styles.label}>FULL NAME</Text>
+          <Text style={styles.label}>HỌ VÀ TÊN</Text>
           <Controller
             control={control}
             name="fullName"
@@ -173,9 +173,9 @@ export default function RegisterScreen() {
           )}
         </View>
 
-        {/* Phone Number */}
+        {/* SỐ ĐIỆN THOẠI */}
         <View style={styles.fieldWrapper}>
-          <Text style={styles.label}>PHONE NUMBER</Text>
+          <Text style={styles.label}>SỐ ĐIỆN THOẠI</Text>
           <Controller
             control={control}
             name="phoneNumber"
@@ -197,7 +197,7 @@ export default function RegisterScreen() {
 
         {/* Password */}
         <View style={styles.fieldWrapper}>
-          <Text style={styles.label}>PASSWORD</Text>
+          <Text style={styles.label}>MẬT KHẨU</Text>
           <Controller
             control={control}
             name="password"
@@ -236,9 +236,9 @@ export default function RegisterScreen() {
 
         {/* Terms */}
         <Text style={styles.termsText}>
-          By continuing, you agree to{" "}
-          <Text style={styles.termsLink}>Terms of Use</Text> and{" "}
-          <Text style={styles.termsLink}>Privacy Policy</Text>.
+          Khi tiếp tục, bạn đồng ý với{" "}
+          <Text style={styles.termsLink}>Điều khoản sử dụng</Text> and{" "}
+          <Text style={styles.termsLink}>Chính sách bảo mật</Text>.
         </Text>
 
         {/* Server error */}
@@ -259,22 +259,22 @@ export default function RegisterScreen() {
           {registerMutation.isPending ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Sign Up</Text>
+            <Text style={styles.buttonText}>Đăng ký</Text>
           )}
         </TouchableOpacity>
 
         {/* Login link */}
         <View style={styles.loginRow}>
-          <Text style={styles.loginHint}>Already have an account? </Text>
+          <Text style={styles.loginHint}>Đã có tài khoản?</Text>
           <TouchableOpacity
             onPress={() => router.replace({ pathname: "/(auth)/login" })}
           >
-            <Text style={styles.loginLink}>Sign In</Text>
+            <Text style={styles.loginLink}>Đăng nhập</Text>
           </TouchableOpacity>
         </View>
 
         {/* Social */}
-        <Text style={styles.orText}>or sign up with</Text>
+        <Text style={styles.orText}>hoặc đăng ký với</Text>
         <View style={styles.socialRow}>
           <TouchableOpacity style={styles.socialButton}>
             <FontAwesome name="google" size={22} color="#EA4335" />

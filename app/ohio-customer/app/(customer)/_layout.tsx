@@ -19,6 +19,7 @@ export default function CustomerLayout() {
         name="reviewbyproduct"
         options={{ headerShown: false, title: "Đánh giá sản phẩm" }}
       />
+      <Stack.Screen name="ordertracking" options={{ headerShown: false }} />
     </Stack>
   );
 }

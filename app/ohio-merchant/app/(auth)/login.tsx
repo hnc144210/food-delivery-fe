@@ -35,7 +35,7 @@ function OhioLogo() {
   return (
     <Image
       source={require("@/assets/images/logo.png")}
-      style={{ width: 160, height: 60, marginBottom: 28 }}
+      style={{ width: 180, height: 100, marginBottom: 18, marginTop: 18 }}
       resizeMode="contain"
     />
   );
@@ -77,12 +77,12 @@ export default function LoginScreen() {
       >
         <OhioLogo />
 
-        <Text style={styles.title}>Let's Sign You In</Text>
-        <Text style={styles.subtitle}>Welcome back, you've been missed</Text>
+        <Text style={styles.title}>Đăng nhập</Text>
+        <Text style={styles.subtitle}>Chào mừng trở lại!</Text>
 
         {/* Email / Phone */}
         <View style={styles.fieldWrapper}>
-          <Text style={styles.label}>EMAIL OR PHONE NUMBER</Text>
+          <Text style={styles.label}>EMAIL HOẶC SỐ ĐIỆN THOẠI</Text>
           <Controller
             control={control}
             name="email"
@@ -105,7 +105,7 @@ export default function LoginScreen() {
 
         {/* Password */}
         <View style={styles.fieldWrapper}>
-          <Text style={styles.label}>PASSWORD</Text>
+          <Text style={styles.label}>MẬT KHẨU</Text>
           <Controller
             control={control}
             name="password"
@@ -156,12 +156,12 @@ export default function LoginScreen() {
                 <Ionicons name="checkmark" size={12} color="#fff" />
               )}
             </View>
-            <Text style={styles.rememberText}>Remember me</Text>
+            <Text style={styles.rememberText}>Ghi nhớ đăng nhập</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => router.push({ pathname: "/(auth)/forgot-password" })}
           >
-            <Text style={styles.forgotText}>Forget Password</Text>
+            <Text style={styles.forgotText}>Quên mật khẩu</Text>
           </TouchableOpacity>
         </View>
 
@@ -183,22 +183,12 @@ export default function LoginScreen() {
           {loginMutation.isPending ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Sign In</Text>
+            <Text style={styles.buttonText}>Đăng nhập</Text>
           )}
         </TouchableOpacity>
 
-        {/* Register link */}
-        <View style={styles.registerRow}>
-          <Text style={styles.registerHint}>Don't have an account? </Text>
-          <TouchableOpacity
-            onPress={() => router.push({ pathname: "/(auth)/register" })}
-          >
-            <Text style={styles.registerLink}>Sign Up</Text>
-          </TouchableOpacity>
-        </View>
-
         {/* Social login */}
-        <Text style={styles.orText}>or sign up with</Text>
+        <Text style={styles.orText}>hoặc đăng nhập với</Text>
         <View style={styles.socialRow}>
           <TouchableOpacity style={styles.socialButton}>
             <FontAwesome name="google" size={22} color="#EA4335" />
