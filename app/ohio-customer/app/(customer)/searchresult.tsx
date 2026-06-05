@@ -16,6 +16,15 @@ import { homeService } from "@/services/catalogService";
 import { useEffect, useState } from "react";
 import { Feather } from "@expo/vector-icons";
 
+function normalizeText(text: string) {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "d");
+}
+
 export default function SearchResult() {
   const { searchQuery: search } = useLocalSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
@@ -30,15 +39,18 @@ export default function SearchResult() {
   }, [search]);
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ["products"],
-    queryFn: homeService.getProducts,
+    queryKey: ["products", "search", searchFinalQuery],
+    queryFn: () => homeService.getProductsWithSearch(),
+    enabled: !!searchFinalQuery,
   });
 
   const filteredProducts =
     products?.items?.filter(
       (product) =>
         product.isAvailable !== false &&
-        product.name?.toLowerCase().includes(searchFinalQuery.toLowerCase()),
+        normalizeText(product.name ?? "").includes(
+          normalizeText(searchFinalQuery),
+        ),
     ) || [];
 
   const filteredMerchants = [
@@ -48,10 +60,21 @@ export default function SearchResult() {
       }),
     ),
   ];
-
+  console.log(
+    "filteredProducts:",
+    filteredProducts.map((p) => p.name + " - " + p.merchantId),
+  );
+  console.log("filteredMerchants:", filteredMerchants);
   const searchHandle = () => {
     setSearchFinalQuery(searchQuery);
   };
+
+  console.log("search normalized:", normalizeText(searchFinalQuery));
+  console.log("product normalized:", normalizeText("Phở bò tái nạm"));
+  console.log(
+    "includes:",
+    normalizeText("Phở bò tái nạm").includes(normalizeText("pho")),
+  );
 
   return (
     <View style={styles.container}>

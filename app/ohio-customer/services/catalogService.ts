@@ -147,4 +147,16 @@ export const homeService = {
             throw handleApiError(error, 'getMerchantReview');
         }
     },
+    getProductsWithSearch: async (): Promise<ProductListResponse['data']> => {
+    try {
+        const response = await api.get<ProductListResponse>('/api/catalog/products', {
+            params: { limit: 100, status: 'ACTIVE' }
+        });
+        const resData = response.data;
+        if (!resData.ok) throw new Error(resData.message);
+        return resData.data;
+    } catch (error) {
+        throw handleApiError(error, 'getProductsWithSearch');
+    }
+},
 };
