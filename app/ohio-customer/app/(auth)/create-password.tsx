@@ -121,12 +121,12 @@ export default function CreatePasswordScreen() {
           resizeMode="contain"
         />
 
-        <Text style={styles.title}>New Password</Text>
-        <Text style={styles.subtitle}>Set your new password</Text>
+        <Text style={styles.title}>Mật khẩu mới</Text>
+        <Text style={styles.subtitle}>Đặt mật khẩu mới cho tài khoản</Text>
 
         {/* Password */}
         <View style={styles.fieldWrapper}>
-          <Text style={styles.label}>PASSWORD</Text>
+          <Text style={styles.label}>MẬT KHẨU</Text>
           <Controller
             control={control}
             name="newPassword"
@@ -164,7 +164,7 @@ export default function CreatePasswordScreen() {
 
         {/* Confirm Password */}
         <View style={styles.fieldWrapper}>
-          <Text style={styles.label}>CONFIRM PASSWORD</Text>
+          <Text style={styles.label}>XÁC NHẬN MẬT KHẨU</Text>
           <Controller
             control={control}
             name="confirmPassword"
@@ -220,7 +220,7 @@ export default function CreatePasswordScreen() {
           {resetPasswordMutation.isPending ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Create New Password</Text>
+            <Text style={styles.buttonText}>Xác nhận</Text>
           )}
         </TouchableOpacity>
       </ScrollView>

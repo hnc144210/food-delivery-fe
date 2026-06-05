@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "ohio-customer",
-    "slug": "ohio-customer",
+    "name": "OHIO Food",
+    "slug": "ohio-food",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/3.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
@@ -16,6 +16,7 @@
     },
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./assets/3.png",
         "backgroundColor": "#E6F4FE"
       },
       "predictiveBackGestureEnabled": false,

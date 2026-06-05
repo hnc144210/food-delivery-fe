@@ -200,3 +200,17 @@ export interface ApiShipperRequest {
   verifiedAt: string | null
   reviewedBy: string | null
 }
+
+export interface TopProductItem {
+  productId: string
+  productName: string
+  productImage: string
+  quantitySold: number
+  orderCount: number
+}
+
+export interface TopProductsReport {
+  from: string
+  to: string
+  items: TopProductItem[]
+}

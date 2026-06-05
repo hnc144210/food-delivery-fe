@@ -101,10 +101,8 @@ export default function ForgotPasswordScreen() {
           resizeMode="contain"
         />
 
-        <Text style={styles.title}>Forgot Password</Text>
-        <Text style={styles.subtitle}>
-          Please sign in to your existing account
-        </Text>
+        <Text style={styles.title}>Quên mật khẩu</Text>
+        <Text style={styles.subtitle}>Nhập email để lấy lại mật khẩu</Text>
 
         <View style={styles.fieldWrapper}>
           <Text style={styles.label}>EMAIL</Text>
@@ -144,7 +142,7 @@ export default function ForgotPasswordScreen() {
           {forgotPasswordMutation.isPending ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Send Code</Text>
+            <Text style={styles.buttonText}>Gửi mã xác nhận</Text>
           )}
         </TouchableOpacity>
       </ScrollView>

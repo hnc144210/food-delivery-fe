@@ -1,6 +1,6 @@
 // app/(auth)/forgot-password.tsx
-import { useState } from 'react';
-import { mockForgotPasswordResponse } from '@/mock/auth';
+import { useState } from "react";
+import { mockForgotPasswordResponse } from "@/mock/auth";
 import {
   View,
   Text,
@@ -12,20 +12,20 @@ import {
   Platform,
   ScrollView,
   Image,
-} from 'react-native';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { router } from 'expo-router';
-import { useMutation } from '@tanstack/react-query';
-import { AxiosError } from 'axios';
-import api from '@/services/api';
-import { authService } from '@/services/authService';
+} from "react-native";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { router } from "expo-router";
+import { useMutation } from "@tanstack/react-query";
+import { AxiosError } from "axios";
+import api from "@/services/api";
+import { authService } from "@/services/authService";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const forgotPasswordSchema = z.object({
-  email: z.string().email('Email không hợp lệ'),
+  email: z.string().email("Email không hợp lệ"),
 });
 
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
@@ -33,7 +33,7 @@ type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ForgotPasswordScreen() {
-  const [serverError, setServerError] = useState('');
+  const [serverError, setServerError] = useState("");
 
   const {
     control,
@@ -42,33 +42,38 @@ export default function ForgotPasswordScreen() {
     formState: { errors },
   } = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
-    defaultValues: { email: '' },
+    defaultValues: { email: "" },
   });
 
   const forgotPasswordMutation = useMutation({
-    mutationFn: (data: ForgotPasswordFormData) => authService.forgetPassword(data.email),
+    mutationFn: (data: ForgotPasswordFormData) =>
+      authService.forgetPassword(data.email),
     onSuccess: (data) => {
       router.push({
-        pathname: '/(auth)/otp',
-        params: { email: getValues('email'), expiresInSeconds: data.data.expiresInSeconds },
+        pathname: "/(auth)/otp",
+        params: {
+          email: getValues("email"),
+          expiresInSeconds: data.data.expiresInSeconds,
+        },
       });
     },
     onError: (error: AxiosError<{ message: string }>) => {
-      const message = error.response?.data?.message ?? 'Đã có lỗi xảy ra. Vui lòng thử lại.';
-      console.log(error)
+      const message =
+        error.response?.data?.message ?? "Đã có lỗi xảy ra. Vui lòng thử lại.";
+      console.log(error);
       setServerError(message);
     },
   });
 
   function handlePressSendCode(formData: ForgotPasswordFormData) {
-    setServerError('');
+    setServerError("");
     forgotPasswordMutation.mutate(formData);
   }
 
   return (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
         contentContainerStyle={styles.container}
@@ -76,13 +81,13 @@ export default function ForgotPasswordScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Image
-          source={require('@/assets/images/logo.png')}
+          source={require("@/assets/images/logo.png")}
           style={styles.logo}
           resizeMode="contain"
         />
 
-        <Text style={styles.title}>Forgot Password</Text>
-        <Text style={styles.subtitle}>Please sign in to your existing account</Text>
+        <Text style={styles.title}>Quên mật khẩu</Text>
+        <Text style={styles.subtitle}>Nhập email để lấy lại mật khẩu</Text>
 
         <View style={styles.fieldWrapper}>
           <Text style={styles.label}>EMAIL</Text>
@@ -111,7 +116,10 @@ export default function ForgotPasswordScreen() {
         ) : null}
 
         <TouchableOpacity
-          style={[styles.button, forgotPasswordMutation.isPending && styles.buttonDisabled]}
+          style={[
+            styles.button,
+            forgotPasswordMutation.isPending && styles.buttonDisabled,
+          ]}
           onPress={handleSubmit(handlePressSendCode)}
           disabled={forgotPasswordMutation.isPending}
           activeOpacity={0.85}
@@ -119,7 +127,7 @@ export default function ForgotPasswordScreen() {
           {forgotPasswordMutation.isPending ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Send Code</Text>
+            <Text style={styles.buttonText}>Gửi mã xác nhận</Text>
           )}
         </TouchableOpacity>
       </ScrollView>
@@ -129,16 +137,16 @@ export default function ForgotPasswordScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const ORANGE = '#E8441A';
+const ORANGE = "#E8441A";
 
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: "#F5F5F5",
   },
   container: {
     flexGrow: 1,
-    alignItems: 'center',
+    alignItems: "center",
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 40,
@@ -150,66 +158,66 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: '800',
-    color: '#1a1a1a',
+    fontWeight: "800",
+    color: "#1a1a1a",
     marginBottom: 6,
-    textAlign: 'center',
+    textAlign: "center",
   },
   subtitle: {
     fontSize: 14,
-    color: '#9ca3af',
+    color: "#9ca3af",
     marginBottom: 32,
-    textAlign: 'center',
+    textAlign: "center",
   },
   fieldWrapper: {
-    width: '100%',
+    width: "100%",
     marginBottom: 16,
   },
   label: {
     fontSize: 11,
-    fontWeight: '600',
-    color: '#6b7280',
+    fontWeight: "600",
+    color: "#6b7280",
     letterSpacing: 1,
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 15,
-    color: '#111827',
+    color: "#111827",
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: "#e5e7eb",
   },
   inputError: {
-    borderColor: '#ef4444',
+    borderColor: "#ef4444",
   },
   errorText: {
     marginTop: 4,
     fontSize: 12,
-    color: '#ef4444',
+    color: "#ef4444",
   },
   serverError: {
     fontSize: 13,
-    color: '#ef4444',
-    textAlign: 'center',
+    color: "#ef4444",
+    textAlign: "center",
     marginBottom: 12,
   },
   button: {
     backgroundColor: ORANGE,
     borderRadius: 14,
     paddingVertical: 16,
-    width: '100%',
-    alignItems: 'center',
+    width: "100%",
+    alignItems: "center",
     marginTop: 8,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   buttonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 });

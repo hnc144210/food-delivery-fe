@@ -34,6 +34,7 @@ export default function ShippersPage() {
 
   const shippers = shippersData?.items ?? [];
   const requests = requestsData?.items ?? [];
+  const pendingRequests = requests.filter((r) => r.status === "Pending");
   const isLoading = tab === "shippers" ? loadingShippers : loadingRequests;
 
   const handleApprove = (id: string) =>
@@ -57,9 +58,9 @@ export default function ShippersPage() {
             )}
           >
             {t.label}
-            {t.v === "requests" && requests.length > 0 && (
+            {t.v === "requests" && pendingRequests.length > 0 && (
               <span className="ml-1.5 px-1.5 py-0.5 bg-[#E8441A] text-white text-xs rounded-full">
-                {requests.length}
+                {pendingRequests.length}
               </span>
             )}
           </button>
@@ -133,7 +134,7 @@ export default function ShippersPage() {
                         </td>
                       </tr>
                     ))
-                  : requests.map((r) => (
+                  : pendingRequests.map((r) => (
                       <tr key={r.id} className="hover:bg-gray-50">
                         <td className="py-3 pr-4 font-medium">{r.fullName}</td>
                         <td className="py-3 pr-4 text-gray-500 font-mono text-xs">

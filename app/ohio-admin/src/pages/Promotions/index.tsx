@@ -116,7 +116,9 @@ export default function PromotionsPage() {
                     </td>
                     <td className="py-3">
                       <button
-                        onClick={() => remove(v.id)}
+                        onClick={() => {
+                          if (confirm(`Xóa voucher ${v.code}?`)) remove(v.id);
+                        }}
                         className="p-1.5 hover:bg-red-50 rounded-lg text-red-400"
                       >
                         <Trash2 size={14} />

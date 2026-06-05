@@ -141,8 +141,8 @@ function ResendButton({ countdown, isPending, onResend }: ResendButtonProps) {
         style={[styles.resendText, !canResend && styles.resendTextDisabled]}
       >
         {isPending
-          ? "Resending..."
-          : `Resend${countdown > 0 ? ` in ${countdown}sec` : ""}`}
+          ? "Đang gửi lại..."
+          : `Gửi lại${countdown > 0 ? ` sau ${countdown}sec` : ""}`}
       </Text>
     </TouchableOpacity>
   );
@@ -273,13 +273,13 @@ export default function OtpScreen() {
         style={styles.logo}
         resizeMode="contain"
       />
-      <Text style={styles.title}>Verification</Text>
+      <Text style={styles.title}>Xác thực OTP</Text>
       <Text style={styles.subtitle}>
-        We have sent a code to your email{"\n"}
+        Chúng tôi đã gửi mã đến email{"\n"}
         <Text style={styles.emailText}>{email ?? "unknown@example.com"}</Text>
       </Text>
 
-      <Text style={styles.codeLabel}>CODE</Text>
+      <Text style={styles.codeLabel}>MÃ XÁC NHẬN</Text>
 
       <OtpInput
         digits={digits}
@@ -305,7 +305,7 @@ export default function OtpScreen() {
         {isPending ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>Verify</Text>
+          <Text style={styles.buttonText}>Xác nhận</Text>
         )}
       </TouchableOpacity>
     </View>

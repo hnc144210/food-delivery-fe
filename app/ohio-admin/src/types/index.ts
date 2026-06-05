@@ -1,11 +1,10 @@
 //src/types/index.ts
-export type UserRole = 'CUSTOMER' | 'MERCHANT' | 'SHIPPER' | 'ADMIN'
 export type UserStatus = 'ACTIVE' | 'LOCKED' | 'PENDING'
 export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'DELIVERING' | 'COMPLETED' | 'CANCELLED'
 export type MerchantStatus = 'PENDING' | 'ACTIVE' | 'SUSPENDED'
 export type VoucherType = 'PERCENT' | 'FIXED'
 export type WithdrawalStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'COMPLETED'
-
+export type UserRole = 'Customer' | 'Merchant' | 'Shipper' | 'Admin'
 export interface User {
   id: string
   name: string
